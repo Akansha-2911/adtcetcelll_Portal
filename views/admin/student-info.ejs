@@ -1,0 +1,325 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-h-screen bg-slate-50">
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <button onclick="openSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg>
+            Student Information Directory
+          </h1>
+          <p class="text-xs text-slate-500"><%= students.length %> student(s) found</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="openWhatsAppModal()"
+          class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+          <span>Draft Message</span>
+        </button>
+
+        <a href="/admin/student-info/template/download"
+          class="flex items-center gap-1.5 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Template</span>
+        </a>
+
+        <a href="/admin/student-info/export?classLevel=<%= filters.classLevel %>&division=<%= filters.division %>&groupId=<%= filters.groupId %>&search=<%= filters.search %>"
+          class="flex items-center gap-1.5 border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>Export Excel</span>
+        </a>
+
+        <button onclick="document.getElementById('importModal').classList.remove('hidden')"
+          class="flex items-center gap-1.5 bg-navy-950 hover:bg-navy-900 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <span>Upload Excel</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-5 lg:p-8 space-y-6">
+      <%- include('../partials/flash') %>
+
+      <!-- Filter Panel -->
+      <form action="/admin/student-info" method="GET" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Class</label>
+          <select name="classLevel" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+            <option value="All">All Classes</option>
+            <% (typeof allClasses !== 'undefined' && allClasses ? allClasses : ['11th', '12th']).forEach(c => { %>
+              <option value="<%= c %>" <%= filters.classLevel === c ? 'selected' : '' %>><%= c %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Division</label>
+          <select name="division" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+            <option value="All">All Divisions</option>
+            <% (typeof allDivisions !== 'undefined' && allDivisions ? allDivisions : ['A', 'B', 'C', 'D']).forEach(d => { %>
+              <option value="<%= d %>" <%= filters.division === d ? 'selected' : '' %>>Div <%= d %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Batch / Group</label>
+          <select name="groupId" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+            <option value="All">All Batches</option>
+            <% groups.forEach(g => { %>
+              <option value="<%= g._id %>" <%= String(filters.groupId) === String(g._id) ? 'selected' : '' %>><%= g.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Search</label>
+          <input type="text" name="search" value="<%= filters.search || '' %>" placeholder="Name, Roll No, Phone..."
+            class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"/>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl text-sm transition">
+            Filter
+          </button>
+          <a href="/admin/student-info" class="border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold py-2 px-3 rounded-xl text-sm transition text-center">
+            Reset
+          </a>
+        </div>
+      </form>
+
+      <!-- Students Table Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs sm:text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-semibold tracking-wider">
+              <tr>
+                <th class="px-5 py-3 text-left">#</th>
+                <th class="px-5 py-3 text-left">Roll No</th>
+                <th class="px-5 py-3 text-left">Student Name</th>
+                <th class="px-5 py-3 text-left">Class</th>
+                <th class="px-5 py-3 text-left">Division</th>
+                <th class="px-5 py-3 text-left">Parent Contact</th>
+                <th class="px-5 py-3 text-left">Phone</th>
+                <th class="px-5 py-3 text-left">Batch</th>
+                <th class="px-5 py-3 text-center">WhatsApp</th>
+                <th class="px-5 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% if (!students || students.length === 0) { %>
+                <tr>
+                  <td colspan="10" class="px-6 py-16 text-center text-slate-400">
+                    <p class="text-base font-semibold text-slate-600 mb-1">No student records found</p>
+                    <p class="text-xs text-slate-400">Upload an Excel file or clear the active filters.</p>
+                  </td>
+                </tr>
+              <% } %>
+              <% students.forEach((s, idx) => { %>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-5 py-3 text-slate-400 text-xs"><%= idx + 1 %></td>
+                  <td class="px-5 py-3 font-mono font-bold text-indigo-700 text-xs"><%= s.rollNo || '—' %></td>
+                  <td class="px-5 py-3 font-semibold text-slate-900"><%= s.name %></td>
+                  <td class="px-5 py-3">
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold <%= s.classLevel ? 'bg-indigo-50 text-indigo-700' : 'text-slate-400' %>">
+                      <%= s.classLevel || '—' %>
+                    </span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold <%= s.division ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'text-slate-400' %>">
+                      <%= s.division ? 'Div ' + s.division : '—' %>
+                    </span>
+                  </td>
+                  <td class="px-5 py-3 font-mono text-slate-700 text-xs">
+                    <%= s.parentContact || '—' %>
+                  </td>
+                  <td class="px-5 py-3 font-mono text-slate-500 text-xs">
+                    <%= s.phone || '—' %>
+                  </td>
+                  <td class="px-5 py-3 text-xs text-slate-600">
+                    <%= (s.batches || []).join(', ') || '—' %>
+                  </td>
+                  <td class="px-5 py-3 text-center">
+                    <button type="button"
+                      data-student-name="<%= s.name || '' %>"
+                      data-roll-no="<%= s.rollNo || '' %>"
+                      data-class-level="<%= s.classLevel || '' %>"
+                      data-division="<%= s.division || '' %>"
+                      data-phone="<%= s.parentContact || s.phone || '' %>"
+                      onclick="onWhatsAppBtnClick(this)"
+                      title="Send WhatsApp Draft to Parent"
+                      class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white transition shadow-sm">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+                    </button>
+                  </td>
+                  <td class="px-5 py-3 text-right">
+                    <a href="/admin/students/<%= s._id %>/view"
+                      class="inline-block border border-slate-200 text-slate-600 hover:bg-slate-100 px-2.5 py-1 rounded-lg text-xs font-semibold transition">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Upload Excel Modal -->
+<div id="importModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+      <h3 class="font-bold text-slate-900 text-base">Upload Student Information Excel</h3>
+      <button onclick="document.getElementById('importModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100">
+        ✕
+      </button>
+    </div>
+    <form action="/admin/student-info/bulk-import" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+      <div class="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/40 rounded-2xl p-6 text-center">
+        <svg class="w-12 h-12 text-indigo-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        <p class="text-sm font-semibold text-slate-700">Select Excel or CSV File</p>
+        <p class="text-xs text-slate-500 mt-1">Accepts .xlsx, .xls, .csv</p>
+        <input type="file" name="excelFile" accept=".xlsx,.xls,.csv" required class="mt-4 text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"/>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+        <p class="font-bold text-slate-700">Supported Columns in Excel:</p>
+        <p class="font-mono text-[11px] text-slate-500">Roll No, Name, Class (e.g. 11th/12th), Division (A/B/C), Parent Contact No, Phone, Email, Batch</p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 bg-navy-950 hover:bg-navy-900 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+          Import &amp; Save
+        </button>
+        <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold py-2.5 rounded-xl text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- WhatsApp Template Modal -->
+<div id="whatsappModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50">
+      <div class="flex items-center gap-2 text-emerald-800 font-bold">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+        <span>Customize WhatsApp Draft Message</span>
+      </div>
+      <button onclick="closeWhatsAppModal()" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100">✕</button>
+    </div>
+    <form id="waTemplateForm" action="/admin/settings/whatsapp-template" method="POST" class="p-6 space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Draft Message Template</label>
+        <textarea id="waTemplateTextarea" name="template" rows="4" required
+          class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"><%= whatsappTemplate %></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Click Variable to Insert:</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="insertVariable('{student_name}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {student_name}</button>
+          <button type="button" onclick="insertVariable('{roll_no}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {roll_no}</button>
+          <button type="button" onclick="insertVariable('{class}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {class}</button>
+          <button type="button" onclick="insertVariable('{division}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {division}</button>
+          <button type="button" onclick="insertVariable('{parent_contact}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {parent_contact}</button>
+          <button type="button" onclick="insertVariable('{portal_url}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {portal_url}</button>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+        <p class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">Live Sample Preview:</p>
+        <p id="waLivePreview" class="text-xs text-slate-700 whitespace-pre-wrap font-sans"></p>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-sm transition">
+          Save Template
+        </button>
+        <button type="button" onclick="closeWhatsAppModal()" class="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold py-2.5 rounded-xl text-sm transition">
+          Close
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentWhatsAppTemplate = `<%- (whatsappTemplate || '').replace(/`/g, '\\`') %>`;
+
+function openWhatsAppModal() {
+  document.getElementById('whatsappModal').classList.remove('hidden');
+  updateLivePreview();
+}
+
+function closeWhatsAppModal() {
+  document.getElementById('whatsappModal').classList.add('hidden');
+}
+
+function insertVariable(v) {
+  const ta = document.getElementById('waTemplateTextarea');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const text = ta.value;
+  ta.value = text.substring(0, start) + v + text.substring(end);
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  ta.focus();
+  updateLivePreview();
+}
+
+function updateLivePreview() {
+  const tpl = document.getElementById('waTemplateTextarea').value;
+  const sample = tpl
+    .replace(/{student_name}/g, 'Aarav Sharma')
+    .replace(/{roll_no}/g, '2024CE001')
+    .replace(/{class}/g, '12th')
+    .replace(/{division}/g, 'A')
+    .replace(/{parent_contact}/g, '9876543201')
+    .replace(/{portal_url}/g, window.location.origin);
+  document.getElementById('waLivePreview').textContent = sample;
+}
+
+function onWhatsAppBtnClick(btn) {
+  sendWhatsAppDirect(
+    btn.getAttribute('data-student-name') || '',
+    btn.getAttribute('data-roll-no') || '',
+    btn.getAttribute('data-class-level') || '',
+    btn.getAttribute('data-division') || '',
+    btn.getAttribute('data-phone') || ''
+  );
+}
+
+function sendWhatsAppDirect(name, rollNo, classLevel, division, phone) {
+  let targetNumber = String(phone || '').replace(/[^0-9]/g, '');
+  if (!targetNumber) {
+    const inputNum = window.prompt('Parent contact number not found for ' + name + ' (' + rollNo + '). Please enter mobile number:');
+    if (!inputNum) return;
+    targetNumber = String(inputNum).replace(/[^0-9]/g, '');
+  }
+  if (targetNumber.length === 10) targetNumber = '91' + targetNumber;
+  if (!targetNumber) { alert('Valid phone number required.'); return; }
+
+  const msg = currentWhatsAppTemplate
+    .replace(/{student_name}/g, name || 'Student')
+    .replace(/{roll_no}/g, rollNo || '—')
+    .replace(/{class}/g, classLevel || '—')
+    .replace(/{division}/g, division || '—')
+    .replace(/{parent_contact}/g, targetNumber)
+    .replace(/{portal_url}/g, window.location.origin);
+
+  const url = 'https://wa.me/' + targetNumber + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+</script>
+</body>
+</html>

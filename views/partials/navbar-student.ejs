@@ -1,0 +1,156 @@
+<nav class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+
+    <div class="max-w-[1600px] mx-auto px-4 lg:px-6">
+
+        <div class="h-16 flex items-center gap-4">
+
+            <!-- Brand -->
+            <a href="/student/dashboard" class="flex items-center gap-3 shrink-0">
+
+                <% if (collegeLogo) { %>
+
+                    <img src="/adt-baramati-mark.png" alt="Agricultural Development Trust Baramati Logo"
+                        class="w-9 h-9 rounded-lg object-contain bg-white border border-slate-200 p-0.5" />
+
+                    <% } else { %>
+
+                        <div
+                            class="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">
+
+                            <%= (collegeShort || 'S' ).charAt(0) %>
+
+                        </div>
+
+                        <% } %>
+
+                            <div class="hidden sm:block">
+
+                                <p class="text-sm font-bold text-slate-900 leading-tight">
+                                    <%= collegeShort %>
+                                </p>
+
+                                <p class="text-[11px] text-slate-400">
+                                    Student Portal
+                                </p>
+
+                            </div>
+
+            </a>
+
+
+            <!-- Mobile Menu -->
+            <button type="button" onclick="toggleStudentNav()"
+                class="ml-auto lg:hidden w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">
+
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+
+                    <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+
+                </svg>
+
+            </button>
+
+
+            <!-- Navbar Links -->
+            <div id="studentNavLinks"
+                class="hidden lg:flex lg:items-center lg:gap-1 lg:ml-4 lg:flex-1 absolute lg:static top-16 left-0 right-0 bg-white lg:bg-transparent border-b lg:border-0 border-slate-200 px-4 lg:px-0 py-3 lg:py-0 shadow-lg lg:shadow-none">
+
+                <% const navItems=[ [ '/student/dashboard' , 'Dashboard' ], [ '/student/tests?tab=new' , 'New Test' ],
+                    [ '/student/tests?tab=unsolved' , 'Unsolved Test' ], [ '/student/tests?tab=solved' , 'Solved Test'
+                    ], [ '/student/practice' , 'Practice Test' ], [ '/student/results' , 'Result' ] ]; %>
+
+
+                    <% navItems.forEach(([href, label])=> {
+
+                        const base =
+                        href.split('?')[0];
+
+                        const active =
+                        requestPath
+                        ? requestPath === base
+                        : false;
+
+                        %>
+
+                        <a href="<%= href %>" class="student-nav-link block px-3 py-2 rounded-lg text-sm font-semibold transition-colors
+            <%= active
+              ? 'bg-slate-900 text-white'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            %>">
+
+                            <%= label %>
+
+                        </a>
+
+                        <% }) %>
+
+            </div>
+
+
+            <!-- User Section -->
+            <div class="hidden lg:flex items-center gap-3 ml-auto shrink-0">
+
+                <div class="text-right hidden xl:block">
+
+                    <p class="text-xs font-semibold text-slate-800">
+
+                        <%= currentUser.name %>
+
+                    </p>
+
+                    <p class="text-[10px] text-slate-400">
+
+                        <%= currentUser.rollNo || 'Student' %>
+
+                    </p>
+
+                </div>
+
+
+                <a href="/student/notifications"
+                    class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50"
+                    title="Notifications">
+
+                    🔔
+
+                </a>
+
+
+                <a href="/auth/change-password" class="text-xs font-semibold text-slate-500 hover:text-slate-900">
+
+                    Password
+
+                </a>
+
+
+                <a href="/auth/logout" class="text-xs font-semibold text-rose-600 hover:text-rose-700">
+
+                    Logout
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+<script>
+
+    function toggleStudentNav() {
+
+        document
+            .getElementById(
+                'studentNavLinks'
+            )
+            ?.classList
+            .toggle(
+                'hidden'
+            );
+
+    }
+
+</script>

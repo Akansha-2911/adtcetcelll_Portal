@@ -1,0 +1,319 @@
+<%- include('../partials/head') %>
+<%
+  const carriedTest = importDraft.testDefaults || {};
+  const carriedGroups = (carriedTest.groupIds || []).map(id => id.toString());
+  const carriedCourses = carriedTest.courses || [];
+%>
+<div class="flex min-h-screen">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-w-0">
+    <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <button onclick="openSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <a href="/admin/questions/smart-import" class="text-slate-400 hover:text-slate-700">←</a>
+          <div class="min-w-0">
+            <h1 class="text-lg font-bold text-slate-900">Review Scanned Questions</h1>
+            <p class="text-xs text-slate-500 truncate"><%= importDraft.sourceFiles.map(file => file.name).join(' · ') %></p>
+          </div>
+        </div>
+        <form action="/admin/questions/smart-import/<%= importDraft._id %>/discard" method="POST" onsubmit="return confirm('Discard this import draft?')">
+          <button type="submit" class="text-xs font-semibold text-rose-600 border border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-lg px-3 py-2">Discard</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="p-5 lg:p-8 max-w-6xl mx-auto">
+      <%- include('../partials/flash') %>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="bg-white border border-slate-200 rounded-xl p-4"><p class="text-2xl font-bold text-slate-900"><%= importDraft.questions.length %></p><p class="text-xs text-slate-500">Detected questions</p></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-4"><p class="text-2xl font-bold text-emerald-600"><%= importDraft.questions.filter(q => q.confidence >= 0.85 && q.correctAnswer !== 'UNKNOWN').length %></p><p class="text-xs text-slate-500">High confidence</p></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-4"><p class="text-2xl font-bold text-amber-600"><%= importDraft.questions.filter(q => q.confidence < 0.85 || q.correctAnswer === 'UNKNOWN').length %></p><p class="text-xs text-slate-500">Needs attention</p></div>
+        <div class="bg-white border border-slate-200 rounded-xl p-4"><p class="text-sm font-bold text-indigo-700 truncate mt-1"><%= ['openai','gemini'].includes(importDraft.extractionMethod) ? importDraft.extractionModel : 'Direct parser' %></p><p class="text-xs text-slate-500 mt-1">Extraction method</p></div>
+      </div>
+
+      <% if (importDraft.warnings.length) { %>
+      <details class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4" open>
+        <summary class="cursor-pointer text-sm font-bold text-amber-900"><%= importDraft.warnings.length %> scanner warning(s) — review these carefully</summary>
+        <ul class="mt-3 space-y-1.5 text-xs text-amber-800 list-disc pl-5 max-h-40 overflow-y-auto">
+          <% importDraft.warnings.forEach(warning => { %><li><%= warning %></li><% }) %>
+        </ul>
+      </details>
+      <% } %>
+
+      <form id="reviewForm" action="/admin/questions/smart-import/<%= importDraft._id %>/commit" method="POST" onsubmit="return validateAndSubmit(event)">
+        <input id="importActionInput" type="hidden" name="importAction" value=""/>
+        <div class="sticky top-[73px] z-10 bg-slate-50/95 backdrop-blur border border-slate-200 rounded-xl p-3 mb-4 shadow-sm flex flex-wrap items-center gap-2">
+          <span id="selectedCount" class="text-sm font-bold text-slate-800 mr-2"></span>
+          <button type="button" onclick="setSelection('all')" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50">Select all</button>
+          <button type="button" onclick="setSelection('none')" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50">Select none</button>
+          <button type="button" onclick="setSelection('confident')" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100">Only high confidence</button>
+          <label class="ml-auto flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+            <input id="attentionOnly" type="checkbox" onchange="filterAttention()" class="rounded"/>
+            Show only needs attention
+          </label>
+        </div>
+
+        <section class="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 lg:p-5">
+          <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+            <div class="flex-1">
+              <p class="text-xs font-bold uppercase tracking-wider text-indigo-700">Bulk classification</p>
+              <h2 class="text-base font-extrabold text-slate-900 mt-1">Apply Course, Subject, Topic/Subtopic and Marks to selected questions</h2>
+              <p class="text-xs text-slate-600 mt-1">Useful when the scanned paper belongs to one course/subject. You can still edit any question individually below.</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mt-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Course</label>
+              <select id="bulkCourse" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                <% COURSES.forEach(course => { %><option value="<%= course %>" <%= (importDraft.defaults.course || 'CET') === course ? 'selected' : '' %>><%= course %></option><% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Subject</label>
+              <select id="bulkSubject" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                <% SUBJECTS.forEach(subject => { %><option value="<%= subject %>" <%= importDraft.defaults.subject === subject ? 'selected' : '' %>><%= subject %></option><% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Topic <span class="font-normal text-slate-400">(optional)</span></label>
+              <input id="bulkTopic" value="<%= importDraft.defaults.topic || '' %>" placeholder="Topic" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Subtopic <span class="font-normal text-slate-400">(optional)</span></label>
+              <input id="bulkSubtopic" value="<%= importDraft.defaults.subtopic || '' %>" placeholder="Subtopic" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Difficulty</label>
+              <select id="bulkDifficulty" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                <% ['Easy','Medium','Hard'].forEach(level => { %><option value="<%= level %>" <%= importDraft.defaults.difficulty === level ? 'selected' : '' %>><%= level %></option><% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Marks</label>
+              <div class="flex gap-2">
+                <input id="bulkMarks" type="number" value="<%= importDraft.defaults.marks || 1 %>" min="0.25" max="100" step="0.25" class="min-w-0 flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+                <button type="button" onclick="applyBulkClassification()" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-4 py-2.5 text-sm">Apply</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div id="questionCards" class="space-y-4">
+          <% importDraft.questions.forEach((q, index) => {
+            const needsAttention = q.confidence < 0.85 || q.correctAnswer === 'UNKNOWN' || !q.question || !q.optionA || !q.optionB || !q.optionC || !q.optionD;
+            const confidencePct = Math.round(q.confidence * 100);
+          %>
+          <article class="question-card bg-white rounded-2xl border <%= needsAttention ? 'border-amber-300' : 'border-slate-200' %> shadow-sm overflow-hidden" data-attention="<%= needsAttention ? '1' : '0' %>" data-confidence="<%= q.confidence %>">
+            <div class="flex items-center gap-3 px-4 lg:px-5 py-3 <%= needsAttention ? 'bg-amber-50' : 'bg-slate-50' %> border-b <%= needsAttention ? 'border-amber-200' : 'border-slate-200' %>">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="questions[<%= index %>][selected]" value="1" class="question-select rounded w-4 h-4" <%= q.isSelected ? 'checked' : '' %> onchange="updateSelectionCount()"/>
+                <span class="font-bold text-slate-800">Q<%= index + 1 %></span>
+              </label>
+              <span class="text-[11px] font-semibold rounded-full px-2.5 py-1 <%= q.confidence >= 0.85 ? 'bg-emerald-100 text-emerald-700' : q.confidence >= 0.65 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700' %>"><%= confidencePct %>% confidence</span>
+              <% if (q.correctAnswer === 'UNKNOWN') { %><span class="text-[11px] font-semibold bg-rose-100 text-rose-700 rounded-full px-2.5 py-1">Answer required</span><% } %>
+              <span class="ml-auto text-[11px] text-slate-400 truncate max-w-[45%]" title="<%= q.sourceLabel %>"><%= q.sourceLabel || 'Source location unavailable' %></span>
+            </div>
+
+            <div class="p-4 lg:p-5 space-y-4">
+              <div data-math-field>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Question</label>
+                <textarea name="questions[<%= index %>][question]" rows="2" class="math-input review-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><%= q.question %></textarea>
+                <div class="math-preview hidden mt-2 overflow-x-auto rounded-xl border border-indigo-100 bg-white px-4 py-3 text-slate-900"></div>
+              </div>
+
+              <input type="hidden" name="questions[<%= index %>][questionImage]" value="<%= q.questionImage || '' %>"/>
+              <% if (q.questionImage) { %>
+              <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 overflow-x-auto">
+                <p class="text-xs font-bold text-indigo-700 mb-2">Detected question image / diagram</p>
+                <img src="<%= q.questionImage %>" alt="Detected visual for question <%= index + 1 %>" class="block w-auto h-auto max-w-full rounded-lg border border-white bg-white" loading="eager" decoding="async"/>
+              </div>
+              <% } %>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <% ['A','B','C','D'].forEach(letter => { %>
+                <div data-math-field>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Option <%= letter %></label>
+                  <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold shrink-0"><%= letter %></span>
+                    <input type="text" name="questions[<%= index %>][option<%= letter %>]" value="<%= q['option'+letter] %>" class="math-input review-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+                  </div>
+                  <div class="math-preview hidden ml-9 mt-2 overflow-x-auto rounded-xl border border-indigo-100 bg-white px-3 py-2 text-slate-900"></div>
+                </div>
+                <% }) %>
+              </div>
+
+              <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Question classification</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Course <span class="text-rose-500">*</span></label>
+                    <select name="questions[<%= index %>][course]" class="course-field review-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                      <% COURSES.forEach(course => { %><option value="<%= course %>" <%= (q.course || importDraft.defaults.course || 'CET') === course ? 'selected' : '' %>><%= course %></option><% }) %>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Subject <span class="text-rose-500">*</span></label>
+                    <select name="questions[<%= index %>][subject]" class="subject-field review-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                      <% SUBJECTS.forEach(subject => { %><option value="<%= subject %>" <%= q.subject === subject ? 'selected' : '' %>><%= subject %></option><% }) %>
+                      <% if (!SUBJECTS.includes(q.subject)) { %><option value="<%= q.subject %>" selected><%= q.subject %></option><% } %>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Topic <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input type="text" name="questions[<%= index %>][topic]" value="<%= q.topic || '' %>" placeholder="Topic" class="topic-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Subtopic <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input type="text" name="questions[<%= index %>][subtopic]" value="<%= q.subtopic || '' %>" placeholder="Subtopic" class="subtopic-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Correct answer <span class="text-rose-500">*</span></label>
+                    <select name="questions[<%= index %>][correctAnswer]" class="answer-field w-full border <%= q.correctAnswer === 'UNKNOWN' ? 'border-rose-300 bg-rose-50' : 'border-slate-200' %> rounded-xl px-3 py-2.5 text-sm">
+                      <option value="" <%= q.correctAnswer === 'UNKNOWN' ? 'selected' : '' %>>Choose…</option>
+                      <% ['A','B','C','D'].forEach(letter => { %><option value="<%= letter %>" <%= q.correctAnswer === letter ? 'selected' : '' %>><%= letter %></option><% }) %>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Difficulty</label>
+                    <select name="questions[<%= index %>][difficulty]" class="difficulty-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                      <% ['Easy','Medium','Hard'].forEach(level => { %><option value="<%= level %>" <%= q.difficulty === level ? 'selected' : '' %>><%= level %></option><% }) %>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Marks <span class="text-rose-500">*</span></label>
+                    <input type="number" name="questions[<%= index %>][marks]" value="<%= q.marks %>" min="0.25" max="100" step="0.25" class="marks-field review-field w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"/>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Answer source</label>
+                    <div class="h-[42px] flex items-center text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl px-3"><%= q.answerSource.replace('_',' ') %></div>
+                  </div>
+                </div>
+              </div>
+
+              <details>
+                <summary class="text-xs font-semibold text-indigo-600 cursor-pointer">Explanation / solution</summary>
+                <div data-math-field class="mt-3">
+                  <textarea name="questions[<%= index %>][explanation]" rows="2" placeholder="Explanation (optional)" class="math-input w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"><%= q.explanation || '' %></textarea>
+                  <div class="math-preview hidden mt-2 overflow-x-auto rounded-xl border border-indigo-100 bg-white px-3 py-2 text-slate-900"></div>
+                </div>
+              </details>
+            </div>
+          </article>
+          <% }) %>
+        </div>
+
+        <div class="mt-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-slate-950 rounded-2xl p-4 lg:p-5 text-white">
+          <div>
+            <p class="font-bold">Save selected questions</p>
+            <p class="text-xs text-slate-300 mt-1">Smart Scan adds reviewed questions to Question Bank only. Create tests separately from the Tests section.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button id="saveQuestionsButton" type="submit" value="save_questions" class="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-950 font-bold rounded-xl px-6 py-3 transition-colors">Save to Question Bank</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<div id="saveOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6">
+  <div class="bg-white rounded-2xl p-7 max-w-sm w-full text-center shadow-2xl">
+    <div class="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-5"></div>
+    <h3 id="saveOverlayTitle" class="font-bold text-slate-900 text-lg">Saving questions…</h3>
+    <p id="saveOverlayText" class="text-sm text-slate-500 mt-2">Your selected questions are being saved safely.</p>
+  </div>
+</div>
+
+<script>
+const questionCards = Array.from(document.querySelectorAll('.question-card'));
+
+function updateSelectionCount() {
+  const selected = document.querySelectorAll('.question-select:checked').length;
+  document.getElementById('selectedCount').textContent = `${selected} of ${questionCards.length} selected`;
+}
+
+function setSelection(mode) {
+  questionCards.forEach(card => {
+    const checkbox = card.querySelector('.question-select');
+    if (mode === 'all') checkbox.checked = true;
+    if (mode === 'none') checkbox.checked = false;
+    if (mode === 'confident') checkbox.checked = Number(card.dataset.confidence) >= 0.85 && card.dataset.attention === '0';
+  });
+  updateSelectionCount();
+}
+
+function filterAttention() {
+  const attentionOnly = document.getElementById('attentionOnly').checked;
+  questionCards.forEach(card => {
+    card.classList.toggle('hidden', attentionOnly && card.dataset.attention !== '1');
+  });
+}
+
+function applyBulkClassification() {
+  const selectedCards = questionCards.filter(card => card.querySelector('.question-select').checked);
+  if (!selectedCards.length) {
+    alert('Select at least one question first.');
+    return;
+  }
+
+  const values = {
+    course: document.getElementById('bulkCourse').value,
+    subject: document.getElementById('bulkSubject').value,
+    topic: document.getElementById('bulkTopic').value.trim(),
+    subtopic: document.getElementById('bulkSubtopic').value.trim(),
+    difficulty: document.getElementById('bulkDifficulty').value,
+    marks: document.getElementById('bulkMarks').value
+  };
+
+  selectedCards.forEach(card => {
+    const course = card.querySelector('.course-field');
+    const subject = card.querySelector('.subject-field');
+    const topic = card.querySelector('.topic-field');
+    const subtopic = card.querySelector('.subtopic-field');
+    const difficulty = card.querySelector('.difficulty-field');
+    const marks = card.querySelector('.marks-field');
+    if (course) course.value = values.course;
+    if (subject) subject.value = values.subject;
+    if (topic) topic.value = values.topic;
+    if (subtopic) subtopic.value = values.subtopic;
+    if (difficulty) difficulty.value = values.difficulty;
+    if (marks) marks.value = values.marks;
+  });
+}
+
+function validateAndSubmit(event) {
+  document.getElementById('importActionInput').value = 'save_questions';
+  const selectedCards = questionCards.filter(card => card.querySelector('.question-select').checked);
+  questionCards.forEach(card => card.classList.remove('ring-2','ring-rose-500'));
+
+  if (!selectedCards.length) {
+    alert('Select at least one question.');
+    return false;
+  }
+
+  const invalidCard = selectedCards.find(card => {
+    const fields = Array.from(card.querySelectorAll('.review-field'));
+    const answer = card.querySelector('.answer-field');
+    return fields.some(field => !String(field.value || '').trim()) || !answer || !answer.value;
+  });
+
+  if (invalidCard) {
+    invalidCard.classList.add('ring-2','ring-rose-500');
+    invalidCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    alert('Fix the highlighted selected question. Question, options, Course, Subject, Marks and Correct Answer are required. Topic and Subtopic are optional.');
+    return false;
+  }
+
+  document.getElementById('saveQuestionsButton').disabled = true;
+  document.getElementById('saveOverlayTitle').textContent = 'Saving to Question Bank…';
+  document.getElementById('saveOverlayText').textContent = 'Reviewed questions and their classification are being saved to Question Bank.';
+  document.getElementById('saveOverlay').classList.remove('hidden');
+  return true;
+}
+
+updateSelectionCount();
+</script>

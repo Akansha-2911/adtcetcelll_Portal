@@ -1,0 +1,693 @@
+<%# Mobile overlay %>
+
+<div
+  id="sidebarOverlay"
+  class="hidden fixed inset-0 bg-black/40 z-20 lg:hidden"
+  onclick="closeSidebar()"
+></div>
+
+
+<aside
+  id="mainSidebar"
+  class="fixed inset-y-0 left-0 w-64 bg-white text-slate-700 flex flex-col z-30 border-r border-slate-200
+         transition-transform duration-300 ease-in-out"
+  style="transform:translateX(-100%);"
+>
+
+
+  <!-- LOGO -->
+
+  <div class="px-4 py-4 border-b border-slate-200">
+
+    <div class="flex items-center gap-3">
+
+      <div
+        class="w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center shrink-0 p-1"
+      >
+
+        <img
+          src="/adt-baramati-mark.png"
+          alt="ADT Baramati"
+          class="w-full h-full object-contain"
+        >
+
+      </div>
+
+
+      <div class="min-w-0 flex-1">
+
+        <p class="font-extrabold text-[15px] leading-tight text-slate-900 truncate">
+
+          <%= collegeShort %>
+
+        </p>
+
+        <p class="text-[11px] text-slate-500 mt-0.5">
+
+          Admin Panel
+
+        </p>
+
+      </div>
+
+
+      <button
+        onclick="closeSidebar()"
+        class="ml-auto lg:hidden text-slate-400 hover:text-slate-800"
+      >
+
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+
+        </svg>
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- MENU -->
+
+  <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+
+
+    <p
+      class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[.14em] mb-2"
+    >
+
+      Overview
+
+    </p>
+
+
+    <a
+      href="/admin/dashboard"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+
+      </svg>
+
+      <span>Dashboard</span>
+
+    </a>
+
+
+    <a
+      href="/admin/organization"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M3 21h18M5 21V7l7-4 7 4v14M9 10h.01M9 14h.01M9 18h.01M15 10h.01M15 14h.01M15 18h.01"
+        />
+
+      </svg>
+
+      <span>Organization</span>
+
+    </a>
+
+
+    <!-- PEOPLE -->
+
+    <p
+      class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[.14em] mt-5 mb-2"
+    >
+
+      People
+
+    </p>
+
+
+    <a
+      href="/admin/students"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M17 20H3v-1a6 6 0 0114 0v1zm7 0h-3v-1a4.5 4.5 0 00-3.21-4.3M15 7a4 4 0 11-8 0 4 4 0 018 0z"
+        />
+
+      </svg>
+
+      <span>Students</span>
+
+    </a>
+
+
+    <a
+      href="/admin/student-info"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"
+        />
+
+      </svg>
+
+      <span>Student Information</span>
+
+    </a>
+
+
+    <a
+      href="/admin/groups"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+        />
+
+      </svg>
+
+      <span>Groups &amp; Batches</span>
+
+    </a>
+
+
+    <!-- EXAMS -->
+
+    <p
+      class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[.14em] mt-5 mb-2"
+    >
+
+      Exams
+
+    </p>
+
+
+    <a
+      href="/admin/topics"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"
+        />
+
+      </svg>
+
+      <span>Syllabus Manager</span>
+
+    </a>
+
+
+    <a
+      href="/admin/questions"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+
+      </svg>
+
+      <span>Question Bank</span>
+
+    </a>
+
+
+    <a
+      href="/admin/tests"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+        />
+
+      </svg>
+
+      <span>Tests</span>
+
+    </a>
+
+
+    <!-- DIRECT UPLOAD TEST -->
+
+    <a
+      href="/admin/tests/upload-test"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14"
+        />
+
+      </svg>
+
+      <span>Upload Test</span>
+
+    </a>
+
+
+    <a
+      href="/admin/documents"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586"
+        />
+
+      </svg>
+
+      <span>Student Docs</span>
+
+    </a>
+
+
+    <!-- REPORT -->
+
+    <p
+      class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[.14em] mt-5 mb-2"
+    >
+
+      Reports
+
+    </p>
+
+
+    <a
+      href="/admin/results"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5"
+        />
+
+      </svg>
+
+      <span>Batch-wise Results</span>
+
+    </a>
+
+
+    <a
+      href="/admin/results/combine"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+
+      </svg>
+
+      <span>Combine Results</span>
+
+    </a>
+
+
+    <a
+      href="/admin/analytics"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M4 19V9m5 10V5m5 14v-7m5 7V3"
+        />
+
+      </svg>
+
+      <span>Analytics</span>
+
+    </a>
+
+
+    <a
+      href="/admin/monitor"
+      class="sidebar-link group flex items-center gap-3 px-3 py-2.5 text-sm transition"
+    >
+
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+      >
+
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M3 12h4l2-5 4 10 2-5h6"
+        />
+
+      </svg>
+
+      <span>Live Monitor</span>
+
+    </a>
+
+  </nav>
+
+
+  <!-- ADMIN -->
+
+  <div class="px-4 py-4 border-t border-slate-200 mt-auto">
+
+    <div class="flex items-center gap-3 mb-3">
+
+      <div
+        class="w-9 h-9 rounded-full bg-sky-100 text-sky-800 flex items-center justify-center font-bold shrink-0"
+      >
+
+        <%= currentUser.name.charAt(0).toUpperCase() %>
+
+      </div>
+
+
+      <div class="min-w-0">
+
+        <p class="text-sm font-bold text-slate-900 truncate">
+
+          <%= currentUser.name %>
+
+        </p>
+
+        <p class="text-[11px] text-slate-500">
+
+          Administrator
+
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <a
+      href="/auth/logout"
+      class="flex items-center gap-2 text-[13px] font-semibold text-slate-600 hover:text-rose-600"
+    >
+
+      Sign out
+
+    </a>
+
+  </div>
+
+</aside>
+
+
+<script>
+
+  function initSidebar(){
+
+    const sidebar =
+      document.getElementById(
+        'mainSidebar'
+      );
+
+    if(
+      window.innerWidth>=1024
+    ){
+
+      sidebar.style.transform =
+        'translateX(0)';
+
+    }else{
+
+      sidebar.style.transform =
+        'translateX(-100%)';
+
+    }
+
+  }
+
+
+  function closeSidebar(){
+
+    document
+      .getElementById(
+        'mainSidebar'
+      )
+      .style.transform =
+        'translateX(-100%)';
+
+    document
+      .getElementById(
+        'sidebarOverlay'
+      )
+      .classList
+      .add(
+        'hidden'
+      );
+
+  }
+
+
+  function openSidebar(){
+
+    document
+      .getElementById(
+        'mainSidebar'
+      )
+      .style.transform =
+        'translateX(0)';
+
+    document
+      .getElementById(
+        'sidebarOverlay'
+      )
+      .classList
+      .remove(
+        'hidden'
+      );
+
+  }
+
+
+  window.addEventListener(
+    'resize',
+    initSidebar
+  );
+
+
+  initSidebar();
+
+
+  /*
+    Longest matching route wins.
+
+    Example:
+    /admin/tests/upload-test
+
+    activates Upload Test,
+    not the main Tests link.
+  */
+
+  const currentPath =
+    window.location.pathname;
+
+
+  const sidebarLinks =
+    [
+      ...document.querySelectorAll(
+        '.sidebar-link'
+      )
+    ];
+
+
+  const matchingLinks =
+    sidebarLinks
+
+      .filter(
+        link=>{
+
+          const href =
+            link.getAttribute(
+              'href'
+            );
+
+          return (
+            currentPath===href ||
+            currentPath.startsWith(
+              href+'/'
+            )
+          );
+
+        }
+      )
+
+      .sort(
+        (
+          a,
+          b
+        )=>
+          b.getAttribute(
+            'href'
+          ).length -
+          a.getAttribute(
+            'href'
+          ).length
+      );
+
+
+  if(
+    matchingLinks[0]
+  ){
+
+    matchingLinks[0]
+      .classList
+      .add(
+        'active'
+      );
+
+  }
+
+</script>

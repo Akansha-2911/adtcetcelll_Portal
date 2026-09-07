@@ -1,0 +1,962 @@
+<%- include('../partials/head') %>
+
+<div class="flex min-h-screen">
+
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-w-0 bg-slate-50">
+
+    <!-- TOP BAR -->
+    <header class="spvn-topbar sticky top-0 z-10 px-5 lg:px-8">
+
+      <div class="flex items-center gap-4">
+
+        <button
+          type="button"
+          onclick="openSidebar()"
+          class="lg:hidden text-slate-500 hover:text-slate-800"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+
+
+        <nav class="spvn-ui-topnav flex-1">
+
+          <a href="/admin/organization">
+            Organization
+          </a>
+
+          <a
+            href="/admin/tests"
+            class="active"
+          >
+            Test Management
+          </a>
+
+          <a href="/admin/results">
+            Reports
+          </a>
+
+          <a href="/admin/analytics">
+            Analytics
+          </a>
+
+          <a href="/admin/monitor">
+            Monitor
+          </a>
+
+          <a href="/admin/topics">
+            Syllabus
+          </a>
+
+        </nav>
+
+
+        <div class="hidden md:flex items-center gap-2 text-right">
+
+          <div>
+
+            <p class="text-xs font-bold text-slate-700">
+              <%= collegeShort %>
+            </p>
+
+            <p class="text-[10px] text-slate-500">
+              Administrator
+            </p>
+
+          </div>
+
+          <div
+            class="w-9 h-9 rounded-full bg-sky-100
+                   text-sky-700 flex items-center justify-center
+                   font-bold"
+          >
+            A
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <!-- SECONDARY TEST NAV -->
+    <div class="test-sub-navigation">
+
+      <a
+        href="/admin/tests"
+        class="<%= view !== 'online' ? 'active' : '' %>"
+      >
+        Tests
+      </a>
+
+      <a href="/admin/tests/create">
+        Create Test
+      </a>
+
+      <a href="/admin/tests/combine">
+        Combine Test
+      </a>
+
+      <a href="/admin/tests/upload-test">
+        Upload Test
+      </a>
+
+    </div>
+
+
+    <!-- PAGE -->
+    <div class="p-5 lg:p-8 spvn-page">
+
+      <%- include('../partials/flash') %>
+
+
+      <!-- PAGE HEADER -->
+      <div
+        class="flex flex-col xl:flex-row
+               xl:items-center xl:justify-between
+               gap-4 mb-6"
+      >
+
+        <div>
+
+          <p class="spvn-kicker mb-1">
+            Test Management
+          </p>
+
+          <h1 class="text-2xl font-black text-slate-950">
+
+            <% if (view === 'online') { %>
+              Published Tests
+            <% } else { %>
+              Tests
+            <% } %>
+
+          </h1>
+
+
+          <p class="text-sm text-slate-600 mt-1 max-w-2xl">
+
+            <% if (view === 'online') { %>
+
+              View published tests, assigned batches and examination status.
+
+            <% } else { %>
+
+              Create tests as Drafts first. Review them and publish only when
+              the test is ready for students.
+
+            <% } %>
+
+          </p>
+
+        </div>
+
+
+        <% if (view !== 'online') { %>
+
+          <div class="spvn-action-row flex flex-wrap gap-2.5 items-center">
+
+            <a
+              href="/admin/tests/create"
+              class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+              <span>Create Test</span>
+            </a>
+
+            <a
+              href="/admin/tests/combine"
+              class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              <span>Combine Test</span>
+            </a>
+
+            <a
+              href="/admin/tests/upload-test"
+              class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Upload Test</span>
+            </a>
+
+          </div>
+
+        <% } %>
+
+      </div>
+
+
+      <!-- DRAFT INFO -->
+      <% if (view !== 'online') { %>
+
+        <div
+          class="mb-5 rounded-xl border border-amber-200
+                 bg-amber-50 px-4 py-3"
+        >
+
+          <div class="flex items-start gap-3">
+
+            <div
+              class="w-8 h-8 rounded-lg bg-amber-100
+                     text-amber-700 flex items-center
+                     justify-center font-black shrink-0"
+            >
+              !
+            </div>
+
+            <div>
+
+              <p class="text-sm font-extrabold text-amber-900">
+                Draft-first workflow
+              </p>
+
+              <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                Create Test, Combine Test and Upload Test are saved as Drafts.
+                Publish only after final test details and batch assignment are completed.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- FILTER -->
+      <div class="spvn-ui-panel p-4 mb-5">
+
+        <form
+          method="GET"
+          action="/admin/tests"
+          class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"
+        >
+
+          <% if (view === 'online') { %>
+
+            <input
+              type="hidden"
+              name="view"
+              value="online"
+            >
+
+          <% } %>
+
+
+          <div class="md:col-span-3">
+
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">
+              Course
+            </label>
+
+            <select
+              name="course"
+              class="spvn-ui-filter"
+            >
+
+              <option value="">
+                All Courses
+              </option>
+
+              <% if (typeof COURSES !== 'undefined' && COURSES) { %>
+
+                <% COURSES.forEach(function(course){ %>
+
+                  <option
+                    value="<%= course %>"
+                    <%= filterCourse === course ? 'selected' : '' %>
+                  >
+                    <%= course %>
+                  </option>
+
+                <% }); %>
+
+              <% } %>
+
+            </select>
+
+          </div>
+
+
+          <div class="md:col-span-3">
+
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">
+              Subject
+            </label>
+
+            <select
+              name="subject"
+              class="spvn-ui-filter"
+            >
+
+              <option value="">
+                All Subjects
+              </option>
+
+              <% if (typeof SUBJECTS !== 'undefined' && SUBJECTS) { %>
+
+                <% SUBJECTS.forEach(function(subject){ %>
+
+                  <option
+                    value="<%= subject %>"
+                    <%= filterSubject === subject ? 'selected' : '' %>
+                  >
+                    <%= subject %>
+                  </option>
+
+                <% }); %>
+
+              <% } %>
+
+            </select>
+
+          </div>
+
+
+          <div class="md:col-span-4">
+
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">
+              Search
+            </label>
+
+            <input
+              id="paperSearch"
+              type="search"
+              class="spvn-ui-filter"
+              placeholder="Search tests..."
+              oninput="filterPaperRows()"
+            >
+
+          </div>
+
+
+          <div class="md:col-span-2 flex gap-2">
+
+            <button
+              type="submit"
+              class="spvn-action-btn spvn-action-blue flex-1"
+            >
+              Search
+            </button>
+
+            <a
+              href="<%= view === 'online' ? '/admin/tests?view=online' : '/admin/tests' %>"
+              class="spvn-action-btn spvn-action-soft-blue"
+            >
+              Clear
+            </a>
+
+          </div>
+
+        </form>
+
+      </div>
+
+
+      <!-- TEST TABLE -->
+      <div class="spvn-ui-panel overflow-hidden">
+
+        <div
+          class="px-5 py-4 flex flex-col sm:flex-row
+                 sm:items-center sm:justify-between
+                 gap-3 border-b border-slate-200"
+        >
+
+          <div>
+
+            <p class="text-sm font-extrabold text-slate-900">
+
+              <% if (view === 'online') { %>
+                Published / Online Tests
+              <% } else { %>
+                Draft & Test Papers
+              <% } %>
+
+            </p>
+
+            <p class="text-xs text-slate-500 mt-1">
+              <%= tests ? tests.length : 0 %>
+              test<%= tests && tests.length === 1 ? '' : 's' %>
+            </p>
+
+          </div>
+
+
+          <div class="flex items-center gap-2">
+
+            <a
+              href="/admin/tests"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition <%= view !== 'online'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              %>"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Drafts</span>
+            </a>
+
+            <a
+              href="/admin/tests?view=online"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition <%= view === 'online'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              %>"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Published</span>
+            </a>
+
+          </div>
+
+        </div>
+
+
+        <div class="overflow-x-auto">
+
+          <table class="spvn-ui-table" id="paperTable">
+
+            <thead>
+
+              <% if (view === 'online') { %>
+
+                <tr>
+
+                  <th>Test</th>
+
+                  <th>Status</th>
+
+                  <th>Schedule</th>
+
+                  <th>Duration</th>
+
+                  <th>Batches</th>
+
+                  <th>Questions</th>
+
+                  <th>Action</th>
+
+                </tr>
+
+              <% } else { %>
+
+                <tr>
+
+                  <th>Test</th>
+
+                  <th>Type</th>
+
+                  <th>Subject</th>
+
+                  <th>Questions</th>
+
+                  <th>Marks</th>
+
+                  <th>Status</th>
+
+                  <th>Created</th>
+
+                  <th>Action</th>
+
+                </tr>
+
+              <% } %>
+
+            </thead>
+
+
+            <tbody>
+
+              <% if (!tests || tests.length === 0) { %>
+
+                <tr>
+
+                  <td
+                    colspan="8"
+                    class="text-center py-14"
+                  >
+
+                    <p class="font-bold text-slate-700">
+                      No tests found.
+                    </p>
+
+                    <p class="text-xs text-slate-500 mt-1">
+
+                      <% if (view === 'online') { %>
+
+                        No published tests are available.
+
+                      <% } else { %>
+
+                        Create your first Draft test.
+
+                      <% } %>
+
+                    </p>
+
+                  </td>
+
+                </tr>
+
+              <% } %>
+
+
+              <% if (tests && tests.length) { %>
+
+                <% tests.forEach(function(test){ %>
+
+                  <%
+                    var subjectList = [];
+
+                    if (Array.isArray(test.subject)) {
+                      subjectList = test.subject;
+                    } else if (test.subject) {
+                      subjectList = [test.subject];
+                    }
+
+                    var subjectText =
+                      subjectList.length
+                        ? subjectList.join(', ')
+                        : 'Mixed';
+
+                    var questionCount =
+                      test.questions
+                        ? test.questions.length
+                        : 0;
+
+                    var groupCount =
+                      test.groups
+                        ? test.groups.length
+                        : 0;
+
+                    var status =
+                      test.status
+                        ? String(test.status)
+                        : 'draft';
+
+                    var statusClass =
+                      status === 'active'
+                        ? 'bg-sky-100 text-sky-800'
+                        : status === 'published'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : status === 'closed'
+                        ? 'bg-slate-200 text-slate-700'
+                        : 'bg-amber-100 text-amber-800';
+
+                    var creationMode =
+                      test.creationMode
+                        ? String(test.creationMode)
+                        : 'question_bank';
+
+                    var creationLabel =
+                      creationMode === 'uploaded_test'
+                        ? 'Uploaded Test'
+                        : creationMode === 'combined'
+                        ? 'Combined'
+                        : 'Question Bank';
+
+                    var createdDate =
+                      test.createdAt
+                        ? new Date(test.createdAt)
+                            .toLocaleDateString(
+                              'en-IN',
+                              {
+                                day:'2-digit',
+                                month:'short',
+                                year:'numeric'
+                              }
+                            )
+                        : '—';
+                  %>
+
+
+                  <tr
+                    data-paper-row
+                    data-search="<%= (
+                      String(test.title || '') +
+                      ' ' +
+                      subjectText +
+                      ' ' +
+                      status +
+                      ' ' +
+                      creationLabel
+                    ).toLowerCase() %>"
+                  >
+
+
+                    <% if (view === 'online') { %>
+
+
+                      <!-- TEST -->
+                      <td>
+
+                        <a
+                          href="/admin/tests/<%= test._id || test.id %>"
+                          class="font-bold text-sky-700 hover:underline"
+                        >
+                          <%= test.title %>
+                        </a>
+
+                        <p class="text-[11px] text-slate-500 mt-1">
+                          <%= subjectText %>
+                        </p>
+
+                      </td>
+
+
+                      <!-- STATUS -->
+                      <td>
+
+                        <span
+                          class="inline-flex px-2.5 py-1 rounded-full
+                                 text-[11px] font-bold
+                                 <%= statusClass %>"
+                        >
+                          <%= status %>
+                        </span>
+
+                      </td>
+
+
+                      <!-- SCHEDULE -->
+                      <td>
+
+                        <% if (test.startTime) { %>
+
+                          <%= new Date(test.startTime).toLocaleString(
+                            'en-IN',
+                            {
+                              day:'2-digit',
+                              month:'short',
+                              year:'numeric',
+                              hour:'2-digit',
+                              minute:'2-digit'
+                            }
+                          ) %>
+
+                        <% } else { %>
+
+                          <span class="text-slate-500">
+                            Not scheduled
+                          </span>
+
+                        <% } %>
+
+                      </td>
+
+
+                      <!-- DURATION -->
+                      <td>
+
+                        <%= test.duration || 0 %> min
+
+                      </td>
+
+
+                      <!-- BATCH -->
+                      <td>
+
+                        <%= groupCount %>
+
+                      </td>
+
+
+                      <!-- QUESTIONS -->
+                      <td>
+
+                        <%= questionCount %>
+
+                      </td>
+
+
+                      <!-- ACTION -->
+                      <td>
+
+                        <div class="flex items-center gap-1.5 flex-nowrap">
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition shadow-xs whitespace-nowrap"
+                            title="View Test"
+                          >
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <span>View</span>
+                          </a>
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>/pdf-answers"
+                            target="_blank"
+                            title="Download PDF Question Paper with Answers"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition shadow-xs whitespace-nowrap"
+                          >
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>PDF + Ans</span>
+                          </a>
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>/pdf-answers?format=word"
+                            target="_blank"
+                            title="Download Word (.doc) Question Paper with Answers"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition shadow-xs whitespace-nowrap"
+                          >
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>Word + Ans</span>
+                          </a>
+
+                          <a
+                            href="/admin/monitor/<%= test._id || test.id %>"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition shadow-xs whitespace-nowrap"
+                            title="Live Test Monitor"
+                          >
+                            <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            <span>Monitor</span>
+                          </a>
+
+                        </div>
+
+                      </td>
+
+
+                    <% } else { %>
+
+
+                      <!-- TEST -->
+                      <td>
+
+                        <a
+                          href="/admin/tests/<%= test._id || test.id %>"
+                          class="font-extrabold text-sky-700 hover:underline"
+                        >
+                          <%= test.title %>
+                        </a>
+
+                        <% if (test.topic) { %>
+
+                          <p class="text-[11px] text-slate-500 mt-1">
+                            <%= test.topic %>
+                          </p>
+
+                        <% } %>
+
+                      </td>
+
+
+                      <!-- TYPE -->
+                      <td>
+
+                        <span
+                          class="inline-flex px-2.5 py-1 rounded-full
+                                 bg-sky-50 text-sky-700
+                                 border border-sky-100
+                                 text-[11px] font-bold"
+                        >
+                          <%= creationLabel %>
+                        </span>
+
+                      </td>
+
+
+                      <!-- SUBJECT -->
+                      <td>
+                        <%= subjectText %>
+                      </td>
+
+
+                      <!-- QUESTION -->
+                      <td>
+                        <%= questionCount %>
+                      </td>
+
+
+                      <!-- MARKS -->
+                      <td>
+                        <%= test.totalMarks || 0 %>
+                      </td>
+
+
+                      <!-- STATUS -->
+                      <td>
+
+                        <span
+                          class="inline-flex px-2.5 py-1 rounded-full
+                                 text-[11px] font-bold
+                                 <%= statusClass %>"
+                        >
+                          <%= status %>
+                        </span>
+
+                      </td>
+
+
+                      <!-- CREATED -->
+                      <td>
+                        <%= createdDate %>
+                      </td>
+
+
+                      <!-- ACTION -->
+                      <td>
+
+                        <div class="flex flex-wrap items-center gap-1.5">
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition shadow-xs whitespace-nowrap"
+                            title="View Test"
+                          >
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <span>View</span>
+                          </a>
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>/pdf-answers"
+                            target="_blank"
+                            title="Download PDF Question Paper with Answers"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition shadow-xs whitespace-nowrap"
+                          >
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>PDF + Ans</span>
+                          </a>
+
+                          <a
+                            href="/admin/tests/<%= test._id || test.id %>/pdf-answers?format=word"
+                            target="_blank"
+                            title="Download Word (.doc) Question Paper with Answers"
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition shadow-xs whitespace-nowrap"
+                          >
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>Word + Ans</span>
+                          </a>
+
+                          <% if (status === 'draft') { %>
+
+                            <a
+                              href="/admin/tests/<%= test._id || test.id %>/edit"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition shadow-xs whitespace-nowrap"
+                              title="Edit Test Questions"
+                            >
+                              <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                              <span>Edit</span>
+                            </a>
+
+                            <a
+                              href="/admin/tests/<%= test._id || test.id %>/publish-setup"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition shadow-xs whitespace-nowrap"
+                              title="Test Details & Batch Setup"
+                            >
+                              <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                              <span>Details</span>
+                            </a>
+
+                          <% } %>
+
+                          <form
+                            method="POST"
+                            action="/admin/tests/<%= test._id || test.id %>/delete"
+                            onsubmit="return confirm('Delete this test? This action cannot be undone.');"
+                            class="inline"
+                          >
+                            <button
+                              type="submit"
+                              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition shadow-xs whitespace-nowrap"
+                              title="Delete Test"
+                            >
+                              <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              <span>Delete</span>
+                            </button>
+                          </form>
+
+                        </div>
+
+                      </td>
+
+
+                    <% } %>
+
+
+                  </tr>
+
+                <% }); %>
+
+              <% } %>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+    </div>
+
+  </main>
+
+</div>
+
+
+<script>
+
+  function filterPaperRows(){
+
+    var input =
+      document.getElementById(
+        'paperSearch'
+      );
+
+    if(!input){
+      return;
+    }
+
+    var query =
+      input.value
+        .toLowerCase()
+        .trim();
+
+
+    var rows =
+      document.querySelectorAll(
+        '[data-paper-row]'
+      );
+
+
+    rows.forEach(
+      function(row){
+
+        var value =
+          row.getAttribute(
+            'data-search'
+          ) || '';
+
+        row.style.display =
+          !query ||
+          value.indexOf(query) !== -1
+            ? ''
+            : 'none';
+
+      }
+    );
+
+  }
+
+</script>
+
+
+</body>
+</html>

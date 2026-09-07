@@ -1,0 +1,354 @@
+<%- include('../partials/head') %>
+
+<div class="min-h-screen bg-slate-50 text-slate-950">
+  <div class="min-h-screen grid lg:grid-cols-[1.05fr_.95fr]">
+
+    <!-- LEFT INFORMATION PANEL -->
+    <section class="relative overflow-hidden bg-white border-r border-slate-200 px-6 py-8 lg:px-14 lg:py-11 flex flex-col justify-between">
+
+      <div class="pointer-events-none absolute -top-28 -left-24 w-80 h-80 rounded-full bg-emerald-100/60"></div>
+      <div class="pointer-events-none absolute top-16 right-8 w-52 h-52 rounded-full bg-amber-100/55"></div>
+      <div class="pointer-events-none absolute -bottom-28 right-0 w-96 h-96 rounded-full bg-sky-100/60"></div>
+
+      <!-- LOGO -->
+      <div class="relative z-10">
+        <div class="inline-flex items-center bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3">
+          <img
+            src="/adt-baramati-logo.jpeg"
+            alt="Agricultural Development Trust Baramati"
+            class="block h-[82px] lg:h-[90px] w-auto max-w-[340px] object-contain object-left"
+          />
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <div class="relative z-10 max-w-[650px] my-10 lg:my-12">
+
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-4 py-2 mb-5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+
+          <span class="text-xs font-extrabold uppercase tracking-[.14em] text-emerald-800">
+            Administrator Portal
+          </span>
+        </div>
+
+        <h1 class="text-[38px] sm:text-[44px] lg:text-[50px] font-black tracking-tight leading-[1.08] text-slate-950">
+          Manage academics with a
+          <span class="text-emerald-700">clear</span>,
+          <span class="text-sky-700">simple</span>
+          workflow.
+        </h1>
+
+        <p class="mt-5 text-[16px] lg:text-[17px] leading-7 text-slate-700 max-w-[570px]">
+          Manage students, batches, question banks, tests, publishing and results
+          from one secure administration portal.
+        </p>
+
+        <div class="grid sm:grid-cols-2 gap-4 mt-8">
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex gap-3">
+              <span class="mt-1.5 w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-950">
+                  Students & Batches
+                </h3>
+
+                <p class="text-xs leading-5 text-slate-600 mt-1">
+                  Manage batches and student access.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex gap-3">
+              <span class="mt-1.5 w-3 h-3 rounded-full bg-sky-500 shrink-0"></span>
+
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-950">
+                  Question Bank & Tests
+                </h3>
+
+                <p class="text-xs leading-5 text-slate-600 mt-1">
+                  Build drafts, review and publish tests.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex gap-3">
+              <span class="mt-1.5 w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-950">
+                  Results & Analytics
+                </h3>
+
+                <p class="text-xs leading-5 text-slate-600 mt-1">
+                  Review performance and reports.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex gap-3">
+              <span class="mt-1.5 w-3 h-3 rounded-full bg-violet-500 shrink-0"></span>
+
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-950">
+                  Secure Administration
+                </h3>
+
+                <p class="text-xs leading-5 text-slate-600 mt-1">
+                  Restricted staff access only.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLLEGE -->
+      <div class="relative z-10 border-t border-slate-200 pt-4">
+        <p class="font-extrabold text-sm text-slate-950">
+          <%= collegeName %>
+        </p>
+
+        <p class="mt-1 text-xs leading-5 text-slate-600">
+          <%= collegeAddress %>
+        </p>
+      </div>
+
+    </section>
+
+    <!-- RIGHT LOGIN PANEL -->
+    <section class="relative bg-gradient-to-br from-slate-50 via-white to-emerald-50/50 px-5 sm:px-7 lg:px-12 py-8 flex items-center justify-center">
+
+      <div class="w-full max-w-[470px]">
+
+        <!-- MOBILE LOGO -->
+        <div class="lg:hidden mb-6 text-center">
+          <div class="inline-flex bg-white border border-slate-200 rounded-2xl shadow-sm px-4 py-3">
+            <img
+              src="/adt-baramati-logo.jpeg"
+              alt="Agricultural Development Trust Baramati"
+              class="h-[72px] max-w-[280px] w-auto object-contain"
+            />
+          </div>
+        </div>
+
+        <!-- LOGIN CARD -->
+        <div class="bg-white rounded-[28px] border border-slate-200 shadow-[0_24px_65px_rgba(15,23,42,.09)] p-6 sm:p-8">
+
+          <div class="flex items-start justify-between gap-4 mb-7">
+
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-sky-50 border border-sky-200 px-3 py-1.5 mb-3">
+
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+
+                <span class="text-[11px] font-extrabold uppercase tracking-[.13em] text-sky-800">
+                  Admin Access
+                </span>
+
+              </div>
+
+              <h2 class="text-[29px] sm:text-[32px] leading-tight font-black text-slate-950">
+                Administrator Login
+              </h2>
+
+              <p class="text-sm text-slate-600 mt-2">
+                Sign in using your authorised administrator account.
+              </p>
+            </div>
+
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
+
+              <svg
+                class="w-6 h-6 text-emerald-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+
+            </div>
+
+          </div>
+
+          <%- include('../partials/flash') %>
+
+          <form action="/auth/admin" method="POST" class="space-y-5">
+
+            <!-- EMAIL -->
+            <div>
+
+              <label
+                for="adminEmail"
+                class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2"
+              >
+                Email Address
+              </label>
+
+              <div class="relative">
+
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9"
+                    />
+                  </svg>
+
+                </div>
+
+                <input
+                  id="adminEmail"
+                  type="email"
+                  name="email"
+                  required
+                  autofocus
+                  autocomplete="username"
+                  placeholder="admin@college.edu.in"
+                  class="w-full h-[54px] pl-12 pr-4 rounded-2xl border border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 font-medium text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                />
+
+              </div>
+            </div>
+
+            <!-- PASSWORD -->
+            <div>
+
+              <label
+                for="aPw"
+                class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2"
+              >
+                Password
+              </label>
+
+              <div class="relative">
+
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+
+                </div>
+
+                <input
+                  type="password"
+                  name="password"
+                  id="aPw"
+                  required
+                  autocomplete="current-password"
+                  placeholder="Enter admin password"
+                  class="w-full h-[54px] pl-12 pr-12 rounded-2xl border border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 font-medium text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                />
+
+                <button
+                  type="button"
+                  onclick="const i=document.getElementById('aPw');i.type=i.type==='password'?'text':'password'"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-950"
+                  aria-label="Show or hide password"
+                >
+
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+
+                </button>
+
+              </div>
+            </div>
+
+            <!-- SECURITY -->
+            <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 flex gap-3">
+
+              <svg class="w-5 h-5 text-amber-700 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92z"
+                />
+              </svg>
+
+              <p class="text-xs leading-5 text-amber-950 font-medium">
+                Restricted area for authorised personnel. Login activity may be monitored for security.
+              </p>
+
+            </div>
+
+            <!-- LOGIN -->
+            <button
+              type="submit"
+              class="w-full h-[56px] rounded-2xl text-white font-extrabold flex items-center justify-center gap-2 transition hover:-translate-y-[1px] active:translate-y-0 shadow-lg shadow-emerald-900/10"
+              style="background:linear-gradient(135deg,#28725a 0%,#25836b 50%,#287eb0 100%);"
+            >
+
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944"
+                />
+              </svg>
+
+              Access Admin Panel
+
+            </button>
+
+          </form>
+
+          <div class="mt-6 pt-5 border-t border-slate-200 text-center">
+
+            <a
+              href="/auth/login"
+              class="inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:text-sky-900"
+            >
+              ← Go to Student Login
+            </a>
+
+          </div>
+
+        </div>
+
+        <p class="mt-5 text-center text-xs text-slate-600">
+          © <%= new Date().getFullYear() %> <%= collegeName %>
+        </p>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+
+</body>
+</html>

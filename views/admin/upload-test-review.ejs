@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <%- include('../partials/head', {
+    title: 'Review Uploaded Test'
+  }) %>
+
+  <style>
+
+    .qfont{
+      font-family:"Times New Roman",serif;
+    }
+
+    .preview-img{
+      max-height:680px;
+      object-fit:contain;
+    }
+
+    .visual-image{
+      display:block;
+      width:auto;
+      height:auto;
+    }
+
+  </style>
+
+</head>
+
+<body class="bg-slate-50">
+
+<%
+/* ============================================================
+   SAFE IMAGE URL
+
+   Converts:
+   C:\project\uploads\file.png
+   /some/path/uploads/file.png
+   uploads/file.png
+
+   into:
+   /uploads/file.png
+
+   Invalid/non-web paths return empty string.
+============================================================ */
+
+function safeImageUrl(value) {
+
+  if (!value) {
+    return '';
+  }
+
+  let src =
+    String(value).trim();
+
+  if (!src) {
+    return '';
+  }
+
+
+  /* Already usable URLs */
+
+  if (
+    src.startsWith('/uploads/') ||
+    src.startsWith('http://') ||
+    src.startsWith('https://') ||
+    src.startsWith('data:image/')
+  ) {
+
+    return src;
+
+  }
+
+
+  /* Windows -> browser path */
+
+  src =
+    src.replace(
+      /\\/g,
+      '/'
+    );
+
+
+  /*
+   * Example:
+   *
+   * C:/project/public/uploads/test/a.png
+   * C:/project/uploads/test/a.png
+   *
+   * ->
+   *
+   * /uploads/test/a.png
+   */
+
+  const lower =
+    src.toLowerCase();
+
+  const uploadsIndex =
+    lower.indexOf(
+      '/uploads/'
+    );
+
+
+  if (
+    uploadsIndex !== -1
+  ) {
+
+    return src.substring(
+      uploadsIndex
+    );
+
+  }
+
+
+  if (
+    lower.startsWith(
+      'uploads/'
+    )
+  ) {
+
+    return '/' + src;
+
+  }
+
+
+  /*
+   * Do not render filesystem paths or malformed values.
+   */
+
+  return '';
+
+}
+%>
+
+
+<div class="min-h-screen">
+
+  <%- include('../partials/sidebar-admin') %>
+
+
+  <main class="lg:ml-64 min-h-screen p-4 md:p-6">
+
+    <div class="max-w-6xl mx-auto">
+
+
+      <!-- =====================================================
+           PAGE HEADER
+      ====================================================== -->
+
+      <div class="mb-5">
+
+        <h1 class="text-2xl font-bold text-slate-800">
+          Review Uploaded Test
+        </h1>
+
+        <p class="text-sm text-slate-500 mt-1">
+          Check extracted questions, options, equations, diagrams
+          and solutions before creating the test.
+        </p>
+
+      </div>
+
+
+      <!-- =====================================================
+           STATS
+      ====================================================== -->
+
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+
+
+        <div class="bg-white border rounded-lg p-3">
+
+          <div class="text-xs text-slate-500">
+            Question Pages
+          </div>
+
+          <div class="text-xl font-bold">
+            <%= uploadSession.totalQuestionPages %>
+          </div>
+
+        </div>
+
+
+        <div class="bg-white border rounded-lg p-3">
+
+          <div class="text-xs text-slate-500">
+            Solution Pages
+          </div>
+
+          <div class="text-xl font-bold">
+            <%= uploadSession.totalSolutionPages %>
+          </div>
+
+        </div>
+
+
+        <div class="bg-white border rounded-lg p-3">
+
+          <div class="text-xs text-slate-500">
+            Extracted
+          </div>
+
+          <div class="text-xl font-bold text-green-600">
+            <%= uploadSession.extractedCount %>
+          </div>
+
+        </div>
+
+
+        <div class="bg-white border rounded-lg p-3">
+
+          <div class="text-xs text-slate-500">
+            Duplicates
+          </div>
+
+          <div class="text-xl font-bold text-amber-600">
+            <%= uploadSession.duplicateCount %>
+          </div>
+
+        </div>
+
+
+        <div class="bg-white border rounded-lg p-3">
+
+          <div class="text-xs text-slate-500">
+            Need Review
+          </div>
+
+          <div class="text-xl font-bold text-red-600">
+
+            <%= Number(uploadSession.failedCount || 0) +
+                Number(uploadSession.warningCount || 0) %>
+
+          </div>
+
+        </div>
+
+
+      </div>
+
+
+      <!-- =====================================================
+           REVIEW FORM
+      ====================================================== -->
+
+      <form
+        method="POST"
+        action="/admin/tests/upload-test/review/<%= uploadSession._id %>"
+      >
+
+        <div class="space-y-5">
+
+
+          <% (uploadSession.questions || []).forEach(function(q, i) {
+
+            const p =
+              'q_' + q._id;
+
+            const questionPagePreviewUrl =
+              safeImageUrl(
+                q.questionPagePreview
+              );
+
+            const solutionPagePreviewUrl =
+              safeImageUrl(
+                q.solutionPagePreview
+              );
+
+            const questionImageUrl =
+              safeImageUrl(
+                q.questionImage
+              );
+
+            const optionAImageUrl =
+              safeImageUrl(
+                q.optionAImage
+              );
+
+            const optionBImageUrl =
+              safeImageUrl(
+                q.optionBImage
+              );
+
+            const optionCImageUrl =
+              safeImageUrl(
+                q.optionCImage
+              );
+
+            const optionDImageUrl =
+              safeImageUrl(
+                q.optionDImage
+              );
+
+            const solutionImageUrl =
+              safeImageUrl(
+                q.solutionImage
+              );
+
+          %>
+
+
+          <!-- =================================================
+               QUESTION CARD
+          ================================================== -->
+
+          <section
+            class="bg-white border border-slate-200
+                   rounded-xl p-4 md:p-5 shadow-sm"
+          >
+
+
+            <!-- HEADER -->
+
+            <div
+              class="flex flex-wrap items-center
+                     justify-between gap-2 mb-4"
+            >
+
+              <div class="flex flex-wrap items-center gap-2">
+
+
+                <span class="font-bold text-slate-800">
+                  Question <%= i + 1 %>
+                </span>
+
+
+                <span
+                  class="text-xs bg-slate-100
+                         px-2 py-1 rounded"
+                >
+                  Page <%= q.pageNumber %>
+                </span>
+
+
+                <% if(q.solutionPageNumber){ %>
+
+                  <span
+                    class="text-xs bg-blue-50
+                           text-blue-700
+                           px-2 py-1 rounded"
+                  >
+                    Solution Page <%= q.solutionPageNumber %>
+                  </span>
+
+                <% } %>
+
+
+                <% if(q.isDuplicate){ %>
+
+                  <span
+                    class="text-xs bg-amber-100
+                           text-amber-700
+                           px-2 py-1 rounded"
+                  >
+                    Duplicate
+                  </span>
+
+                <% } %>
+
+
+                <% if(questionImageUrl){ %>
+
+                  <span
+                    class="text-xs bg-purple-100
+                           text-purple-700
+                           px-2 py-1 rounded"
+                  >
+                    Question Image
+                  </span>
+
+                <% } %>
+
+
+                <%
+                const hasRealVisualOptions =
+                  Boolean(
+                    optionAImageUrl ||
+                    optionBImageUrl ||
+                    optionCImageUrl ||
+                    optionDImageUrl
+                  );
+                %>
+
+
+                <% if(hasRealVisualOptions){ %>
+
+                  <span
+                    class="text-xs bg-indigo-100
+                           text-indigo-700
+                           px-2 py-1 rounded"
+                  >
+                    Visual Options
+                  </span>
+
+                <% } %>
+
+
+                <% if(q.extractionStatus === 'failed'){ %>
+
+                  <span
+                    class="text-xs bg-red-100
+                           text-red-700
+                           px-2 py-1 rounded"
+                  >
+                    Failed
+                  </span>
+
+                <% } %>
+
+
+                <% if(q.extractionStatus === 'warning'){ %>
+
+                  <span
+                    class="text-xs bg-orange-100
+                           text-orange-700
+                           px-2 py-1 rounded"
+                  >
+                    Review
+                  </span>
+
+                <% } %>
+
+
+              </div>
+
+
+              <label
+                class="text-sm flex gap-2 items-center"
+              >
+
+                <input
+                  type="checkbox"
+                  name="<%= p %>_include"
+                  <%= q.includeInTest !== false ? 'checked' : '' %>
+                >
+
+                Include in Test
+
+              </label>
+
+
+            </div>
+
+
+            <!-- DUPLICATE MESSAGE -->
+
+            <% if(q.duplicateReason){ %>
+
+              <div
+                class="mb-3 bg-amber-50
+                       border border-amber-200
+                       text-amber-700
+                       text-sm p-2 rounded"
+              >
+                <%= q.duplicateReason %>
+                Existing question will be reused.
+              </div>
+
+            <% } %>
+
+
+            <!-- EXTRACTION MESSAGE -->
+
+            <% if(q.extractionMessage){ %>
+
+              <div
+                class="mb-3 bg-red-50
+                       border border-red-200
+                       text-red-700
+                       text-sm p-2 rounded"
+              >
+                <%= q.extractionMessage %>
+              </div>
+
+            <% } %>
+
+
+            <!-- =================================================
+                 ORIGINAL QUESTION PAGE
+            ================================================== -->
+
+            <% if(questionPagePreviewUrl){ %>
+
+              <details
+                class="mb-4
+                       border border-slate-200
+                       rounded-xl bg-slate-50"
+              >
+
+                <summary
+                  class="cursor-pointer
+                         px-3 py-2
+                         font-semibold
+                         text-sm text-slate-700"
+                >
+                  View Original Question Page
+                </summary>
+
+
+                <div
+                  class="p-3 border-t
+                         flex justify-center
+                         overflow-auto
+                         preview-wrapper"
+                >
+
+                  <img
+                    src="<%= questionPagePreviewUrl %>"
+                    class="preview-img max-w-full rounded border bg-white"
+                    alt="Question page <%= q.pageNumber %>"
+                    loading="lazy"
+                    onerror="this.closest('.preview-wrapper').style.display='none'"
+                  >
+
+                </div>
+
+              </details>
+
+            <% } %>
+
+
+            <!-- =================================================
+                 QUESTION
+            ================================================== -->
+
+            <label
+              class="block text-sm font-medium
+                     text-slate-700 mb-1"
+            >
+              Question
+            </label>
+
+
+            <textarea
+              name="<%= p %>_question"
+              rows="3"
+              class="qfont w-full
+                     border border-slate-300
+                     rounded-lg p-3 mb-3
+                     focus:ring-2
+                     focus:ring-indigo-200
+                     focus:border-indigo-400"
+            ><%= q.question || '' %></textarea>
+
+
+            <!-- QUESTION IMAGE -->
+
+            <% if(questionImageUrl){ %>
+
+              <div
+                class="mb-4
+                       border border-purple-200
+                       rounded-xl
+                       bg-purple-50
+                       p-3
+                       question-image-wrapper"
+              >
+
+                <div
+                  class="text-xs font-semibold
+                         text-purple-700 mb-2"
+                >
+                  Question Diagram / Figure
+                </div>
+
+
+                <img
+                  src="<%= questionImageUrl %>"
+                  class="visual-image
+                         max-h-80 max-w-full
+                         mx-auto object-contain
+                         rounded bg-white border"
+                  alt="Question image"
+                  loading="lazy"
+                  onerror="this.closest('.question-image-wrapper').style.display='none'"
+                >
+
+              </div>
+
+            <% } %>
+
+
+            <!-- =================================================
+                 OPTIONS
+            ================================================== -->
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+
+
+              <!-- OPTION A -->
+
+              <div
+                class="border border-slate-200
+                       rounded-xl p-3"
+              >
+
+                <label
+                  class="text-xs font-semibold
+                         text-slate-600
+                         mb-1 block"
+                >
+                  Option A
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_optionA"
+                  rows="2"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                  placeholder="Option A"
+                ><%= q.optionA || '' %></textarea>
+
+
+                <% if(optionAImageUrl){ %>
+
+                  <div
+                    class="mt-2 bg-slate-50
+                           border rounded-lg p-2
+                           option-image-wrapper"
+                  >
+
+                    <img
+                      src="<%= optionAImageUrl %>"
+                      class="visual-image
+                             max-h-56 max-w-full
+                             mx-auto object-contain
+                             rounded bg-white"
+                      alt="Option A image"
+                      loading="lazy"
+                      onerror="this.closest('.option-image-wrapper').style.display='none'"
+                    >
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+
+              <!-- OPTION B -->
+
+              <div
+                class="border border-slate-200
+                       rounded-xl p-3"
+              >
+
+                <label
+                  class="text-xs font-semibold
+                         text-slate-600
+                         mb-1 block"
+                >
+                  Option B
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_optionB"
+                  rows="2"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                  placeholder="Option B"
+                ><%= q.optionB || '' %></textarea>
+
+
+                <% if(optionBImageUrl){ %>
+
+                  <div
+                    class="mt-2 bg-slate-50
+                           border rounded-lg p-2
+                           option-image-wrapper"
+                  >
+
+                    <img
+                      src="<%= optionBImageUrl %>"
+                      class="visual-image
+                             max-h-56 max-w-full
+                             mx-auto object-contain
+                             rounded bg-white"
+                      alt="Option B image"
+                      loading="lazy"
+                      onerror="this.closest('.option-image-wrapper').style.display='none'"
+                    >
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+
+              <!-- OPTION C -->
+
+              <div
+                class="border border-slate-200
+                       rounded-xl p-3"
+              >
+
+                <label
+                  class="text-xs font-semibold
+                         text-slate-600
+                         mb-1 block"
+                >
+                  Option C
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_optionC"
+                  rows="2"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                  placeholder="Option C"
+                ><%= q.optionC || '' %></textarea>
+
+
+                <% if(optionCImageUrl){ %>
+
+                  <div
+                    class="mt-2 bg-slate-50
+                           border rounded-lg p-2
+                           option-image-wrapper"
+                  >
+
+                    <img
+                      src="<%= optionCImageUrl %>"
+                      class="visual-image
+                             max-h-56 max-w-full
+                             mx-auto object-contain
+                             rounded bg-white"
+                      alt="Option C image"
+                      loading="lazy"
+                      onerror="this.closest('.option-image-wrapper').style.display='none'"
+                    >
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+
+              <!-- OPTION D -->
+
+              <div
+                class="border border-slate-200
+                       rounded-xl p-3"
+              >
+
+                <label
+                  class="text-xs font-semibold
+                         text-slate-600
+                         mb-1 block"
+                >
+                  Option D
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_optionD"
+                  rows="2"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                  placeholder="Option D"
+                ><%= q.optionD || '' %></textarea>
+
+
+                <% if(optionDImageUrl){ %>
+
+                  <div
+                    class="mt-2 bg-slate-50
+                           border rounded-lg p-2
+                           option-image-wrapper"
+                  >
+
+                    <img
+                      src="<%= optionDImageUrl %>"
+                      class="visual-image
+                             max-h-56 max-w-full
+                             mx-auto object-contain
+                             rounded bg-white"
+                      alt="Option D image"
+                      loading="lazy"
+                      onerror="this.closest('.option-image-wrapper').style.display='none'"
+                    >
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 META / CLASSIFICATION
+            ================================================== -->
+
+            <div
+              class="grid sm:grid-cols-2
+                     lg:grid-cols-6
+                     gap-3 mb-4"
+            >
+
+
+              <!-- ANSWER -->
+
+              <div>
+
+                <label class="text-xs font-medium">
+                  Answer
+                </label>
+
+
+                <select
+                  name="<%= p %>_correctAnswer"
+                  class="w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                >
+
+                  <option value="">
+                    Select
+                  </option>
+
+
+                  <% ['A','B','C','D'].forEach(function(answer){ %>
+
+                    <option
+                      value="<%= answer %>"
+                      <%= q.correctAnswer === answer ? 'selected' : '' %>
+                    >
+                      <%= answer %>
+                    </option>
+
+                  <% }); %>
+
+
+                </select>
+
+              </div>
+
+
+              <!-- SUBJECT -->
+
+              <div>
+
+                <label class="text-xs font-medium">
+                  Subject
+                </label>
+
+
+                <input
+                  name="<%= p %>_subject"
+                  value="<%= q.subject || '' %>"
+                  class="w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                >
+
+              </div>
+
+
+              <!-- TOPIC -->
+
+              <div>
+
+                <label class="text-xs font-medium">
+                  Topic
+                </label>
+
+
+                <input
+                  name="<%= p %>_topic"
+                  value="<%= q.topic || '' %>"
+                  class="w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                >
+
+              </div>
+
+
+              <!-- SUBTOPIC -->
+
+              <div>
+
+                <label class="text-xs font-medium">
+                  Subtopic
+                </label>
+
+
+                <input
+                  name="<%= p %>_subtopic"
+                  value="<%= q.subtopic || '' %>"
+                  class="w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                >
+
+              </div>
+
+
+              <!-- DIFFICULTY -->
+
+              <div>
+
+                <label class="text-xs font-medium">
+                  Difficulty
+                </label>
+
+
+                <select
+                  name="<%= p %>_difficulty"
+                  class="w-full
+                         border border-slate-300
+                         rounded-lg p-2"
+                >
+
+                  <% ['Easy','Medium','Hard'].forEach(function(difficulty){ %>
+
+                    <option
+                      value="<%= difficulty %>"
+                      <%= q.difficulty === difficulty ? 'selected' : '' %>
+                    >
+                      <%= difficulty %>
+                    </option>
+
+                  <% }); %>
+
+
+                </select>
+
+              </div>
+
+
+              <!-- MARKS -->
+
+              <div class="grid grid-cols-2 gap-1">
+
+
+                <div>
+
+                  <label class="text-xs font-medium">
+                    Marks
+                  </label>
+
+
+                  <input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    name="<%= p %>_marks"
+                    value="<%= Number(q.marks || 1) %>"
+                    class="w-full
+                           border border-slate-300
+                           rounded-lg p-2"
+                  >
+
+                </div>
+
+
+                <div>
+
+                  <label class="text-xs font-medium">
+                    Neg.
+                  </label>
+
+
+                  <input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    name="<%= p %>_negativeMarks"
+                    value="<%= Number(q.negativeMarks || 0) %>"
+                    class="w-full
+                           border border-slate-300
+                           rounded-lg p-2"
+                  >
+
+                </div>
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 SOLUTIONS
+            ================================================== -->
+
+            <div class="grid md:grid-cols-2 gap-3">
+
+
+              <!-- SHORT SOLUTION -->
+
+              <div>
+
+                <label
+                  class="text-sm font-medium
+                         text-slate-700"
+                >
+                  Short Solution
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_explanation"
+                  rows="4"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2 mt-1"
+                ><%= q.explanation || '' %></textarea>
+
+              </div>
+
+
+              <!-- DETAILED SOLUTION -->
+
+              <div>
+
+                <label
+                  class="text-sm font-medium
+                         text-slate-700"
+                >
+                  Detailed Solution
+                </label>
+
+
+                <textarea
+                  name="<%= p %>_detailedSolution"
+                  rows="4"
+                  class="qfont w-full
+                         border border-slate-300
+                         rounded-lg p-2 mt-1"
+                ><%= q.detailedSolution || '' %></textarea>
+
+
+                <% if(solutionImageUrl){ %>
+
+                  <div
+                    class="mt-2
+                           border border-blue-200
+                           rounded-lg
+                           bg-blue-50
+                           p-2
+                           solution-image-wrapper"
+                  >
+
+                    <img
+                      src="<%= solutionImageUrl %>"
+                      class="visual-image
+                             max-h-72 max-w-full
+                             mx-auto object-contain
+                             rounded bg-white"
+                      alt="Solution image"
+                      loading="lazy"
+                      onerror="this.closest('.solution-image-wrapper').style.display='none'"
+                    >
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 ORIGINAL SOLUTION PAGE
+            ================================================== -->
+
+            <% if(solutionPagePreviewUrl){ %>
+
+              <details
+                class="mt-4
+                       border border-blue-200
+                       rounded-xl
+                       bg-blue-50"
+              >
+
+                <summary
+                  class="cursor-pointer
+                         px-3 py-2
+                         text-sm font-semibold
+                         text-blue-700"
+                >
+                  View Original Solution Page
+                </summary>
+
+
+                <div
+                  class="p-3
+                         flex justify-center
+                         overflow-auto
+                         border-t border-blue-100
+                         solution-preview-wrapper"
+                >
+
+                  <img
+                    src="<%= solutionPagePreviewUrl %>"
+                    class="preview-img
+                           max-w-full rounded
+                           border bg-white"
+                    alt="Solution page <%= q.solutionPageNumber %>"
+                    loading="lazy"
+                    onerror="this.closest('.solution-preview-wrapper').style.display='none'"
+                  >
+
+                </div>
+
+              </details>
+
+            <% } %>
+
+
+          </section>
+
+
+          <% }); %>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             BOTTOM ACTION BAR
+        ====================================================== -->
+
+        <div
+          class="sticky bottom-3
+                 bg-white
+                 border border-slate-200
+                 rounded-xl
+                 shadow-lg
+                 p-4 mt-5
+                 flex flex-wrap
+                 gap-3
+                 justify-between
+                 items-center"
+        >
+
+
+          <a
+            href="/admin/tests/upload-test"
+            class="border border-slate-300
+                   px-4 py-2
+                   rounded-lg
+                   hover:bg-slate-50"
+          >
+            Cancel
+          </a>
+
+
+          <button
+            type="submit"
+            class="bg-indigo-600
+                   hover:bg-indigo-700
+                   text-white
+                   font-semibold
+                   px-6 py-2
+                   rounded-lg"
+          >
+            Confirm Questions & Continue
+          </button>
+
+
+        </div>
+
+
+      </form>
+
+
+    </div>
+
+  </main>
+
+</div>
+
+
+</body>
+</html>

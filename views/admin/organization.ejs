@@ -1,0 +1,35 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen bg-[#f7f9fb]">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-w-0">
+    <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+      <div class="flex items-center gap-4">
+        <button onclick="openSidebar()" class="lg:hidden text-slate-500">☰</button>
+        <nav class="spvn-ui-topnav flex-1">
+          <a href="/admin/organization" class="active">Organization</a><a href="/admin/tests">Test Management</a><a href="/admin/results">Reports</a><a href="/admin/analytics">Analytics</a><a href="/admin/monitor">Monitor</a><a href="/admin/content">Content</a>
+        </nav>
+      </div>
+    </header>
+    <div class="p-5 lg:p-8">
+      <%- include('../partials/flash') %>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div><p class="text-xs text-sky-600 font-semibold mb-1">Home / Organization</p><h1 class="spvn-ui-heading">Organization Details</h1><p class="text-sm text-slate-500 mt-1"><%= collegeName %></p></div>
+        <div class="flex gap-2"><a href="/admin/questions/smart-import" class="spvn-ui-btn spvn-ui-btn-blue">Upload Questions</a><a href="/admin/groups" class="spvn-ui-btn spvn-ui-btn-primary">+ Add Batch</a></div>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <% [['Batches',totals.batches],['Students',totals.students],['Active Batches',totals.active],['Courses',totals.courses]].forEach(([label,val])=>{ %>
+          <div class="spvn-ui-panel p-5"><p class="text-2xl font-bold text-slate-900"><%= val %></p><p class="text-xs text-slate-500 mt-1"><%= label %></p></div>
+        <% }) %>
+      </div>
+      <section class="spvn-ui-panel overflow-hidden">
+        <div class="px-5 py-4 border-b flex items-center justify-between"><div><h2 class="font-bold text-slate-800">Batches</h2><p class="text-xs text-slate-400">SPVN CET batches and student strength</p></div><input id="batchSearch" oninput="filterBatches()" class="spvn-ui-filter max-w-xs" placeholder="Search batch..." /></div>
+        <div class="overflow-x-auto"><table class="spvn-ui-table"><thead><tr><th>Name</th><th>Total Students</th><th>Course</th><th>Start date</th><th>End date</th><th>Status</th><th>Reports</th><th>Action</th></tr></thead><tbody>
+          <% if(!groups.length){ %><tr><td colspan="8" class="text-center py-12 text-slate-400">No batches created yet.</td></tr><% } %>
+          <% groups.forEach(g=>{ %><tr data-batch-row data-search="<%= (g.name+' '+(g.course||'')+' '+(g.status||'active')).toLowerCase() %>"><td><a class="text-sky-600 font-medium hover:underline" href="/admin/groups/<%= g._id %>"><%= g.name %></a></td><td><%= g.totalStudents %></td><td><%= g.course || 'CET' %></td><td><%= g.startDate ? new Date(g.startDate).toLocaleDateString('en-IN') : '—' %></td><td><%= g.endDate ? new Date(g.endDate).toLocaleDateString('en-IN') : '—' %></td><td><span class="text-xs font-semibold <%= (g.status||'active')==='active'?'text-emerald-600':'text-slate-500' %>"><%= g.status||'active' %></span></td><td><a href="/admin/results?groupId=<%= g._id %>" class="text-sky-600 hover:underline">Reports</a></td><td><a href="/admin/groups/<%= g._id %>" class="spvn-ui-icon-btn bg-amber-400">✎</a></td></tr><% }) %>
+        </tbody></table></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>function filterBatches(){const q=document.getElementById('batchSearch').value.toLowerCase();document.querySelectorAll('[data-batch-row]').forEach(r=>r.style.display=r.dataset.search.includes(q)?'':'none')}</script>
+</body></html>

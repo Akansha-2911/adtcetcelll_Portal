@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head><%- include('../partials/head',{title}) %></head>
+
+<body class="bg-slate-50">
+    <div class="min-h-screen flex"><%- include('../partials/sidebar-admin') %>
+            <main class="lg:ml-64 flex-1 min-w-0">
+                <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+                    <nav class="spvn-ui-topnav"><a href="/admin/tests" class="active">Test Management</a><a
+                            href="/admin/results">Reports</a><a href="/admin/analytics">Analytics</a><a
+                            href="/admin/monitor">Monitor</a></nav>
+                </header><%- include('../partials/test-management-tabs',{activeTab:'upload'}) %>
+                    <div class="p-5 lg:p-8 max-w-5xl mx-auto"><%- include('../partials/flash') %>
+                            <div class="mb-5">
+                                <p class="spvn-kicker">OPTIONAL PDF FLOW</p>
+                                <h1 class="spvn-ui-heading">Upload Test</h1>
+                                <p class="text-sm text-slate-700 mt-1">Use this only when you already have a complete
+                                    test PDF. One PDF page must contain exactly one question.</p>
+                            </div>
+                            <form action="/admin/tests/upload-test/extract" method="POST" enctype="multipart/form-data"
+                                class="spvn-ui-panel p-6 space-y-6" id="uploadTestForm"><input type="hidden"
+                                    name="extractionMode" value="one_question_per_page">
+                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-950">
+                                    <strong>One Page = One Question</strong>
+                                    <div class="mt-1">Question page 1 → Question 1. Question page 2 → Question 2.
+                                        Optional solution pages are matched using the same page number.</div>
+                                </div>
+                                <div>
+                                    <h2 class="font-bold text-slate-950 mb-3">1. Upload PDFs</h2>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div><label class="spvn-ui-form-label">Question Paper *</label><input
+                                                type="file" name="questionFile" accept=".pdf" required
+                                                class="w-full border border-slate-300 rounded-xl p-3 bg-white">
+                                            <p class="text-xs text-slate-600 mt-1">PDF only. Exactly one question per
+                                                page.</p>
+                                        </div>
+                                        <div><label class="spvn-ui-form-label">Solution / Answer Paper <span
+                                                    class="font-normal text-slate-500">(optional)</span></label><input
+                                                type="file" name="solutionFile" accept=".pdf"
+                                                class="w-full border border-slate-300 rounded-xl p-3 bg-white">
+                                            <p class="text-xs text-slate-600 mt-1">Solution page number should match
+                                                question page number.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2 class="font-bold text-slate-950 mb-3">2. Default Question Details</h2>
+                                    <div class="grid md:grid-cols-3 gap-4">
+                                        <div><label class="spvn-ui-form-label">Subject *</label><select name="subject"
+                                                required class="spvn-ui-filter">
+                                                <option value="">Select Subject</option>
+                                                <% (subjects||[]).forEach(s=>{ %><option value="<%= s %>">
+                                                        <%= s %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div><label class="spvn-ui-form-label">Topic</label><input name="topic"
+                                                class="spvn-ui-filter" placeholder="Optional"></div>
+                                        <div><label class="spvn-ui-form-label">Subtopic</label><input name="subtopic"
+                                                class="spvn-ui-filter" placeholder="Optional"></div>
+                                        <div><label class="spvn-ui-form-label">Difficulty</label><select
+                                                name="difficulty" class="spvn-ui-filter">
+                                                <option>Easy</option>
+                                                <option selected>Medium</option>
+                                                <option>Hard</option>
+                                            </select></div>
+                                        <div><label class="spvn-ui-form-label">Marks / Question</label><input
+                                                type="number" name="marks" value="1" min="0" step="0.25"
+                                                class="spvn-ui-filter"></div>
+                                        <div><label class="spvn-ui-form-label">Negative Marks</label><input
+                                                type="number" name="negativeMarks" value="0" min="0" step="0.25"
+                                                class="spvn-ui-filter"></div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-950">
+                                    Flow: <strong>Upload PDF → Review Questions → Add Draft Details → Marking Scheme →
+                                        Save Draft.</strong> Nothing is published automatically.</div>
+                                <div class="flex justify-end gap-3"><a href="/admin/tests"
+                                        class="spvn-ui-btn spvn-ui-btn-soft">Cancel</a><button id="extractBtn"
+                                        class="spvn-ui-btn spvn-ui-btn-primary px-7">Extract & Review →</button></div>
+                            </form>
+                    </div>
+            </main>
+    </div>
+    <script>document.getElementById('uploadTestForm').addEventListener('submit', () => { const b = document.getElementById('extractBtn'); b.disabled = true; b.textContent = 'Extracting… Please wait'; b.classList.add('opacity-60', 'cursor-not-allowed'); });</script>
+</body>
+
+</html>

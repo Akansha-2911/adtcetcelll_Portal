@@ -1,0 +1,149 @@
+<%- include('../partials/head') %>
+<div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen grid lg:grid-cols-[1.05fr_.95fr]">
+
+    <!-- Student Brand Panel -->
+    <section class="relative overflow-hidden bg-white border-r border-slate-200 px-6 py-8 lg:px-14 lg:py-12 flex flex-col justify-between">
+      <div class="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-sky-100/70"></div>
+      <div class="absolute top-[32%] -left-24 w-64 h-64 rounded-full bg-emerald-100/60"></div>
+      <div class="absolute bottom-0 right-10 w-56 h-56 rounded-full bg-amber-100/60"></div>
+
+      <div class="relative z-10">
+        <div class="inline-flex items-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <img src="/adt-baramati-logo.jpeg" alt="Agricultural Development Trust Baramati" class="h-16 w-auto max-w-[270px] object-contain" />
+        </div>
+      </div>
+
+      <div class="relative z-10 max-w-xl my-10 lg:my-16">
+        <div class="inline-flex items-center gap-2 rounded-full bg-sky-50 border border-sky-200 px-3.5 py-1.5 mb-5">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-sky-800">Student Examination Portal</span>
+        </div>
+
+        <h1 class="text-4xl lg:text-5xl font-black leading-[1.06] tracking-tight text-slate-950">
+          CET Online<br/>
+          <span class="text-sky-700">Examination</span> System
+        </h1>
+
+        <p class="mt-5 text-base lg:text-lg text-slate-700 leading-relaxed max-w-lg">
+          Secure access to assigned tests, live examinations, results and academic performance for <%= collegeName %>.
+        </p>
+
+        <div class="grid sm:grid-cols-3 gap-3 mt-8">
+          <% [
+            ['Students','Secure login','emerald'],
+            ['Live Exams','Assigned tests','sky'],
+            ['Results','Scores & rank','amber']
+          ].forEach(([title,sub,color])=>{ %>
+          <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+            <div class="w-9 h-9 rounded-xl mb-3 flex items-center justify-center <%= color==='emerald'?'bg-emerald-50 text-emerald-700':color==='sky'?'bg-sky-50 text-sky-700':'bg-amber-50 text-amber-700' %>">
+              <% if(title==='Students'){ %>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20H5v-1a6 6 0 0112 0v1zm-6-9a4 4 0 100-8 4 4 0 000 8z"/></svg>
+              <% } else if(title==='Live Exams'){ %>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 12h6m-6 4h4"/></svg>
+              <% } else { %>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m4 10H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"/></svg>
+              <% } %>
+            </div>
+            <p class="text-sm font-bold text-slate-950"><%= title %></p>
+            <p class="text-xs text-slate-600 mt-1"><%= sub %></p>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <div class="relative z-10 text-xs text-slate-600">
+        <p class="font-semibold text-slate-800"><%= collegeShort %></p>
+        <p class="mt-1">Academic Year <%= academicYear %></p>
+      </div>
+    </section>
+
+    <!-- Student Login Panel -->
+    <section class="bg-gradient-to-br from-slate-50 via-white to-sky-50/50 px-6 py-10 lg:px-12 flex items-center justify-center">
+      <div class="w-full max-w-[460px]">
+        <div class="lg:hidden mb-7 text-center">
+          <img src="/adt-baramati-logo.jpeg" alt="Agricultural Development Trust Baramati" class="h-16 w-auto max-w-[260px] mx-auto object-contain" />
+        </div>
+
+        <div class="bg-white rounded-[28px] border border-slate-200 shadow-[0_24px_70px_rgba(15,23,42,.08)] p-7 sm:p-9">
+          <div class="flex items-start justify-between gap-4 mb-7">
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Portal is Live</span>
+              </div>
+              <h2 class="text-3xl font-black text-slate-950">Student Login</h2>
+              <p class="text-slate-600 text-sm mt-1.5">Enter your roll number and password.</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center shrink-0">
+              <svg class="w-6 h-6 text-sky-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            </div>
+          </div>
+
+          <%- include('../partials/flash') %>
+
+          <form action="/auth/login" method="POST" class="space-y-5">
+            <input type="hidden" name="role" value="student"/>
+
+            <div>
+              <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">Roll Number</label>
+              <div class="relative">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2"/></svg>
+                </div>
+                <input type="text" name="identifier" required autofocus
+                  class="w-full pl-11 pr-4 py-3.5 border border-slate-300 rounded-2xl text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition placeholder-slate-400"
+                  placeholder="e.g. APAR0001" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">Password</label>
+              <div class="relative">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <input type="password" name="password" id="sPw" required
+                  class="w-full pl-11 pr-12 py-3.5 border border-slate-300 rounded-2xl text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition placeholder-slate-400"
+                  placeholder="Enter your password" />
+                <button type="button" onclick="const i=document.getElementById('sPw');i.type=i.type==='password'?'text':'password'"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors" aria-label="Show or hide password">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-sky-200 bg-sky-50 p-3.5 flex items-start gap-3">
+              <svg class="w-4 h-4 text-sky-700 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+              <p class="text-sky-950 text-xs leading-relaxed">Default password: <span class="font-mono font-extrabold">CET@XXXX</span> (last 4 digits of your roll number). You may be asked to change it after first login.</p>
+            </div>
+
+            <button type="submit" class="w-full text-white font-extrabold py-4 rounded-2xl transition active:scale-[.99] shadow-lg shadow-sky-900/10 flex items-center justify-center gap-2"
+              style="background:linear-gradient(135deg,#2f6f59,#2d7fb8);">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+              Sign In to Portal
+            </button>
+          </form>
+
+          <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+            <button id="pwa-install-trigger" type="button" class="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 active:scale-[.98]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14a2 2 0 002-2v-2M3 17v2a2 2 0 002 2"/></svg>
+              Install SPVN App (APK)
+            </button>
+            <p id="pwa-install-status" class="mt-2 text-center text-[11px] leading-relaxed text-emerald-900" aria-live="polite">Install the portal on Android for quick access.</p>
+          </div>
+
+          <div class="mt-6 pt-5 border-t border-slate-200 text-center">
+            <a href="/auth/admin" class="inline-flex items-center gap-2 text-sm font-semibold text-sky-700 hover:text-sky-900 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              Administrator Login
+            </a>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-600 mt-5"><%= collegeName %> · Academic Year <%= academicYear %></p>
+      </div>
+    </section>
+  </div>
+</div>
+</body></html>

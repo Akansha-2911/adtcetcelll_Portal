@@ -1,0 +1,102 @@
+<%- include('../partials/head') %>
+
+<%- include('../partials/navbar-student') %>
+
+
+<main class="min-h-screen bg-slate-50">
+
+  <div class="p-8 max-w-2xl mx-auto">
+
+
+    <h1 class="text-2xl font-bold text-slate-900 mb-5">
+
+      Notifications
+
+    </h1>
+
+
+    <% if (!notifications.length) { %>
+
+
+      <div class="text-center py-20 text-gray-400">
+
+        <div class="text-5xl mb-3">
+          🔔
+        </div>
+
+        <p>
+          No notifications.
+        </p>
+
+      </div>
+
+
+    <% } else { %>
+
+
+      <div class="space-y-3">
+
+
+        <% notifications.forEach(n => { %>
+
+
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
+
+
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xl flex-shrink-0">
+
+              <%= n.type === 'exam'
+                ? '📝'
+                : n.type === 'success'
+                  ? '✅'
+                  : n.type === 'warning'
+                    ? '⚠️'
+                    : 'ℹ️'
+              %>
+
+            </div>
+
+
+            <div class="flex-1">
+
+
+              <p class="font-semibold text-gray-900">
+
+                <%= n.title %>
+
+              </p>
+
+
+              <p class="text-sm text-gray-600 mt-1">
+
+                <%= n.message %>
+
+              </p>
+
+
+              <p class="text-xs text-gray-400 mt-2">
+
+                <%= new Date(n.createdAt)
+                  .toLocaleString('en-IN')
+                %>
+
+              </p>
+
+            </div>
+
+          </div>
+
+
+        <% }) %>
+
+      </div>
+
+
+    <% } %>
+
+  </div>
+
+</main>
+
+</body>
+</html>

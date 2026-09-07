@@ -1,0 +1,1704 @@
+<%- include('../partials/head') %>
+
+<style>
+  /* =========================================================
+     COMPACT QUESTION BANK
+  ========================================================= */
+
+  .qb-question-row {
+    padding: 10px 16px !important;
+  }
+
+  .qb-question-row + .qb-question-row {
+    border-top: 1px solid #eef2f7;
+  }
+
+  .qb-question-body {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .qb-question-text,
+  .qb-option-text {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .qb-question-text p,
+  .qb-question-text div,
+  .qb-question-text span,
+  .qb-option-text p,
+  .qb-option-text div,
+  .qb-option-text span {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .qb-question-text {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #0f172a;
+    margin-bottom: 7px !important;
+  }
+
+  .qb-options {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 40px;
+    row-gap: 4px;
+    margin: 0 0 7px 0 !important;
+  }
+
+  .qb-option {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .qb-option-label {
+    font-family: Inter, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    line-height: 1.45;
+  }
+
+  .qb-option-text {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 14px;
+    line-height: 1.35;
+    color: #334155;
+    min-width: 0;
+  }
+
+  .qb-number {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 12px;
+    font-family: Inter, Arial, sans-serif;
+  }
+
+  .qb-actions {
+    width: 68px;
+    min-width: 68px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+
+  .qb-actions a,
+  .qb-actions button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .qb-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .qb-topic-header {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 4px 16px;
+  }
+
+  .qb-question-row mjx-container,
+  .qb-question-row .MathJax,
+  .qb-question-row .katex-display {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .qb-question-row .katex-display {
+    text-align: left !important;
+  }
+
+  @media (max-width: 768px) {
+    .qb-options {
+      grid-template-columns: 1fr;
+      row-gap: 3px;
+    }
+
+    .qb-actions {
+      width: 58px;
+      min-width: 58px;
+    }
+
+    .qb-question-row {
+      padding: 9px 10px !important;
+    }
+  }
+</style>
+
+<div class="flex min-h-screen">
+
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-h-screen">
+
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4 flex items-center justify-between">
+
+      <button
+        onclick="openSidebar()"
+        class="lg:hidden text-slate-500 hover:text-slate-800 mr-3 shrink-0">
+
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          stroke-width="2">
+
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M4 6h16M4 12h16M4 18h16"/>
+
+        </svg>
+
+      </button>
+
+      <div>
+
+        <h1 class="text-lg font-bold text-slate-900">
+          Question Bank
+        </h1>
+
+        <p class="text-sm text-slate-500">
+          <%= typeof total !== "undefined" ? total : questions.length %> questions
+        </p>
+
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+
+        <a
+          href="/admin/questions/smart-import"
+          class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+
+          ↑ Upload Questions
+
+        </a>
+
+        <a
+          href="/admin/topics"
+          class="hidden md:flex items-center gap-2 border border-slate-200 bg-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">
+
+          Syllabus Manager
+
+        </a>
+
+        <button
+          onclick="document.getElementById('addQModal').classList.remove('hidden')"
+          class="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors">
+
+          + Manual Question
+
+        </button>
+
+        <button
+          onclick="document.getElementById('importModal').classList.remove('hidden')"
+          class="flex items-center gap-2 border border-slate-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors">
+
+          📥 Import CSV
+
+        </button>
+
+        <button
+          type="button"
+          onclick="document.getElementById('downloadQbModal').classList.remove('hidden')"
+          class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Download Question Bank</span>
+        </button>
+
+      </div>
+
+    </header>
+
+    <div class="p-5 lg:p-8">
+
+      <%- include('../partials/flash') %>
+
+      <!-- Filter bar -->
+      <form
+        method="GET"
+        id="filterForm"
+        class="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm">
+
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Filter Questions
+        </p>
+
+        <div class="flex flex-wrap gap-3 items-end">
+
+          <div class="flex flex-col gap-1 flex-1 min-w-[220px]">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Search
+            </label>
+
+            <input
+              type="search"
+              name="search"
+              value="<%= filters.search || '' %>"
+              placeholder="Question, topic, subtopic, explanation..."
+              class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+          </div>
+
+          <div class="flex flex-col gap-1">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Subject
+            </label>
+
+            <select
+              name="subject"
+              id="fSubject"
+              onchange="onFilterSubjectChange(this.value)"
+              class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-44">
+
+              <option value="">
+                All Subjects
+              </option>
+
+              <% SUBJECTS.forEach(s => { %>
+
+                <option
+                  value="<%= s %>"
+                  <%= filters.subject===s?'selected':'' %>>
+
+                  <%= s %>
+
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+          <div class="flex flex-col gap-1">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Topic
+            </label>
+
+            <select
+              name="topic"
+              id="fTopic"
+              onchange="onFilterTopicChange(this.value)"
+              class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-44">
+
+              <option value="">
+                All Topics
+              </option>
+
+              <% (topicRows||[]).forEach(t => { %>
+
+                <option
+                  value="<%= t.name %>"
+                  <%= filters.topic===t.name?'selected':'' %>>
+
+                  <%= t.name %>
+
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+          <div class="flex flex-col gap-1">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Subtopic
+            </label>
+
+            <select
+              name="subtopic"
+              id="fSubtopic"
+              class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-44">
+
+              <option value="">
+                All Subtopics
+              </option>
+
+              <% (subtopicList||[]).forEach(st => { %>
+
+                <option
+                  value="<%= st %>"
+                  <%= filters.subtopic===st?'selected':'' %>>
+
+                  <%= st %>
+
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+          <div class="flex flex-col gap-1">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Difficulty
+            </label>
+
+            <select
+              name="difficulty"
+              class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-36">
+
+              <option value="">
+                All
+              </option>
+
+              <% ['Easy','Medium','Hard'].forEach(d => { %>
+
+                <option
+                  value="<%= d %>"
+                  <%= filters.difficulty===d?'selected':'' %>>
+
+                  <%= d %>
+
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+          <div class="flex flex-col gap-1">
+
+            <label class="text-xs font-semibold text-slate-600">
+              Sort By
+            </label>
+
+            <select
+              name="sort"
+              class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-44">
+
+              <option
+                value="subject"
+                <%= (filters.sort||'subject')==='subject'?'selected':'' %>>
+
+                Subject → Topic
+
+              </option>
+
+              <option
+                value="difficulty"
+                <%= filters.sort==='difficulty'?'selected':'' %>>
+
+                Difficulty
+
+              </option>
+
+              <option
+                value="newest"
+                <%= filters.sort==='newest'?'selected':'' %>>
+
+                Newest First
+
+              </option>
+
+              <option
+                value="oldest"
+                <%= filters.sort==='oldest'?'selected':'' %>>
+
+                Oldest First
+
+              </option>
+
+            </select>
+
+          </div>
+
+          <div class="flex gap-2 mt-auto">
+
+            <button
+              type="submit"
+              class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-700 transition-colors">
+
+              Apply
+
+            </button>
+
+            <a
+              href="/admin/questions"
+              class="px-4 py-2 rounded-lg text-sm text-slate-500 border border-slate-200 hover:bg-slate-50">
+
+              Clear
+
+            </a>
+
+          </div>
+
+        </div>
+
+        <% if (
+          filters.search ||
+          filters.subject ||
+          filters.topic ||
+          filters.subtopic ||
+          filters.difficulty
+        ) { %>
+
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
+
+            <span class="text-xs text-slate-400">
+              Active:
+            </span>
+
+            <% if (filters.search) { %>
+
+              <span class="bg-cyan-100 text-cyan-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                Search: <%= filters.search %>
+              </span>
+
+            <% } %>
+
+            <% if (filters.subject) { %>
+
+              <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                <%= filters.subject %>
+              </span>
+
+            <% } %>
+
+            <% if (filters.topic) { %>
+
+              <span class="text-slate-400 text-xs">
+                ›
+              </span>
+
+              <span class="bg-purple-100 text-purple-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                <%= filters.topic %>
+              </span>
+
+            <% } %>
+
+            <% if (filters.subtopic) { %>
+
+              <span class="text-slate-400 text-xs">
+                ›
+              </span>
+
+              <span class="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                <%= filters.subtopic %>
+              </span>
+
+            <% } %>
+
+            <% if (filters.difficulty) { %>
+
+              <span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                <%= filters.difficulty %>
+              </span>
+
+            <% } %>
+
+            <span class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">
+              Sort: <%= filters.sort||'subject' %>
+            </span>
+
+          </div>
+
+        <% } %>
+
+      </form>
+
+      <!-- Questions -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+
+        <div>
+
+          <% if (!questions.length) { %>
+
+            <p class="px-6 py-12 text-center text-slate-400">
+              No questions found. Try clearing filters or add new questions.
+            </p>
+
+          <% } %>
+
+          <%
+            let lastSubject = '';
+            let lastTopic = '';
+          %>
+
+          <% questions.forEach((q, i) => { %>
+
+            <% if (q.subject !== lastSubject) {
+
+              lastSubject = q.subject;
+              lastTopic = '';
+
+            %>
+
+              <div class="px-4 py-1.5 bg-blue-50 border-b border-blue-100">
+
+                <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+                  📚 <%= q.subject %>
+                </span>
+
+              </div>
+
+            <% } %>
+
+            <% if (q.topic && q.topic !== lastTopic) {
+
+              lastTopic = q.topic;
+
+            %>
+
+              <div class="qb-topic-header bg-purple-50/70 border-b border-purple-100">
+
+                <span class="text-[11px] font-semibold text-purple-600">
+                  📌 <%= q.topic %>
+                </span>
+
+                <% if (q.subtopic) { %>
+
+                  <span class="mx-1.5 text-purple-300">
+                    ›
+                  </span>
+
+                  <span class="text-[11px] text-purple-500">
+                    <%= q.subtopic %>
+                  </span>
+
+                <% } %>
+
+              </div>
+
+            <% } %>
+
+            <div class="qb-question-row hover:bg-slate-50 transition-colors border-b border-slate-100">
+
+              <div class="flex items-start gap-3">
+
+                <div class="qb-number">
+
+                  <%= ((currentPage - 1) * 25) + i + 1 %>
+
+                </div>
+
+                <div class="qb-question-body">
+
+                  <div class="qb-question-text math-content">
+                    <%= q.question || '' %>
+                  </div>
+
+                  <% if (q.questionImage) { %>
+
+                    <div class="mb-2">
+
+                      <img
+                        src="<%= q.questionImage %>"
+                        alt="Question image"
+                        loading="lazy"
+                        class="max-h-40 max-w-full object-contain rounded-lg border border-slate-200 bg-white"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'"/>
+
+                      <span
+                        style="display:none"
+                        class="text-[11px] text-rose-500 bg-rose-50 px-2 py-0.5 rounded">
+
+                        ⚠ Image failed to load
+
+                      </span>
+
+                    </div>
+
+                  <% } %>
+
+                  <div class="qb-options">
+
+                    <div class="qb-option">
+
+                      <span class="qb-option-label">
+                        A.
+                      </span>
+
+                      <div class="qb-option-text math-content">
+                        <%= q.optionA || '' %>
+                      </div>
+
+                    </div>
+
+                    <div class="qb-option">
+
+                      <span class="qb-option-label">
+                        B.
+                      </span>
+
+                      <div class="qb-option-text math-content">
+                        <%= q.optionB || '' %>
+                      </div>
+
+                    </div>
+
+                    <div class="qb-option">
+
+                      <span class="qb-option-label">
+                        C.
+                      </span>
+
+                      <div class="qb-option-text math-content">
+                        <%= q.optionC || '' %>
+                      </div>
+
+                    </div>
+
+                    <div class="qb-option">
+
+                      <span class="qb-option-label">
+                        D.
+                      </span>
+
+                      <div class="qb-option-text math-content">
+                        <%= q.optionD || '' %>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <div class="qb-badges">
+
+                    <span class="bg-emerald-100 text-emerald-700 text-[11px] px-2 py-0.5 rounded-md font-bold">
+                      ✓ <%= q.correctAnswer %>
+                    </span>
+
+                    <span
+                      class="
+                        <%= q.difficulty === 'Easy'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : q.difficulty === 'Hard'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-amber-100 text-amber-700'
+                        %>
+                        text-[11px] px-2 py-0.5 rounded-md">
+
+                      <%= q.difficulty || 'Medium' %>
+
+                    </span>
+
+                    <span class="text-[11px] text-slate-400">
+                      <%= q.marks || 1 %> mk
+                    </span>
+
+                    <% if (q.questionType) { %>
+
+                      <span class="text-[11px] text-slate-400">
+                        · <%= q.questionType %>
+                      </span>
+
+                    <% } %>
+
+                    <% if (q.subtopic) { %>
+
+                      <span class="text-[11px] text-orange-500">
+                        · <%= q.subtopic %>
+                      </span>
+
+                    <% } %>
+
+                  </div>
+
+                </div>
+
+                <div class="qb-actions">
+
+                  <a
+                    href="/admin/questions/<%= q._id || q.id %>/edit"
+                    class="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1.5 hover:bg-indigo-100">
+
+                    Edit
+
+                  </a>
+
+                  <form
+                    action="/admin/questions/<%= q._id || q.id %>/delete"
+                    method="POST"
+                    onsubmit="return confirm('Delete this question?')">
+
+                    <button
+                      type="submit"
+                      class="text-xs font-medium text-red-500 bg-red-50 border border-red-100 rounded-lg px-2 py-1.5 hover:bg-red-100">
+
+                      Delete
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          <% }) %>
+
+        </div>
+
+        <!-- Compact Pagination -->
+        <% if (totalPages > 1) { %>
+
+          <div class="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-white">
+
+            <div class="hidden md:block text-xs text-slate-400">
+
+              Page
+
+              <span class="font-semibold text-slate-700">
+                <%= currentPage %>
+              </span>
+
+              of
+
+              <span class="font-semibold text-slate-700">
+                <%= totalPages %>
+              </span>
+
+            </div>
+
+            <div class="flex items-center justify-center gap-1 flex-1 md:flex-none">
+
+              <%
+                const makePageUrl = (pageNo) => {
+
+                  return (
+                    `?page=${pageNo}` +
+                    `&search=${encodeURIComponent(filters.search || '')}` +
+                    `&course=${encodeURIComponent(filters.course || '')}` +
+                    `&subject=${encodeURIComponent(filters.subject || '')}` +
+                    `&topic=${encodeURIComponent(filters.topic || '')}` +
+                    `&subtopic=${encodeURIComponent(filters.subtopic || '')}` +
+                    `&difficulty=${encodeURIComponent(filters.difficulty || '')}` +
+                    `&sort=${encodeURIComponent(filters.sort || 'subject')}`
+                  );
+
+                };
+
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, currentPage + 2);
+
+                if (currentPage <= 3) {
+                  startPage = 1;
+                  endPage = Math.min(5, totalPages);
+                }
+
+                if (currentPage >= totalPages - 2) {
+                  startPage = Math.max(1, totalPages - 4);
+                  endPage = totalPages;
+                }
+              %>
+
+              <% if (currentPage > 1) { %>
+
+                <a
+                  href="<%= makePageUrl(currentPage - 1) %>"
+                  class="h-8 min-w-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-100"
+                  title="Previous page">
+
+                  &lt;
+
+                </a>
+
+              <% } else { %>
+
+                <span
+                  class="h-8 min-w-8 px-2 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-300 text-sm">
+
+                  &lt;
+
+                </span>
+
+              <% } %>
+
+              <% if (startPage > 1) { %>
+
+                <a
+                  href="<%= makePageUrl(1) %>"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">
+
+                  1
+
+                </a>
+
+                <% if (startPage > 2) { %>
+
+                  <span class="px-1 text-slate-400 text-xs">
+                    ...
+                  </span>
+
+                <% } %>
+
+              <% } %>
+
+              <% for (let p = startPage; p <= endPage; p++) { %>
+
+                <a
+                  href="<%= makePageUrl(p) %>"
+                  class="
+                    w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors
+                    <%= p === currentPage
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    %>">
+
+                  <%= p %>
+
+                </a>
+
+              <% } %>
+
+              <% if (endPage < totalPages) { %>
+
+                <% if (endPage < totalPages - 1) { %>
+
+                  <span class="px-1 text-slate-400 text-xs">
+                    ...
+                  </span>
+
+                <% } %>
+
+                <a
+                  href="<%= makePageUrl(totalPages) %>"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">
+
+                  <%= totalPages %>
+
+                </a>
+
+              <% } %>
+
+              <% if (currentPage < totalPages) { %>
+
+                <a
+                  href="<%= makePageUrl(currentPage + 1) %>"
+                  class="h-8 min-w-8 px-2 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-100"
+                  title="Next page">
+
+                  &gt;
+
+                </a>
+
+              <% } else { %>
+
+                <span
+                  class="h-8 min-w-8 px-2 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-300 text-sm">
+
+                  &gt;
+
+                </span>
+
+              <% } %>
+
+            </div>
+
+          </div>
+
+        <% } %>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- Add Question Modal -->
+<div
+  id="addQModal"
+  class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 max-h-[calc(100vh-2rem)] overflow-y-auto">
+
+    <div class="flex items-center justify-between px-6 py-5 border-b">
+
+      <h3 class="font-bold text-lg text-slate-900">
+        Add Question
+      </h3>
+
+      <button
+        onclick="document.getElementById('addQModal').classList.add('hidden')"
+        class="text-slate-400 hover:text-slate-600 text-xl">
+
+        ✕
+
+      </button>
+
+    </div>
+
+    <form
+      action="/admin/questions"
+      method="POST"
+      enctype="multipart/form-data"
+      class="p-6 space-y-4">
+
+      <div data-math-field>
+
+        <label class="block text-sm font-semibold mb-1.5">
+          Question *
+        </label>
+
+        <textarea
+          name="question"
+          rows="2"
+          required
+          class="math-input w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+          placeholder="Enter question text"></textarea>
+
+        <div
+          class="math-preview hidden mt-2 overflow-x-auto rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 text-slate-900">
+        </div>
+
+      </div>
+
+      <div class="border border-dashed border-slate-300 rounded-xl p-3 bg-slate-50">
+
+        <label class="block text-xs font-semibold text-slate-600 mb-2">
+
+          📷 Question Image
+
+          <span class="font-normal text-slate-400">
+            (optional)
+          </span>
+
+        </label>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0">
+
+          <div class="min-w-0">
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Upload from device</label>
+          <input
+            type="file"
+            name="questionImage"
+            accept="image/*"
+            onchange="prev(this,'qp')"
+            class="block w-full min-w-0 text-xs border border-slate-200 rounded-lg px-2 py-2 bg-white"/>
+          </div>
+
+          <div class="min-w-0">
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Or image URL</label>
+          <input
+            type="text"
+            name="questionImageUrl"
+            placeholder="Or paste image URL"
+            class="block w-full min-w-0 text-xs border border-slate-200 rounded-lg px-3 py-2"/>
+          </div>
+
+        </div>
+
+        <img
+          id="qp"
+          class="hidden mt-2 max-h-24 rounded-lg border object-contain"/>
+
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+
+        <% ['A','B','C','D'].forEach(o => { %>
+
+          <div data-math-field>
+
+            <label class="block text-xs font-semibold mb-1 text-slate-600">
+              Option <%= o %> *
+            </label>
+
+            <input
+              type="text"
+              name="option<%= o %>"
+              required
+              class="math-input w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              placeholder="Option <%= o %>"/>
+
+            <div
+              class="math-preview hidden mt-2 overflow-x-auto rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-2 text-slate-900">
+            </div>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+
+        <div>
+
+          <label class="block text-xs font-semibold mb-1 text-slate-600">
+            Correct Answer *
+          </label>
+
+          <select
+            name="correctAnswer"
+            required
+            class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+            <% ['A','B','C','D'].forEach(o => { %>
+
+              <option value="<%= o %>">
+                <%= o %>
+              </option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <div>
+
+          <label class="block text-xs font-semibold mb-1 text-slate-600">
+            Difficulty
+          </label>
+
+          <select
+            name="difficulty"
+            class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+            <% ['Easy','Medium','Hard'].forEach(d => { %>
+
+              <option value="<%= d %>">
+                <%= d %>
+              </option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <div>
+
+          <label class="block text-xs font-semibold mb-1 text-slate-600">
+            Marks
+          </label>
+
+          <input
+            type="number"
+            name="marks"
+            value="1"
+            step="0.5"
+            min="0.5"
+            class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"/>
+
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+          📂 Classify Question
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+          <div>
+
+            <label class="block text-xs font-semibold mb-1 text-slate-600">
+              Subject *
+            </label>
+
+            <select
+              name="subject"
+              id="mSubject"
+              required
+              onchange="onModalSubjectChange(this.value)"
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+              <option value="">
+                Select Subject
+              </option>
+
+              <% SUBJECTS.forEach(s => { %>
+
+                <option value="<%= s %>">
+                  <%= s %>
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+          <div>
+
+            <label class="block text-xs font-semibold mb-1 text-slate-600">
+              Topic
+            </label>
+
+            <select
+              name="topic"
+              id="mTopic"
+              onchange="onModalTopicChange(this.value)"
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+              <option value="">
+                Select Topic
+              </option>
+
+            </select>
+
+          </div>
+
+          <div>
+
+            <label class="block text-xs font-semibold mb-1 text-slate-600">
+              Subtopic
+            </label>
+
+            <select
+              name="subtopic"
+              id="mSubtopic"
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+
+              <option value="">
+                Select Subtopic
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div>
+
+        <label class="block text-xs font-semibold mb-1 text-slate-600">
+          Explanation (optional)
+        </label>
+
+        <input
+          type="text"
+          name="explanation"
+          class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+          placeholder="Brief explanation of correct answer"/>
+
+      </div>
+
+      <div class="flex gap-3 pt-2">
+
+        <button
+          type="submit"
+          class="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors">
+
+          Add Question
+
+        </button>
+
+        <button
+          type="button"
+          onclick="document.getElementById('addQModal').classList.add('hidden')"
+          class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<!-- Import Modal -->
+<div
+  id="importModal"
+  class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+    <div class="flex items-center justify-between px-6 py-5 border-b">
+
+      <h3 class="font-bold text-lg">
+        Import Questions (CSV / Excel)
+      </h3>
+
+      <button
+        onclick="document.getElementById('importModal').classList.add('hidden')"
+        class="text-slate-400 text-xl">
+
+        ✕
+
+      </button>
+
+    </div>
+
+    <form
+      action="/admin/questions/bulk-import"
+      method="POST"
+      enctype="multipart/form-data"
+      class="p-6 space-y-4">
+
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm">
+          1
+        </div>
+
+        <div class="flex-1">
+
+          <p class="text-sm font-semibold text-blue-900 mb-0.5">
+            Download the import template
+          </p>
+
+          <p class="text-xs text-blue-700 mb-2">
+            Fill in this template — it includes all required columns plus optional Image URL and Explanation.
+          </p>
+
+          <a
+            href="/admin/questions/template/download"
+            class="inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+
+            </svg>
+
+            Download question_import_template.xlsx
+
+          </a>
+
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs text-slate-600">
+
+        <p class="font-bold mb-1.5 text-slate-700">
+          Required columns in file:
+        </p>
+
+        <p class="font-mono">
+          question, optionA, optionB, optionC, optionD, correctAnswer, subject, difficulty
+        </p>
+
+        <p class="font-bold mt-2 mb-0.5 text-slate-700">
+          Optional columns:
+        </p>
+
+        <p class="font-mono">
+          topic, subtopic, marks, explanation, questionImageUrl
+        </p>
+
+      </div>
+
+      <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center">
+
+        <label class="cursor-pointer">
+
+          <p
+            class="text-slate-900 font-medium hover:underline text-sm"
+            id="qImportLabel">
+
+            Click to choose file
+
+          </p>
+
+          <p class="text-xs text-slate-400 mt-1">
+            Supports .csv, .xlsx, .xls
+          </p>
+
+          <input
+            type="file"
+            name="csvFile"
+            accept=".csv,.xlsx,.xls"
+            required
+            class="sr-only"
+            onchange="document.getElementById('qImportLabel').textContent = this.files[0]?.name || 'Choose file'"/>
+
+        </label>
+
+      </div>
+
+      <div class="flex gap-3">
+
+        <button
+          type="submit"
+          class="flex-1 bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700">
+
+          Import
+
+        </button>
+
+        <button
+          type="button"
+          onclick="document.getElementById('importModal').classList.add('hidden')"
+          class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl">
+
+          Cancel
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<!-- Download Question Bank Modal -->
+<div id="downloadQbModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50">
+      <div class="flex items-center gap-2 text-emerald-800 font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span class="text-base">Download Question Bank</span>
+      </div>
+      <button onclick="document.getElementById('downloadQbModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100">✕</button>
+    </div>
+
+    <form action="/admin/questions/export" method="GET" target="_blank" class="p-6 space-y-4">
+      <!-- File Format -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Export Format</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer transition">
+            <input type="radio" name="format" value="pdf" checked class="text-emerald-600 focus:ring-emerald-500">
+            <div>
+              <p class="text-sm font-bold text-slate-800">PDF Document</p>
+              <p class="text-[11px] text-slate-500">Institutional paper layout</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer transition">
+            <input type="radio" name="format" value="word" class="text-emerald-600 focus:ring-emerald-500">
+            <div>
+              <p class="text-sm font-bold text-slate-800">Word (.doc)</p>
+              <p class="text-[11px] text-slate-500">Editable document</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Question Count Limit -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Question Count Limit</label>
+        <div class="grid grid-cols-2 gap-3">
+          <select id="qbLimitSelect" onchange="handleLimitChange(this.value)" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="all">All Available Questions</option>
+            <option value="25">25 Questions</option>
+            <option value="50">50 Questions</option>
+            <option value="100">100 Questions</option>
+            <option value="custom">Custom Count...</option>
+          </select>
+          <input type="number" id="qbCustomLimit" min="1" max="1000" placeholder="Enter count (e.g. 75)" disabled
+            class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <input type="hidden" name="limit" id="qbLimitInput" value="all">
+      </div>
+
+      <!-- Subject & Difficulty Filters -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subject</label>
+          <select name="subject" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="All">All Subjects</option>
+            <% if (typeof SUBJECTS !== 'undefined' && SUBJECTS) { %>
+              <% SUBJECTS.forEach(s => { %>
+                <option value="<%= s %>"><%= s %></option>
+              <% }) %>
+            <% } else { %>
+              <option value="Physics">Physics</option>
+              <option value="Chemistry">Chemistry</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Biology">Biology</option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Difficulty</label>
+          <select name="difficulty" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="All">All Difficulties</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Include Answers Toggle -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold text-slate-800">Include Answers &amp; Solutions</p>
+          <p class="text-[11px] text-slate-500">Appends correct option and step-by-step explanations</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" name="includeAnswers" value="true" checked class="sr-only peer">
+          <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+        </label>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" onclick="setTimeout(() => document.getElementById('downloadQbModal').classList.add('hidden'), 500)"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm">
+          Download Now
+        </button>
+        <button type="button" onclick="document.getElementById('downloadQbModal').classList.add('hidden')"
+          class="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold py-3 rounded-xl text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function handleLimitChange(val) {
+  const customInput = document.getElementById('qbCustomLimit');
+  const hiddenLimit = document.getElementById('qbLimitInput');
+  if (val === 'custom') {
+    customInput.disabled = false;
+    customInput.classList.remove('bg-slate-100');
+    customInput.focus();
+    hiddenLimit.value = customInput.value || '50';
+    customInput.oninput = () => { hiddenLimit.value = customInput.value || '50'; };
+  } else {
+    customInput.disabled = true;
+    customInput.classList.add('bg-slate-100');
+    hiddenLimit.value = val;
+  }
+}
+
+function prev(input, id) {
+
+  if (!input.files || !input.files[0]) return;
+
+  const r = new FileReader();
+
+  r.onload = e => {
+
+    const p = document.getElementById(id);
+
+    p.src = e.target.result;
+    p.classList.remove('hidden');
+
+  };
+
+  r.readAsDataURL(input.files[0]);
+
+}
+
+
+async function onFilterSubjectChange(subject) {
+
+  const tSel = document.getElementById('fTopic');
+  const stSel = document.getElementById('fSubtopic');
+
+  tSel.innerHTML =
+    '<option value="">All Topics</option>';
+
+  stSel.innerHTML =
+    '<option value="">All Subtopics</option>';
+
+  if (!subject) return;
+
+  const topics =
+    await fetchTopics(subject);
+
+  topics.forEach(t => {
+
+    const option =
+      document.createElement('option');
+
+    option.value = t.name;
+    option.textContent = t.name;
+
+    tSel.appendChild(option);
+
+  });
+
+}
+
+
+async function onFilterTopicChange(topicName) {
+
+  const stSel =
+    document.getElementById('fSubtopic');
+
+  const subj =
+    document.getElementById('fSubject').value;
+
+  stSel.innerHTML =
+    '<option value="">All Subtopics</option>';
+
+  if (!topicName) return;
+
+  const subs =
+    await fetchSubtopics(subj, topicName);
+
+  subs.forEach(s => {
+
+    const option =
+      document.createElement('option');
+
+    option.value = s;
+    option.textContent = s;
+
+    stSel.appendChild(option);
+
+  });
+
+}
+
+
+async function onModalSubjectChange(subject) {
+
+  const tSel =
+    document.getElementById('mTopic');
+
+  const stSel =
+    document.getElementById('mSubtopic');
+
+  tSel.innerHTML =
+    '<option value="">Select Topic</option>';
+
+  stSel.innerHTML =
+    '<option value="">Select Subtopic</option>';
+
+  if (!subject) return;
+
+  const topics =
+    await fetchTopics(subject);
+
+  topics.forEach(t => {
+
+    const option =
+      document.createElement('option');
+
+    option.value = t.name;
+    option.textContent = t.name;
+
+    tSel.appendChild(option);
+
+  });
+
+}
+
+
+async function onModalTopicChange(topicName) {
+
+  const stSel =
+    document.getElementById('mSubtopic');
+
+  const subj =
+    document.getElementById('mSubject').value;
+
+  stSel.innerHTML =
+    '<option value="">Select Subtopic</option>';
+
+  if (!topicName) return;
+
+  const subs =
+    await fetchSubtopics(subj, topicName);
+
+  subs.forEach(s => {
+
+    const option =
+      document.createElement('option');
+
+    option.value = s;
+    option.textContent = s;
+
+    stSel.appendChild(option);
+
+  });
+
+}
+
+
+async function fetchTopics(subject) {
+
+  try {
+
+    const r = await fetch(
+      `/admin/ajax/topics?subject=${encodeURIComponent(subject)}`
+    );
+
+    if (!r.ok) {
+      throw new Error('Unable to load topics');
+    }
+
+    return await r.json();
+
+  } catch (error) {
+
+    console.error(error);
+    return [];
+
+  }
+
+}
+
+
+async function fetchSubtopics(subject, topic) {
+
+  try {
+
+    const r = await fetch(
+      `/admin/ajax/subtopics?subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`
+    );
+
+    if (!r.ok) {
+      throw new Error('Unable to load subtopics');
+    }
+
+    return await r.json();
+
+  } catch (error) {
+
+    console.error(error);
+    return [];
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>

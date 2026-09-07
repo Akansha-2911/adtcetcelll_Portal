@@ -1,0 +1,220 @@
+<%- include('../partials/head') %>
+
+  <%- include('../partials/navbar-student') %>
+
+
+    <main class="min-h-screen bg-slate-50">
+
+      <div class="max-w-7xl mx-auto px-4 lg:px-6 py-7">
+
+        <%- include('../partials/flash') %>
+
+
+          <div class="mb-5">
+
+            <h1 class="text-2xl font-bold text-slate-900">
+
+              Result
+
+            </h1>
+
+
+            <p class="text-sm text-slate-500 mt-1">
+
+              Official test results, subject marks, rank and percentile.
+
+            </p>
+
+          </div>
+
+
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+
+            <div class="overflow-x-auto">
+
+              <table class="w-full text-sm">
+
+
+                <thead class="bg-slate-50 text-[11px] text-slate-500 uppercase tracking-wider">
+
+                  <tr>
+
+                    <th class="px-5 py-3 text-left">
+                      Test
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Physics
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Chemistry
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Maths / Bio
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Total
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Rank
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Percentile
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Date
+                    </th>
+
+                    <th class="px-5 py-3 text-left">
+                      Action
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+
+                <tbody class="divide-y divide-slate-100">
+
+
+                  <% results.forEach(r=> {
+
+                    const total =
+                    r.totalMarks ||
+                    r.testId?.totalMarks ||
+                    0;
+
+
+                    const math =
+                    r.subjectScores?.Mathematics;
+
+
+                    const bio =
+                    r.subjectScores?.Biology;
+
+                    %>
+
+
+                    <tr class="hover:bg-slate-50">
+
+
+                      <td class="px-5 py-4 font-semibold text-slate-900">
+
+                        <%= r.testId?.title || '—' %>
+
+                      </td>
+
+
+                      <% ['Physics','Chemistry'].forEach(subject=> {
+
+                        const sr =
+                        r.subjectScores?.[
+                        subject
+                        ];
+
+                        %>
+
+
+                        <td class="px-5 py-4">
+
+                          <%= sr ? `${Number(sr.marks || 0).toFixed(2)}/${sr.total || 0}` : '—' %>
+
+                        </td>
+
+
+                        <% }) %>
+
+
+                          <td class="px-5 py-4">
+
+                            <% const mb=math || bio; %>
+
+                              <%= mb ? `${Number(mb.marks || 0).toFixed(2)}/${mb.total || 0}` : '—' %>
+
+                          </td>
+
+
+                          <td class="px-5 py-4 font-bold">
+
+                            <%= Number(r.score || 0).toFixed(2) %>
+
+                              /
+
+                              <%= total %>
+
+                          </td>
+
+
+                          <td class="px-5 py-4">
+
+                            <%= r.rank ? '#' + r.rank : '—' %>
+
+                          </td>
+
+
+                          <td class="px-5 py-4">
+
+                            <%= r.percentile !=null ? Number(r.percentile).toFixed(2) : '—' %>
+
+                          </td>
+
+
+                          <td class="px-5 py-4 text-xs text-slate-400">
+
+                            <%= r.submittedAt ? new Date(r.submittedAt) .toLocaleDateString('en-IN') : '—' %>
+
+                          </td>
+
+
+                          <td class="px-5 py-4">
+
+                            <a href="/results/<%= r._id %>" class="text-indigo-600 font-semibold hover:underline">
+
+                              View
+
+                            </a>
+
+                          </td>
+
+                    </tr>
+
+
+                    <% }) %>
+
+
+                      <% if (!results.length) { %>
+
+                        <tr>
+
+                          <td colspan="9" class="px-6 py-14 text-center text-slate-400">
+
+                            No official results yet.
+
+                          </td>
+
+                        </tr>
+
+                        <% } %>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+      </div>
+
+    </main>
+
+    </body>
+
+    </html>

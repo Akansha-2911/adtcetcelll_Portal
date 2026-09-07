@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: spvn-cet-portal
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --include=optional && npm run verify
+    startCommand: npm start
+    healthCheckPath: /health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_AUTO_INDEX
+        value: "false"
+      - key: OCR_PRIMARY
+        value: gemini
+      - key: SESSION_SECURE
+        value: "true"
+      - key: MONGO_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MOBILE_API_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: UPLOAD_ROOT_DIR
+        sync: false

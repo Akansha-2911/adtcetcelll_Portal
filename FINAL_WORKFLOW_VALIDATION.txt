@@ -1,0 +1,28 @@
+SPVN CET Portal — Final Test Workflow Validation
+
+FINAL WORKFLOW
+1. Create Test
+   Question Bank → select one or more questions → Marking Scheme → Save as Draft.
+   No final schedule/batch/publish form during Draft creation.
+
+2. Combine Test
+   Select at least two eligible single-subject Draft tests → Marking Scheme → Save as Draft.
+
+3. Upload Test (optional)
+   PDF only → exactly one question per page → optional matching solution PDF → Review → basic Draft details → Marking Scheme → Save as Draft.
+   Upload Test is fixed to one-question-per-page mode.
+
+4. Publish
+   Tests → select exactly one Draft → Create Mock Test → final test details → assign batch → Publish & Notify Students.
+   Draft publishing is routed through this final setup.
+
+5. Question Bank Smart Scan / Upload Questions
+   Adds reviewed questions to Question Bank only. Test creation remains separate under Tests.
+
+OTHER FINAL RULES
+- Every new test is Draft first.
+- Students are notified when a Draft is published through Create Mock Test.
+- Marking Scheme is required before publishing.
+- No third-party/reference portal name is used in the UI/source labels.
+- Main test creation choices are clearly separated: Create Test, Combine Test, Upload Test.
+- Dark readable text on white backgrounds; light SPVN green/blue/gold accents retained.

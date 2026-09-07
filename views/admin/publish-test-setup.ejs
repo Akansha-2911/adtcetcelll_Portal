@@ -1,0 +1,178 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen bg-[#f7f9fb]">
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-w-0">
+    <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+      <div class="flex items-center gap-4">
+        <button onclick="openSidebar()" type="button" class="lg:hidden text-slate-600">☰</button>
+        <nav class="spvn-ui-topnav flex-1">
+          <a href="/admin/organization">Organization</a>
+          <a href="/admin/tests" class="active">Test Management</a>
+          <a href="/admin/results">Reports</a>
+          <a href="/admin/analytics">Analytics</a>
+          <a href="/admin/monitor">Monitor</a>
+          <a href="/admin/topics">Syllabus</a>
+        </nav>
+      </div>
+    </header>
+
+    <%- include('../partials/test-management-tabs',{activeTab:'tests'}) %>
+
+    <div class="p-5 lg:p-8 max-w-6xl mx-auto">
+      <%- include('../partials/flash') %>
+
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
+        <div>
+          <a href="/admin/tests" class="text-sm font-semibold text-blue-700">← Back to Tests</a>
+          <p class="spvn-kicker mt-3">FINAL TEST SETUP</p>
+          <h1 class="spvn-ui-heading">Test Details</h1>
+          <p class="text-sm text-slate-700 mt-1">Complete the final details, select the student batch and publish the test.</p>
+        </div>
+        <span class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+          READY FOR PUBLISH SETUP
+        </span>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div class="spvn-ui-panel p-4">
+          <p class="text-xs text-slate-500">Questions</p>
+          <p class="text-2xl font-black text-slate-950"><%= test.questions ? test.questions.length : 0 %></p>
+        </div>
+        <div class="spvn-ui-panel p-4">
+          <p class="text-xs text-slate-500">Total Marks</p>
+          <p class="text-2xl font-black text-slate-950"><%= test.totalMarks || 0 %></p>
+        </div>
+        <div class="spvn-ui-panel p-4">
+          <p class="text-xs text-slate-500">Subjects</p>
+          <p class="text-sm font-bold text-slate-950 mt-1"><%= Array.isArray(test.subject) && test.subject.length ? test.subject.join(', ') : '—' %></p>
+        </div>
+        <div class="spvn-ui-panel p-4">
+          <p class="text-xs text-slate-500">Source</p>
+          <p class="text-sm font-bold text-slate-950 mt-1"><%= test.creationMode === 'combined' ? 'Combined Draft Paper(s)' : 'Draft Test' %></p>
+        </div>
+      </div>
+
+      <form method="POST" action="/admin/tests/<%= test._id %>/publish-setup" class="space-y-5">
+        <div class="spvn-ui-panel p-6">
+          <h2 class="font-bold text-slate-950 mb-4">Test Information</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="spvn-ui-form-label">Test Name *</label>
+              <input name="title" required value="<%= test.title %>" class="spvn-ui-filter text-slate-950">
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="spvn-ui-form-label">Description</label>
+              <textarea name="description" rows="2" class="spvn-ui-filter text-slate-950"><%= test.description||'' %></textarea>
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Duration (minutes)</label>
+              <input type="number" min="1" name="duration" value="<%= test.duration||180 %>" class="spvn-ui-filter">
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Type</label>
+              <select name="testType" class="spvn-ui-filter">
+                <% ['Mock Test','Practice Test','Chapter Test','Full Syllabus Test'].forEach(function(value){ %>
+                  <option value="<%= value %>" <%= test.testType===value?'selected':'' %>><%= value %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Test Pattern</label>
+              <select name="testPattern" class="spvn-ui-filter">
+                <% ['BASIC','MHT-CET','JEE','NEET'].forEach(function(value){ %>
+                  <option value="<%= value %>" <%= test.testPattern===value?'selected':'' %>><%= value %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Rank Schema</label>
+              <select name="rankSchema" class="spvn-ui-filter">
+                <% ['Scheme 1','Percentile','Score Only'].forEach(function(value){ %>
+                  <option value="<%= value %>" <%= test.rankSchema===value?'selected':'' %>><%= value %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Start Time</label>
+              <input type="datetime-local" name="startTime" class="spvn-ui-filter">
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">End Time</label>
+              <input type="datetime-local" name="endTime" class="spvn-ui-filter">
+            </div>
+
+            <div>
+              <label class="spvn-ui-form-label">Password <span class="font-normal text-slate-500">(optional)</span></label>
+              <input name="testPassword" value="<%= test.testPassword||'' %>" class="spvn-ui-filter">
+            </div>
+
+            <div class="flex items-end">
+              <label class="flex gap-2 text-sm text-slate-800 pb-2">
+                <input type="checkbox" name="noTimeLimit" class="rounded" <%= test.noTimeLimit?'checked':'' %>>
+                No time limit
+              </label>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="spvn-ui-form-label">Instructions</label>
+              <textarea name="instructions" rows="3" class="spvn-ui-filter"><%= test.instructions||'' %></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="spvn-ui-panel p-6">
+          <div class="mb-4">
+            <h2 class="font-bold text-slate-950">Assign Batch *</h2>
+            <p class="text-xs text-slate-500 mt-1">Select at least one batch. Only students in the selected batch(es) will receive this test.</p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-2 max-h-72 overflow-y-auto">
+            <% if(!groups.length){ %>
+              <div class="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">No active batches found. Create a batch before publishing.</div>
+            <% } %>
+            <% groups.forEach(function(g){ %>
+              <% const alreadySelected = (test.groups||[]).some(function(existing){ return String(existing._id || existing) === String(g._id); }); %>
+              <label class="flex items-center gap-3 border rounded-xl p-3 cursor-pointer hover:bg-slate-50">
+                <input type="checkbox" name="groupIds" value="<%= g._id %>" class="rounded" <%= alreadySelected?'checked':'' %>>
+                <div>
+                  <p class="font-semibold text-slate-950"><%= g.name %></p>
+                  <p class="text-xs text-slate-600"><%= g.course||'CET' %></p>
+                </div>
+              </label>
+            <% }); %>
+          </div>
+
+          <label class="flex gap-2 mt-4 text-sm text-slate-800">
+            <input type="checkbox" name="notifyStudents" checked class="rounded">
+            Notify assigned students after publishing
+          </label>
+        </div>
+
+        <div class="spvn-ui-panel p-6">
+          <h2 class="font-bold text-slate-950 mb-4">Exam Settings</h2>
+          <div class="flex flex-wrap gap-5">
+            <label class="flex gap-2 text-sm"><input type="checkbox" name="shuffleQuestions" checked class="rounded"> Shuffle questions</label>
+            <label class="flex gap-2 text-sm"><input type="checkbox" name="shuffleOptions" class="rounded"> Shuffle options</label>
+            <label class="flex gap-2 text-sm"><input type="checkbox" name="hideImmediateResults" class="rounded"> Hide immediate results</label>
+            <label class="flex gap-2 text-sm"><input type="checkbox" name="fixedTime" class="rounded"> Fixed time</label>
+          </div>
+        </div>
+
+        <div class="flex justify-end flex-wrap gap-3">
+          <a href="/admin/tests" class="spvn-ui-btn spvn-ui-btn-soft">Cancel</a>
+          <button class="spvn-ui-btn spvn-ui-btn-primary px-8">Publish Test</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+</body>
+</html>

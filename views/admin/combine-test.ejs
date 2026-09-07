@@ -1,0 +1,150 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen bg-[#f7f9fb]">
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-w-0">
+    <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+      <div class="flex items-center gap-4">
+        <button onclick="openSidebar()" type="button" class="lg:hidden text-slate-600">☰</button>
+        <nav class="spvn-ui-topnav flex-1">
+          <a href="/admin/organization">Organization</a>
+          <a href="/admin/tests" class="active">Test Management</a>
+          <a href="/admin/results">Reports</a>
+          <a href="/admin/analytics">Analytics</a>
+          <a href="/admin/monitor">Monitor</a>
+          <a href="/admin/topics">Syllabus</a>
+        </nav>
+      </div>
+    </header>
+
+    <%- include('../partials/test-management-tabs',{activeTab:'combine'}) %>
+
+    <div class="p-5 lg:p-8 max-w-[1450px] mx-auto">
+      <%- include('../partials/flash') %>
+
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
+        <div>
+          <p class="spvn-kicker">QUESTION PAPERS</p>
+          <h1 class="spvn-ui-heading">Combine Test</h1>
+          <p class="text-sm text-slate-700 mt-1 max-w-3xl">
+            Select <strong>one, two or more</strong> Draft question papers. The selected questions and their marking scheme are prepared as one test, then you go directly to <strong>Test Details</strong> to assign a batch and publish.
+          </p>
+        </div>
+        <span class="px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-bold whitespace-nowrap">
+          SELECT → TEST DETAILS → PUBLISH
+        </span>
+      </div>
+
+      <form action="/admin/tests/combine" method="POST" id="combineForm" class="space-y-5">
+        <div class="spvn-ui-panel p-5">
+          <label class="block text-sm font-bold text-slate-900 mb-2">
+            Final Test Name <span class="font-normal text-slate-500">(optional)</span>
+          </label>
+          <input name="title" class="spvn-ui-filter" placeholder="e.g. CET PCM Mock Test">
+          <p class="text-xs text-slate-500 mt-2">If left blank, a name is created automatically from the selected paper(s).</p>
+        </div>
+
+        <div class="spvn-ui-panel overflow-hidden">
+          <div class="p-4 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center gap-3">
+            <div class="flex-1">
+              <h2 class="font-bold text-slate-950">Available Draft Question Papers</h2>
+              <p class="text-xs text-slate-500 mt-1"><%= tests.length %> eligible Draft paper(s)</p>
+            </div>
+            <div class="relative w-full md:w-80">
+              <input id="combineSearch" type="search" class="spvn-ui-filter" placeholder="Search paper or subject...">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="spvn-ui-table min-w-[900px]">
+              <thead>
+                <tr>
+                  <th class="w-20">Select</th>
+                  <th>Question Paper</th>
+                  <th>Subject</th>
+                  <th>Questions</th>
+                  <th>Total Marks</th>
+                  <th>Created On</th>
+                </tr>
+              </thead>
+              <tbody id="combineRows">
+                <% if(!tests.length){ %>
+                  <tr>
+                    <td colspan="6" class="text-center py-14 text-slate-500">
+                      No eligible single-subject Draft tests are available yet.
+                    </td>
+                  </tr>
+                <% } %>
+
+                <% tests.forEach(function(t){ %>
+                  <% const subject = Array.isArray(t.subject) ? (t.subject[0] || '—') : (t.subject || '—'); %>
+                  <tr data-combine-row data-search="<%= (String(t.title||'') + ' ' + String(subject)).toLowerCase() %>">
+                    <td>
+                      <input type="checkbox" name="testIds" value="<%= t._id %>" class="rounded combineBox w-4 h-4">
+                    </td>
+                    <td>
+                      <p class="font-bold text-sky-700"><%= t.title %></p>
+                      <p class="text-[11px] text-slate-500 mt-1">Draft question paper</p>
+                    </td>
+                    <td class="font-semibold text-slate-800"><%= subject %></td>
+                    <td><%= t.questions ? t.questions.length : 0 %></td>
+                    <td><%= t.totalMarks || 0 %></td>
+                    <td><%= t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN') : '—' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="spvn-ui-panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p class="text-sm text-slate-700">
+            <strong id="combineCount" class="text-sky-700">0</strong> paper(s) selected
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <a href="/admin/tests" class="spvn-ui-btn spvn-ui-btn-soft">Cancel</a>
+            <button type="submit" class="spvn-ui-btn spvn-ui-btn-primary px-7">
+              Continue to Test Details →
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const boxes = Array.from(document.querySelectorAll('.combineBox'));
+  const count = document.getElementById('combineCount');
+  const form = document.getElementById('combineForm');
+  const search = document.getElementById('combineSearch');
+
+  function updateCount(){
+    count.textContent = boxes.filter(function(box){ return box.checked; }).length;
+  }
+
+  boxes.forEach(function(box){
+    box.addEventListener('change', updateCount);
+  });
+
+  form.addEventListener('submit', function(event){
+    if (boxes.filter(function(box){ return box.checked; }).length < 1) {
+      event.preventDefault();
+      alert('Select at least one Draft test.');
+    }
+  });
+
+  if (search) {
+    search.addEventListener('input', function(){
+      const query = search.value.toLowerCase().trim();
+      document.querySelectorAll('[data-combine-row]').forEach(function(row){
+        const value = row.getAttribute('data-search') || '';
+        row.style.display = !query || value.indexOf(query) !== -1 ? '' : 'none';
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
