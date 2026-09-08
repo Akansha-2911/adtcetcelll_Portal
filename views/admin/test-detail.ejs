@@ -1,0 +1,660 @@
+<%- include('../partials/head') %>
+
+<div class="flex min-h-screen">
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-h-screen">
+
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4">
+      <button onclick="openSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800 mr-3 shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <div class="flex items-center justify-between">
+
+        <div class="flex items-center gap-3">
+
+          <a href="/admin/tests" class="text-slate-400 hover:text-slate-600">←</a>
+
+          <div>
+            <h1 class="text-lg font-bold text-slate-900">
+              <%= test.title %>
+            </h1>
+
+            <p class="text-sm text-slate-500">
+              <%= test.duration %> mins ·
+              <%= test.totalMarks %> marks
+
+              <% if(test.course){ %>
+                · <%= test.course %>
+              <% } %>
+
+              <% if(test.subject){ %>
+                / <%= test.subject %>
+              <% } %>
+            </p>
+          </div>
+
+        </div>
+
+        <div class="flex items-center gap-3">
+
+          <span class="text-xs px-3 py-1.5 rounded-full font-semibold
+          <%= test.status==='published'
+              ? 'bg-green-100 text-green-700'
+              : test.status==='draft'
+              ? 'bg-slate-100 text-slate-600'
+              : 'bg-blue-100 text-blue-700' %>">
+
+            <%= test.status.toUpperCase() %>
+
+          </span>
+
+
+          <% if(test.status==='draft') { %>
+
+          <a
+            href="/admin/tests/<%= test.id %>/publish-setup"
+            class="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-emerald-700 shadow-sm">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+
+            <span>
+              Test Details &amp; Publish
+            </span>
+
+          </a>
+
+          <% } %>
+
+
+          <!-- ============================= -->
+          <!-- DOWNLOAD BUTTONS -->
+          <!-- ============================= -->
+
+
+          <!-- Question Paper PDF -->
+
+          <a
+            href="#"
+            onclick="downloadFile(
+              '/admin/tests/<%= test.id %>/pdf',
+              'Question_Paper.pdf'
+            ); return false;"
+            title="Download Question Paper Only (PDF)"
+            class="inline-flex items-center gap-1.5 bg-sky-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-sky-700 shadow-sm">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+
+            <span>Paper (PDF)</span>
+
+          </a>
+
+
+          <!-- Question Paper + Answers PDF -->
+
+          <a
+            href="#"
+            onclick="downloadFile(
+              '/admin/tests/<%= test.id %>/pdf-answers',
+              'Question_Paper_With_Answers.pdf'
+            ); return false;"
+            title="Download Paper with Answers & Solutions (PDF)"
+            class="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-emerald-700 shadow-sm">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+
+            <span>
+              Paper + Ans (PDF)
+            </span>
+
+          </a>
+
+
+          <!-- Question Paper Word -->
+
+          <a
+            href="#"
+            onclick="downloadFile(
+              '/admin/tests/<%= test.id %>/pdf-answers?format=word&includeAnswers=false',
+              'Question_Paper.docx'
+            ); return false;"
+            title="Download Question Paper Only (Word)"
+            class="inline-flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-indigo-700 shadow-sm">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+
+            <span>
+              Paper (Word)
+            </span>
+
+          </a>
+
+
+          <!-- Question Paper + Answers Word -->
+
+          <a
+            href="#"
+            onclick="downloadFile(
+              '/admin/tests/<%= test.id %>/pdf-answers?format=word&includeAnswers=true',
+              'Question_Paper_With_Answers.docx'
+            ); return false;"
+            title="Download Paper with Answers & Solutions (Word)"
+            class="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700 shadow-sm">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+
+            <span>
+              Paper + Ans (Word)
+            </span>
+
+          </a>
+
+
+          <a
+            href="/admin/tests/<%= test.id %>/marking-template"
+            class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-700 border border-sky-200 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-sky-100 shadow-xs">
+
+            <svg class="w-4 h-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+
+            <span>
+              Marking Scheme
+            </span>
+
+          </a>
+
+
+          <% if(test.status!=='draft') { %>
+
+          <button
+            type="button"
+            onclick="document.getElementById('assignBatchModal').classList.remove('hidden')"
+            class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-indigo-100 shadow-xs">
+
+            <span>
+              Assign Batches
+            </span>
+
+          </button>
+
+          <% } %>
+
+
+          <a
+            href="/admin/tests/<%= test.id %>/edit"
+            class="inline-flex items-center gap-1.5 border border-slate-200 text-slate-700 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-slate-50 shadow-xs">
+
+            <span>Edit</span>
+
+          </a>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <div class="p-5 lg:p-8">
+
+      <%- include('../partials/flash') %>
+
+
+      <!-- Stats -->
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        <% [
+          {
+            icon:'❓',
+            label:'Questions',
+            val:test.questions.length
+          },
+          {
+            icon:'⏱',
+            label:'Duration',
+            val:test.duration+' min'
+          },
+          {
+            icon:'👨‍🎓',
+            label:'Attempts',
+            val:results.length
+          },
+          {
+            icon:'📊',
+            label:'Avg Score',
+            val:results.length
+              ?(results.reduce((s,r)=>s+r.score,0)/results.length).toFixed(1)+'/'+test.totalMarks
+              :'N/A'
+          }
+        ].forEach(c=>{ %>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+
+          <p class="text-xl mb-2">
+            <%= c.icon %>
+          </p>
+
+          <p class="text-xl font-bold text-slate-900">
+            <%= c.val %>
+          </p>
+
+          <p class="text-xs text-slate-500 mt-0.5">
+            <%= c.label %>
+          </p>
+
+        </div>
+
+        <% }) %>
+
+      </div>
+
+
+      <!-- Questions / Results -->
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+
+          <div class="px-5 py-4 border-b bg-slate-50">
+
+            <h3 class="font-semibold text-slate-900 text-sm">
+              Questions (<%= test.questions.length %>)
+            </h3>
+
+          </div>
+
+
+          <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+
+            <% test.questions.forEach((q,i) => { %>
+
+            <div class="px-5 py-3 hover:bg-slate-50">
+
+              <p class="math-clamp-2 text-xs text-slate-800 leading-snug">
+
+                <span>
+                  <%= i+1 %>.
+                </span>
+
+                <span class="math-content">
+                  <%= q.question %>
+                </span>
+
+              </p>
+
+
+              <div class="flex gap-2 mt-1">
+
+                <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                  Ans: <%= q.correctAnswer %>
+                </span>
+
+                <span class="text-xs text-slate-400">
+                  <%= q.subject %>
+                </span>
+
+              </div>
+
+            </div>
+
+            <% }) %>
+
+          </div>
+
+        </div>
+
+
+        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+
+          <div class="px-6 py-4 border-b flex items-center justify-between">
+
+            <h3 class="font-semibold text-slate-900">
+              Student Results
+            </h3>
+
+            <a
+              href="/admin/results/export?testId=<%= test.id %>"
+              class="text-xs text-navy-600 hover:underline font-medium">
+
+              Export This Test to Excel
+
+            </a>
+
+          </div>
+
+
+          <% if (!results.length) { %>
+
+          <p class="px-6 py-12 text-center text-slate-400">
+            No submissions yet.
+          </p>
+
+          <% } else { %>
+
+          <div class="overflow-x-auto">
+
+            <table class="w-full text-xs sm:text-sm">
+
+              <thead class="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
+
+                <tr>
+                  <th class="px-5 py-3 text-left">Rank</th>
+                  <th class="px-5 py-3 text-left">Student</th>
+                  <th class="px-5 py-3 text-left">Physics</th>
+                  <th class="px-5 py-3 text-left">Chemistry</th>
+                  <th class="px-5 py-3 text-left">Mathematics</th>
+                  <th class="px-5 py-3 text-left">Total</th>
+                  <th class="px-5 py-3 text-left">%</th>
+                  <th class="px-5 py-3 text-left">Action</th>
+                </tr>
+
+              </thead>
+
+
+              <tbody class="divide-y divide-slate-100">
+
+                <% results.forEach((r,i) => {
+
+                  const pct =
+                    r.totalMarks > 0
+                    ? ((r.score/r.totalMarks)*100).toFixed(1)
+                    : 0
+
+                %>
+
+                <tr class="hover:bg-slate-50">
+
+                  <td class="px-5 py-3">
+
+                    <%= i===0
+                      ? '🥇'
+                      : i===1
+                      ? '🥈'
+                      : i===2
+                      ? '🥉'
+                      : '#'+(i+1) %>
+
+                  </td>
+
+
+                  <td class="px-5 py-3">
+
+                    <p class="font-medium">
+                      <%= r.student?.name %>
+                    </p>
+
+                    <p class="text-xs text-slate-400">
+                      <%= r.student?.rollNo %>
+                    </p>
+
+                  </td>
+
+
+                  <% ['Physics','Chemistry','Mathematics'].forEach(subject => {
+
+                    const subjectResult =
+                      r.subjectScores?.[subject];
+
+                  %>
+
+                  <td class="px-5 py-3 text-xs font-semibold
+                    <%= subjectResult?.status==='ABSENT'
+                        ? 'text-rose-600'
+                        : 'text-slate-600' %>">
+
+                    <%= subjectResult?.status==='ABSENT'
+                      ? 'ABSENT'
+                      : subjectResult
+                      ? `${subjectResult.marks||0}/${subjectResult.total||0}`
+                      : '—' %>
+
+                  </td>
+
+                  <% }) %>
+
+
+                  <td class="px-5 py-3 font-bold">
+
+                    <%= r.score %>/<%= r.totalMarks %>
+
+                  </td>
+
+
+                  <td class="px-5 py-3 font-semibold
+                    <%= pct>=60
+                        ? 'text-green-600'
+                        : pct>=40
+                        ? 'text-yellow-600'
+                        : 'text-red-500' %>">
+
+                    <%= pct %>%
+
+                  </td>
+
+
+                  <td class="px-5 py-3">
+
+                    <a
+                      href="/results/<%= r.id %>"
+                      class="text-navy-600 hover:underline text-xs font-medium">
+
+                      View
+
+                    </a>
+
+                  </td>
+
+                </tr>
+
+                <% }) %>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          <% } %>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+
+<!-- Download Function -->
+
+<script>
+
+async function downloadFile(url, fallbackFileName) {
+
+  try {
+
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        'Download failed with status ' +
+        response.status
+      );
+
+    }
+
+
+    const blob = await response.blob();
+
+
+    let fileName = fallbackFileName;
+
+    const disposition =
+      response.headers.get(
+        'content-disposition'
+      );
+
+
+    if (disposition) {
+
+      const utf8Match =
+        disposition.match(
+          /filename\*=UTF-8''([^;]+)/i
+        );
+
+      const normalMatch =
+        disposition.match(
+          /filename="?([^"]+)"?/i
+        );
+
+
+      if (
+        utf8Match &&
+        utf8Match[1]
+      ) {
+
+        fileName =
+          decodeURIComponent(
+            utf8Match[1]
+          );
+
+      }
+
+      else if (
+        normalMatch &&
+        normalMatch[1]
+      ) {
+
+        fileName =
+          normalMatch[1].trim();
+
+      }
+
+    }
+
+
+    const blobUrl =
+      window.URL.createObjectURL(blob);
+
+
+    const link =
+      document.createElement('a');
+
+
+    link.href =
+      blobUrl;
+
+    link.download =
+      fileName;
+
+    link.style.display =
+      'none';
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+
+    setTimeout(() => {
+
+      window.URL.revokeObjectURL(
+        blobUrl
+      );
+
+    }, 1500);
+
+
+  }
+
+  catch (error) {
+
+    console.error(
+      'File download error:',
+      error
+    );
+
+    alert(
+      'Unable to download the file. Please try again.'
+    );
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>

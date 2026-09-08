@@ -1,0 +1,65 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-h-screen bg-slate-50/70">
+    <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4 flex items-center gap-4">
+      <button onclick="openSidebar()" class="lg:hidden text-slate-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="flex-1"><h1 class="text-lg font-bold text-slate-900">Edit Question</h1><p class="text-xs text-slate-400">Update question content, answer and syllabus classification</p></div>
+      <a href="/admin/questions" class="border border-slate-200 bg-white px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Back to Bank</a>
+    </header>
+
+    <div class="p-5 lg:p-8 max-w-5xl mx-auto">
+      <%- include('../partials/flash') %>
+      <form action="/admin/questions/<%= question.id %>/edit" method="POST" enctype="multipart/form-data" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 class="font-bold text-slate-900">Question Details</h2><p class="text-xs text-slate-400 mt-1">ID: <%= question.id %></p></div><span class="text-xs px-2.5 py-1 rounded-full <%= question.difficulty==='Hard'?'bg-rose-50 text-rose-700':question.difficulty==='Easy'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700' %>"><%= question.difficulty %></span></div>
+        <div class="p-6 space-y-6">
+          <div data-math-field><label class="block text-sm font-semibold text-slate-700 mb-2">Question *</label><textarea name="question" rows="4" required class="math-input w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"><%= question.question %></textarea><div class="math-preview hidden mt-2 rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3"></div></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <% ['A','B','C','D'].forEach(o => { %><div data-math-field><label class="block text-xs font-semibold text-slate-600 mb-1.5">Option <%= o %> *</label><input name="option<%= o %>" required value="<%= question['option'+o] %>" class="math-input w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"><div class="math-preview hidden mt-2 rounded-xl border border-indigo-100 bg-indigo-50/40 px-3 py-2"></div></div><% }) %>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Correct Answer *</label><select name="correctAnswer" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"><% ['A','B','C','D'].forEach(o=>{ %><option value="<%= o %>" <%= question.correctAnswer===o?'selected':'' %>><%= o %></option><% }) %></select></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Difficulty</label><select name="difficulty" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"><% ['Easy','Medium','Hard'].forEach(d=>{ %><option <%= question.difficulty===d?'selected':'' %>><%= d %></option><% }) %></select></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Marks</label><input type="number" name="marks" value="<%= question.marks %>" step="0.5" min="0.5" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"></div>
+          </div>
+
+          <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+            <div class="flex items-center justify-between mb-4"><div><h3 class="text-sm font-bold text-slate-800">Syllabus Classification</h3><p class="text-xs text-slate-400 mt-1">Subject → Unit/Topic → Subtopic</p></div><a href="/admin/topics" target="_blank" class="text-xs font-semibold text-indigo-600">Manage syllabus ↗</a></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subject *</label><select name="subject" id="editSubject" required onchange="loadTopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><% SUBJECTS.forEach(s=>{ %><option value="<%= s %>" <%= question.subject===s?'selected':'' %>><%= s %></option><% }) %></select></div>
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Topic / Unit</label><select name="topic" id="editTopic" onchange="loadSubtopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Topic</option><% topicRows.forEach(t=>{ %><option value="<%= t.name %>" <%= question.topic===t.name?'selected':'' %>><%= t.name %></option><% }) %></select></div>
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subtopic</label><select name="subtopic" id="editSubtopic" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Subtopic</option><% subtopicList.forEach(s=>{ %><option value="<%= s %>" <%= question.subtopic===s?'selected':'' %>><%= s %></option><% }) %></select></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Question Image URL</label><input name="questionImageUrl" value="<%= question.questionImage || '' %>" placeholder="https://..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm"><p class="text-[11px] text-slate-400 mt-1">Leave unchanged to keep current image.</p></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Replace Image</label><input type="file" name="questionImage" accept="image/*" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white"></div>
+          </div>
+          <% if(question.questionImage){ %><img src="<%= question.questionImage %>" class="max-h-48 rounded-xl border border-slate-200 bg-slate-50 object-contain"><% } %>
+
+          <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Explanation</label><textarea name="explanation" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="Explain the correct answer"><%= question.explanation || '' %></textarea></div>
+        </div>
+        <div class="px-6 py-5 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-end gap-3"><a href="/admin/questions" class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 text-center">Cancel</a><button class="px-6 py-2.5 rounded-xl bg-slate-950 text-white text-sm font-bold hover:bg-slate-800">Save Changes</button></div>
+      </form>
+    </div>
+  </main>
+</div>
+<script>
+async function loadTopics(subject){
+  const topic=document.getElementById('editTopic'), sub=document.getElementById('editSubtopic');
+  topic.innerHTML='<option value="">Loading…</option>'; sub.innerHTML='<option value="">Select Subtopic</option>';
+  const rows=await fetch('/admin/ajax/topics?subject='+encodeURIComponent(subject)).then(r=>r.json()).catch(()=>[]);
+  topic.innerHTML='<option value="">Select Topic</option>'+rows.map(r=>`<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('');
+}
+async function loadSubtopics(topicName){
+  const subject=document.getElementById('editSubject').value, sub=document.getElementById('editSubtopic');
+  sub.innerHTML='<option value="">Loading…</option>';
+  const rows=await fetch('/admin/ajax/subtopics?subject='+encodeURIComponent(subject)+'&topic='+encodeURIComponent(topicName)).then(r=>r.json()).catch(()=>[]);
+  sub.innerHTML='<option value="">Select Subtopic</option>'+rows.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+}
+function escapeHtml(v){return String(v||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+</script>
+<%- include('../partials/footer') %>

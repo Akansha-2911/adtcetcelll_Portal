@@ -1,0 +1,15 @@
+SPVN CET Portal — Run Steps
+
+1. Open terminal in this project folder.
+2. Run: npm install
+3. Run: npm run check:all
+4. Run: npm run dev
+5. Open: http://localhost:5000
+
+MongoDB note:
+- Primary DB uses MONGO_URI from .env.
+- If Atlas DNS fails in development, the app retries:
+  mongodb://127.0.0.1:27017/spvn_test
+- To use the fallback, MongoDB Community Server must be running locally.
+
+Do NOT copy an old node_modules folder between Windows/Mac/Linux. Always run npm install on the machine where you will run the portal (Sharp and other native packages are platform-specific).

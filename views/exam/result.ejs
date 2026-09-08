@@ -1,0 +1,2579 @@
+<%- include('../partials/head') %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+
+<%
+/* =========================================================
+   SAFE IMAGE URL
+========================================================= */
+
+function safeImageUrl(value) {
+
+  if (!value) {
+    return '';
+  }
+
+  let src =
+    String(value)
+      .trim();
+
+  if (!src) {
+    return '';
+  }
+
+  if (
+    src.startsWith('/uploads/') ||
+    src.startsWith('http://') ||
+    src.startsWith('https://') ||
+    src.startsWith('data:image/')
+  ) {
+    return src;
+  }
+
+  src =
+    src.replace(/\\/g, '/');
+
+  const uploadsIndex =
+    src.toLowerCase()
+      .indexOf('/uploads/');
+
+  if (uploadsIndex !== -1) {
+    return src.substring(uploadsIndex);
+  }
+
+  if (
+    src.toLowerCase()
+      .startsWith('uploads/')
+  ) {
+    return '/' + src;
+  }
+
+  return src;
+}
+
+
+/* =========================================================
+   VISUAL-ONLY OPTION DESCRIPTION
+========================================================= */
+
+function isVisualDescription(value) {
+
+  const text =
+    String(value || '')
+      .trim();
+
+  if (!text) {
+    return false;
+  }
+
+  if (
+    /^\[[\s\S]*\]$/.test(text)
+  ) {
+    return true;
+  }
+
+  return /^(venn diagram|diagram|graph|figure|image|circuit|chart|visual table)\s*:/i
+    .test(
+      text
+        .replace(/^\[|\]$/g, '')
+        .trim()
+    );
+}
+%>
+
+
+<div class="min-h-screen bg-slate-50 py-5 lg:py-10 px-4">
+
+  <div class="max-w-4xl mx-auto space-y-5">
+
+
+    <!-- =====================================================
+         SCORE HERO
+    ====================================================== -->
+
+    <div class="bg-white rounded-2xl shadow-card-md overflow-hidden">
+
+      <div
+        class="<%=
+          percentage >= 60
+            ? 'bg-gradient-to-r from-emerald-600 to-emerald-500'
+            : percentage >= 40
+              ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+              : 'bg-gradient-to-r from-rose-600 to-rose-500'
+        %> px-5 py-8 text-white text-center"
+      >
+
+        <p class="text-white/80 text-sm mb-1 truncate">
+          <%= result.test.title %>
+        </p>
+
+
+        <div class="text-5xl sm:text-7xl font-bold mb-2">
+          <%= percentage %>%
+        </div>
+
+
+        <p class="text-xl sm:text-2xl font-semibold">
+          <%= result.score %> / <%= result.totalMarks %> Marks
+        </p>
+
+
+        <% if (result.absentSubjects?.length) { %>
+
+          <p class="text-white/80 text-xs mt-2">
+
+            Percentage uses attempted subjects only · Full test:
+
+            <%= result.fullTotalMarks || result.test.totalMarks %>
+
+            marks
+
+          </p>
+
+        <% } %>
+
+
+        <div class="flex items-center justify-center gap-2 mt-2">
+
+          <% if (result.status === 'auto_submitted') { %>
+
+            <svg
+              class="w-4 h-4 text-white/80"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+
+            <span class="text-white/80 text-sm">
+              Auto-submitted
+            </span>
+
+          <% } else { %>
+
+            <svg
+              class="w-4 h-4 text-white/80"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+
+            <span class="text-white/80 text-sm">
+              Submitted
+            </span>
+
+          <% } %>
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           STATS
+      ==================================================== -->
+
+      <div class="grid grid-cols-3 sm:grid-cols-5 border-b border-slate-100">
+
+        <%
+        const statRows = [
+
+          {
+            label: 'Rank',
+            value: '#' + (result.rank || '—'),
+            color: 'amber'
+          },
+
+          {
+            label: 'Correct',
+            value: result.correctAnswers || 0,
+            color: 'emerald'
+          },
+
+          {
+            label: 'Wrong',
+            value: result.wrongAnswers || 0,
+            color: 'rose'
+          },
+
+          {
+            label: 'Skipped',
+            value: result.skippedAnswers || 0,
+            color: 'slate'
+          },
+
+          {
+            label: 'Percentile',
+            value: Number(result.percentile || 0).toFixed(1) + '%',
+            color: 'indigo'
+          }
+
+        ];
+        %>
+
+
+        <% statRows.forEach(function(stat){ %>
+
+          <div class="p-3 sm:p-4 text-center">
+
+            <div
+              class="w-7 h-7 mx-auto mb-1
+                     flex items-center justify-center
+                     rounded-full
+                     bg-<%= stat.color %>-50
+                     text-<%= stat.color %>-600"
+            >
+
+              <% if(stat.label === 'Rank'){ %>
+
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 3v4M3 5h4M19 3v4m-2-2h4M5 17v4m-2-2h4M12 3l2.5 5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-1L12 3z"
+                  />
+                </svg>
+
+              <% } else if(stat.label === 'Correct'){ %>
+
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+
+              <% } else if(stat.label === 'Wrong'){ %>
+
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+
+              <% } else if(stat.label === 'Skipped'){ %>
+
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+
+              <% } else { %>
+
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h6l6 6v10a2 2 0 01-2 2z"
+                  />
+                </svg>
+
+              <% } %>
+
+            </div>
+
+
+            <p class="text-base sm:text-xl font-bold text-slate-900">
+              <%= stat.value %>
+            </p>
+
+            <p class="text-[10px] sm:text-xs text-slate-500 mt-0.5">
+              <%= stat.label %>
+            </p>
+
+          </div>
+
+        <% }); %>
+
+      </div>
+
+
+      <!-- ===================================================
+           META
+      ==================================================== -->
+
+      <div
+        class="px-5 py-3
+               flex flex-wrap
+               gap-x-6 gap-y-2
+               text-xs text-slate-500
+               border-b border-slate-100"
+      >
+
+        <span>
+
+          <span class="font-semibold text-slate-800">
+            <%= result.student.name %>
+          </span>
+
+          · Roll:
+
+          <span class="font-mono">
+            <%= result.student.rollNo %>
+          </span>
+
+        </span>
+
+
+        <span>
+
+          Time:
+
+          <strong>
+
+            <%= Math.floor((result.timeTaken || 0) / 60) %>m
+
+            <%= (result.timeTaken || 0) % 60 %>s
+
+          </strong>
+
+        </span>
+
+
+        <% if (result.violationCount > 0) { %>
+
+          <span
+            class="text-rose-600
+                   font-semibold
+                   flex items-center gap-1"
+          >
+
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+
+            <%= result.violationCount %> violation(s)
+
+          </span>
+
+        <% } %>
+
+
+        <span>
+
+          <%= result.submittedAt
+            ? new Date(result.submittedAt).toLocaleString('en-IN')
+            : ''
+          %>
+
+        </span>
+
+      </div>
+
+
+      <!-- ===================================================
+           ACTION BUTTONS
+      ==================================================== -->
+
+      <div class="px-5 py-4 flex flex-wrap gap-3 items-center">
+
+
+        <% if (
+          typeof currentUser !== 'undefined' &&
+          currentUser &&
+          currentUser.role === 'student'
+        ) { %>
+
+          <a
+            href="/student/dashboard"
+            class="inline-flex items-center gap-2
+                   border border-slate-300
+                   bg-white
+                   text-slate-700
+                   px-5 py-2.5
+                   rounded-xl
+                   font-semibold
+                   hover:bg-slate-50
+                   hover:border-slate-400
+                   transition-colors
+                   text-sm"
+          >
+
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+
+            Back to Dashboard
+
+          </a>
+
+        <% } %>
+
+
+        <a
+          href="/results/<%= result._id || result.id %>/pdf"
+          class="inline-flex items-center gap-2
+                 bg-rose-600
+                 text-white
+                 px-5 py-2.5
+                 rounded-xl
+                 font-semibold
+                 hover:bg-rose-700
+                 transition-colors
+                 text-sm"
+        >
+
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+
+          Download PDF
+
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ANALYTICS GRID
+    ====================================================== -->
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+
+      <!-- ===================================================
+           SUBJECT BREAKDOWN
+      ==================================================== -->
+
+      <% if (
+        result.subjectScores &&
+        Object.keys(result.subjectScores).length > 0
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-slate-100
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-slate-900
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
+
+            Subject-wise Breakdown
+
+          </h3>
+
+
+          <canvas
+            id="subjectChart"
+            class="max-h-44 mb-4"
+          ></canvas>
+
+
+          <div class="space-y-3">
+
+
+            <% Object.entries(result.subjectScores).forEach(function(entry){
+
+              const subject = entry[0];
+              const data = entry[1];
+
+              const isAbsent =
+                data.status === 'ABSENT';
+
+              const pct =
+                data.total > 0
+                  ? Math.round(
+                      (Number(data.marks || 0) /
+                      Number(data.total || 1)) *
+                      100
+                    )
+                  : 0;
+
+              const color =
+                pct >= 60
+                  ? 'emerald'
+                  : pct >= 40
+                    ? 'amber'
+                    : 'rose';
+
+            %>
+
+
+              <div>
+
+                <div class="flex justify-between text-sm mb-1">
+
+
+                  <span
+                    class="font-medium
+                           text-slate-700
+                           truncate mr-2"
+                  >
+                    <%= subject %>
+                  </span>
+
+
+                  <% if (isAbsent) { %>
+
+                    <span
+                      class="font-bold
+                             text-rose-600
+                             bg-rose-50
+                             border border-rose-200
+                             px-2.5 py-0.5
+                             rounded-full
+                             shrink-0"
+                    >
+                      ABSENT
+                    </span>
+
+                  <% } else { %>
+
+                    <span
+                      class="font-bold
+                             text-<%= color %>-600
+                             shrink-0"
+                    >
+                      <%= data.marks || 0 %>/<%= data.total || 0 %>
+                      (<%= pct %>%)
+                    </span>
+
+                  <% } %>
+
+                </div>
+
+
+                <% if (!isAbsent) { %>
+
+                  <div
+                    class="h-2
+                           bg-slate-100
+                           rounded-full
+                           overflow-hidden"
+                  >
+
+                    <div
+                      class="h-2 rounded-full bg-<%= color %>-500"
+                      style="width:<%= Math.max(0, Math.min(100, pct)) %>%"
+                    ></div>
+
+                  </div>
+
+
+                  <div
+                    class="flex gap-3
+                           text-xs
+                           text-slate-400
+                           mt-1"
+                  >
+
+                    <span class="text-emerald-600">
+                      <%= data.correct || 0 %> correct
+                    </span>
+
+                    <span class="text-rose-500">
+                      <%= data.wrong || 0 %> wrong
+                    </span>
+
+                    <span>
+                      <%= data.skipped || 0 %> skipped
+                    </span>
+
+                  </div>
+
+                <% } else { %>
+
+                  <p class="text-xs text-rose-500">
+
+                    No answer was attempted in this subject.
+                    Its marks are excluded from the total.
+
+                  </p>
+
+                <% } %>
+
+              </div>
+
+
+            <% }); %>
+
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ===================================================
+           TOPIC ANALYSIS
+      ==================================================== -->
+
+      <% if (
+        result.topicScores &&
+        Object.keys(result.topicScores).length > 0
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-slate-100
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-slate-900
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+
+            Topic Analysis
+
+          </h3>
+
+
+          <div class="space-y-2 max-h-72 overflow-y-auto">
+
+
+            <%
+            const sortedTopics =
+              Object.entries(result.topicScores)
+                .sort(function(a,b){
+
+                  const aTotal =
+                    Number(a[1].correct || 0) +
+                    Number(a[1].wrong || 0) +
+                    Number(a[1].skipped || 0) ||
+                    1;
+
+                  const bTotal =
+                    Number(b[1].correct || 0) +
+                    Number(b[1].wrong || 0) +
+                    Number(b[1].skipped || 0) ||
+                    1;
+
+                  return (
+                    Number(a[1].correct || 0) / aTotal
+                  ) - (
+                    Number(b[1].correct || 0) / bTotal
+                  );
+
+                });
+            %>
+
+
+            <% sortedTopics.forEach(function(entry){
+
+              const topic =
+                entry[0];
+
+              const data =
+                entry[1];
+
+              const total =
+                Number(data.correct || 0) +
+                Number(data.wrong || 0) +
+                Number(data.skipped || 0) ||
+                1;
+
+              const accuracy =
+                Math.round(
+                  (
+                    Number(data.correct || 0) /
+                    total
+                  ) *
+                  100
+                );
+
+              const color =
+                accuracy < 50
+                  ? 'rose'
+                  : accuracy < 75
+                    ? 'amber'
+                    : 'emerald';
+
+            %>
+
+
+              <div
+                class="flex items-center
+                       gap-3
+                       p-2.5
+                       rounded-xl
+                       border border-<%= color %>-200
+                       bg-<%= color %>-50"
+              >
+
+                <div
+                  class="w-2 h-2
+                         rounded-full
+                         bg-<%= color %>-500
+                         shrink-0"
+                ></div>
+
+
+                <div class="flex-1 min-w-0">
+
+                  <p
+                    class="text-xs
+                           font-semibold
+                           text-slate-800
+                           truncate"
+                  >
+                    <%= topic %>
+                  </p>
+
+                  <p class="text-[10px] text-slate-500">
+
+                    <%= data.correct || 0 %> correct ·
+                    <%= data.wrong || 0 %> wrong ·
+                    <%= data.skipped || 0 %> skipped
+
+                  </p>
+
+                </div>
+
+
+                <span
+                  class="font-bold
+                         text-sm
+                         text-<%= color %>-600
+                         shrink-0"
+                >
+                  <%= accuracy %>%
+                </span>
+
+              </div>
+
+
+            <% }); %>
+
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ===================================================
+           TOPPER COMPARISON
+      ==================================================== -->
+
+      <% if (
+        topperResult &&
+        topperResult.score > 0 &&
+        result.rank !== 1
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-slate-100
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-slate-900
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4 text-amber-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+
+            Your Score vs Topper
+
+          </h3>
+
+
+          <canvas
+            id="comparisonChart"
+            class="max-h-44 mb-4"
+          ></canvas>
+
+
+          <% if (
+            topperResult.subjectScores &&
+            result.subjectScores
+          ) { %>
+
+            <div class="space-y-1.5">
+
+
+              <% Object.entries(result.subjectScores).forEach(function(entry){
+
+                const subject =
+                  entry[0];
+
+                const data =
+                  entry[1];
+
+                const topperSubject =
+                  topperResult.subjectScores[subject];
+
+                if (
+                  !topperSubject ||
+                  data.status === 'ABSENT'
+                ) {
+                  return;
+                }
+
+                const myPct =
+                  data.total > 0
+                    ? Math.round(
+                        Number(data.marks || 0) /
+                        Number(data.total) *
+                        100
+                      )
+                    : 0;
+
+                const topperPct =
+                  topperSubject.total > 0
+                    ? Math.round(
+                        Number(topperSubject.marks || 0) /
+                        Number(topperSubject.total) *
+                        100
+                      )
+                    : 0;
+
+              %>
+
+
+                <div
+                  class="flex
+                         items-center
+                         justify-between
+                         text-xs"
+                >
+
+                  <span
+                    class="text-slate-600
+                           font-medium
+                           truncate mr-2"
+                  >
+                    <%= subject %>
+                  </span>
+
+
+                  <span class="shrink-0 text-slate-500">
+
+                    You:
+
+                    <strong class="text-indigo-600">
+                      <%= myPct %>%
+                    </strong>
+
+                    · Topper:
+
+                    <strong class="text-amber-600">
+                      <%= topperPct %>%
+                    </strong>
+
+                  </span>
+
+                </div>
+
+
+              <% }); %>
+
+
+            </div>
+
+          <% } %>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ===================================================
+           PERFORMANCE TREND
+      ==================================================== -->
+
+      <% if (
+        trend &&
+        trend.length > 1
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-slate-100
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-slate-900
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+              />
+            </svg>
+
+            Performance Trend
+
+          </h3>
+
+
+          <canvas
+            id="trendChart"
+            class="max-h-44"
+          ></canvas>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ===================================================
+           TIME PER QUESTION
+      ==================================================== -->
+
+      <% if (
+        result.questionTimings &&
+        Object.keys(result.questionTimings).length > 0
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-slate-100
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-slate-900
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4 text-indigo-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+
+            Time per Question
+
+          </h3>
+
+
+          <canvas
+            id="timeChart"
+            class="max-h-44"
+          ></canvas>
+
+
+          <p class="text-xs text-slate-400 mt-2 text-center">
+            Time in seconds per question
+          </p>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ===================================================
+           EXAM INTEGRITY
+      ==================================================== -->
+
+      <% if (
+        result.cheatingFlags &&
+        (
+          result.cheatingFlags.tabSwitches > 0 ||
+          result.cheatingFlags.fullscreenExits > 0 ||
+          result.cheatingFlags.focusLosses > 0
+        )
+      ) { %>
+
+        <div
+          class="bg-white
+                 rounded-2xl
+                 border border-rose-200
+                 shadow-card
+                 p-5"
+        >
+
+          <h3
+            class="font-bold
+                   text-rose-700
+                   mb-4
+                   text-sm
+                   flex items-center gap-2"
+          >
+
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+
+            Exam Integrity Report
+
+          </h3>
+
+
+          <div class="space-y-2 text-sm">
+
+            <div
+              class="flex justify-between
+                     py-2
+                     border-b border-slate-100"
+            >
+
+              <span class="text-slate-600">
+                Tab Switches
+              </span>
+
+              <span class="font-bold text-rose-600">
+                <%= result.cheatingFlags.tabSwitches || 0 %>
+              </span>
+
+            </div>
+
+
+            <div
+              class="flex justify-between
+                     py-2
+                     border-b border-slate-100"
+            >
+
+              <span class="text-slate-600">
+                Fullscreen Exits
+              </span>
+
+              <span class="font-bold text-rose-600">
+                <%= result.cheatingFlags.fullscreenExits || 0 %>
+              </span>
+
+            </div>
+
+
+            <div class="flex justify-between py-2">
+
+              <span class="text-slate-600">
+                Focus Losses
+              </span>
+
+              <span class="font-bold text-rose-600">
+                <%= result.cheatingFlags.focusLosses || 0 %>
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         QUESTION REVIEW
+    ====================================================== -->
+
+    <div
+      class="bg-white
+             rounded-2xl
+             border border-slate-100
+             shadow-card
+             overflow-hidden"
+    >
+
+      <div
+        class="px-5 py-4
+               border-b border-slate-100"
+      >
+
+        <h3
+          class="font-bold
+                 text-slate-900
+                 text-sm
+                 flex items-center gap-2"
+        >
+
+          <svg
+            class="w-4 h-4 text-indigo-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+
+          Question-by-Question Review
+
+        </h3>
+
+      </div>
+
+
+      <div class="divide-y divide-slate-100">
+
+
+        <%
+        const answers =
+          result.answers || {};
+
+        const resultAnswerKeyMap =
+          new Map(
+            (
+              result.test.questionSettings ||
+              []
+            ).map(function(row){
+
+              return [
+                String(row.questionId),
+                row.answerKey
+              ];
+
+            })
+          );
+        %>
+
+
+        <% (result.test.questions || []).forEach(function(q,idx){
+
+          const qid =
+            String(
+              q._id ||
+              q.id
+            );
+
+          const answerRecord =
+            answers[qid] ||
+            answers[q._id] ||
+            answers[q.id] ||
+            null;
+
+          const given =
+            answerRecord?.answer ||
+            null;
+
+          const correct =
+            resultAnswerKeyMap.get(qid) ||
+            q.correctAnswer ||
+            '';
+
+          const isRight =
+            Boolean(
+              given &&
+              given === correct
+            );
+
+          const isSkip =
+            !given;
+
+          const optionRows = [
+
+            {
+              key:'A',
+              text:q.optionA,
+              image:safeImageUrl(q.optionAImage)
+            },
+
+            {
+              key:'B',
+              text:q.optionB,
+              image:safeImageUrl(q.optionBImage)
+            },
+
+            {
+              key:'C',
+              text:q.optionC,
+              image:safeImageUrl(q.optionCImage)
+            },
+
+            {
+              key:'D',
+              text:q.optionD,
+              image:safeImageUrl(q.optionDImage)
+            }
+
+          ];
+
+          const questionImage =
+            safeImageUrl(
+              q.questionImage
+            );
+
+        %>
+
+
+          <div class="px-5 py-5">
+
+            <div class="flex items-start gap-3">
+
+
+              <div
+                class="w-8 h-8
+                       rounded-full
+                       flex items-center
+                       justify-center
+                       text-xs
+                       font-bold
+                       shrink-0
+                       mt-0.5
+                       <%=
+                         isSkip
+                           ? 'bg-slate-200 text-slate-600'
+                           : isRight
+                             ? 'bg-emerald-500 text-white'
+                             : 'bg-rose-500 text-white'
+                       %>"
+              >
+                <%= idx + 1 %>
+              </div>
+
+
+              <div class="flex-1 min-w-0">
+
+
+                <p
+                  class="math-content
+                         text-sm
+                         font-medium
+                         text-slate-900
+                         leading-relaxed
+                         mb-3"
+                >
+                  <%= q.question %>
+                </p>
+
+
+                <% if (questionImage) { %>
+
+                  <div
+                    class="overflow-x-auto
+                           mb-4
+                           border border-slate-200
+                           rounded-xl
+                           bg-slate-50
+                           p-3"
+                  >
+
+                    <img
+                      src="<%= questionImage %>"
+                      alt="Question <%= idx + 1 %> diagram"
+                      class="block
+                             w-auto
+                             h-auto
+                             max-w-full
+                             max-h-96
+                             mx-auto
+                             object-contain
+                             rounded-lg
+                             bg-white"
+                    >
+
+                  </div>
+
+                <% } %>
+
+
+                <div
+                  class="grid
+                         grid-cols-1
+                         sm:grid-cols-2
+                         gap-2
+                         mb-4"
+                >
+
+
+                  <% optionRows.forEach(function(option){
+
+                    if (
+                      !String(option.text || '').trim() &&
+                      !option.image
+                    ) {
+                      return;
+                    }
+
+                    const isCorrectOption =
+                      option.key === correct;
+
+                    const isGivenOption =
+                      option.key === given;
+
+                    let optionClass =
+                      'border-slate-200 text-slate-700 bg-slate-50';
+
+                    if (isCorrectOption) {
+                      optionClass =
+                        'border-emerald-400 text-emerald-800 bg-emerald-50';
+                    }
+
+                    if (
+                      isGivenOption &&
+                      !isRight
+                    ) {
+                      optionClass =
+                        'border-rose-400 text-rose-800 bg-rose-50';
+                    }
+
+                    const showText =
+                      String(option.text || '').trim() &&
+                      !(
+                        option.image &&
+                        isVisualDescription(
+                          option.text
+                        )
+                      );
+
+                  %>
+
+
+                    <div
+                      class="border
+                             rounded-xl
+                             p-3
+                             <%= optionClass %>"
+                    >
+
+                      <div class="flex items-start gap-2">
+
+                        <span
+                          class="w-6 h-6
+                                 rounded-full
+                                 flex items-center
+                                 justify-center
+                                 shrink-0
+                                 text-xs
+                                 font-bold
+                                 border
+                                 <%=
+                                   isCorrectOption
+                                     ? 'bg-emerald-500 text-white border-emerald-500'
+                                     : isGivenOption && !isRight
+                                       ? 'bg-rose-500 text-white border-rose-500'
+                                       : 'bg-white text-slate-600 border-slate-300'
+                                 %>"
+                        >
+                          <%= option.key %>
+                        </span>
+
+
+                        <div class="flex-1 min-w-0">
+
+
+                          <% if (showText) { %>
+
+                            <div
+                              class="math-content
+                                     text-xs
+                                     leading-relaxed"
+                            >
+                              <%= option.text %>
+                            </div>
+
+                          <% } %>
+
+
+                          <% if (option.image) { %>
+
+                            <div
+                              class="<%= showText ? 'mt-2' : '' %>
+                                     rounded-lg
+                                     bg-white
+                                     overflow-hidden"
+                            >
+
+                              <img
+                                src="<%= option.image %>"
+                                alt="Option <%= option.key %>"
+                                class="block
+                                       max-w-full
+                                       max-h-64
+                                       w-auto
+                                       h-auto
+                                       mx-auto
+                                       object-contain"
+                              >
+
+                            </div>
+
+                          <% } %>
+
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+
+                  <% }); %>
+
+
+                </div>
+
+
+                <div
+                  class="flex
+                         flex-wrap
+                         gap-2
+                         text-xs
+                         mb-2"
+                >
+
+                  <span
+                    class="font-semibold
+                           <%=
+                             isSkip
+                               ? 'text-slate-600'
+                               : isRight
+                                 ? 'text-emerald-600'
+                                 : 'text-rose-600'
+                           %>"
+                  >
+
+                    <%= isSkip
+                      ? 'Not Attempted'
+                      : isRight
+                        ? 'Correct'
+                        : 'Wrong'
+                    %>
+
+                  </span>
+
+
+                  <% if (!isSkip) { %>
+
+                    <span class="text-slate-500">
+
+                      Your:
+
+                      <strong>
+                        <%= given %>
+                      </strong>
+
+                    </span>
+
+                  <% } %>
+
+
+                  <span class="text-slate-500">
+
+                    Correct:
+
+                    <strong class="text-emerald-600">
+                      <%= correct || '—' %>
+                    </strong>
+
+                  </span>
+
+                </div>
+
+
+                <% if (q.explanation) { %>
+
+                  <div
+                    class="bg-amber-50
+                           border border-amber-200
+                           rounded-lg
+                           px-3 py-2
+                           text-xs
+                           text-amber-800
+                           leading-relaxed"
+                  >
+
+                    <strong>
+                      Explanation:
+                    </strong>
+
+                    <span class="math-content">
+                      <%= q.explanation %>
+                    </span>
+
+                  </div>
+
+                <% } %>
+
+
+                <% if (
+                  q.subject ||
+                  q.topic ||
+                  q.subtopic ||
+                  q.difficulty
+                ) { %>
+
+                  <div
+                    class="flex
+                           flex-wrap
+                           gap-1.5
+                           mt-2"
+                  >
+
+                    <% if (q.subject) { %>
+
+                      <span
+                        class="text-[10px]
+                               bg-slate-100
+                               text-slate-600
+                               px-2 py-0.5
+                               rounded-full"
+                      >
+                        <%= q.subject %>
+                      </span>
+
+                    <% } %>
+
+
+                    <% if (q.topic) { %>
+
+                      <span
+                        class="text-[10px]
+                               bg-slate-100
+                               text-slate-600
+                               px-2 py-0.5
+                               rounded-full"
+                      >
+                        <%= q.topic %>
+                      </span>
+
+                    <% } %>
+
+
+                    <% if (q.subtopic) { %>
+
+                      <span
+                        class="text-[10px]
+                               bg-slate-100
+                               text-slate-600
+                               px-2 py-0.5
+                               rounded-full"
+                      >
+                        <%= q.subtopic %>
+                      </span>
+
+                    <% } %>
+
+
+                    <% if (q.difficulty) { %>
+
+                      <span
+                        class="text-[10px]
+                               bg-slate-100
+                               text-slate-600
+                               px-2 py-0.5
+                               rounded-full"
+                      >
+                        <%= q.difficulty %>
+                      </span>
+
+                    <% } %>
+
+                  </div>
+
+                <% } %>
+
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+        <% }); %>
+
+
+      </div>
+
+    </div>
+
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHART DATA — CORRECTED
+========================================================= -->
+
+<%
+const chartSubjectScores = result.subjectScores || {};
+const chartSubjectLabels = Object.keys(chartSubjectScores);
+
+const chartYourSubjectScores =
+  Object.values(chartSubjectScores).map(function(data){
+
+    const total =
+      Number(
+        data && data.total
+          ? data.total
+          : 0
+      );
+
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Number(
+      (
+        (
+          Number(data.marks || 0) /
+          total
+        ) *
+        100
+      ).toFixed(1)
+    );
+
+  });
+
+
+const hasTopperChart =
+  typeof topperResult !== 'undefined' &&
+  topperResult &&
+  Number(topperResult.score || 0) > 0 &&
+  Number(result.rank || 0) !== 1;
+
+
+const topperSubjectMap =
+  hasTopperChart &&
+  topperResult.subjectScores
+    ? topperResult.subjectScores
+    : {};
+
+
+const chartTopperSubjectScores =
+  chartSubjectLabels.map(function(subject){
+
+    const data =
+      topperSubjectMap[subject];
+
+    const total =
+      Number(
+        data && data.total
+          ? data.total
+          : 0
+      );
+
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Number(
+      (
+        (
+          Number(data.marks || 0) /
+          total
+        ) *
+        100
+      ).toFixed(1)
+    );
+
+  });
+
+
+const safeTrend =
+  typeof trend !== 'undefined' &&
+  Array.isArray(trend)
+    ? trend
+    : [];
+
+
+const chartTrendLabels =
+  safeTrend.map(function(_, index){
+    return 'T' + (index + 1);
+  });
+
+
+const chartTrendValues =
+  safeTrend.map(function(item){
+
+    const total =
+      Number(
+        item && item.totalMarks
+          ? item.totalMarks
+          : 0
+      );
+
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Number(
+      (
+        (
+          Number(item.score || 0) /
+          total
+        ) *
+        100
+      ).toFixed(1)
+    );
+
+  });
+
+
+const chartTimings =
+  result.questionTimings ||
+  {};
+
+
+const resultChartData = {
+
+  subject: {
+
+    enabled:
+      chartSubjectLabels.length > 0,
+
+    labels:
+      chartSubjectLabels,
+
+    yourScores:
+      chartYourSubjectScores,
+
+    topperEnabled:
+      Boolean(
+        hasTopperChart &&
+        topperResult.subjectScores
+      ),
+
+    topperScores:
+      chartTopperSubjectScores
+
+  },
+
+
+  trend: {
+
+    enabled:
+      safeTrend.length > 1,
+
+    labels:
+      chartTrendLabels,
+
+    values:
+      chartTrendValues
+
+  },
+
+
+  time: {
+
+    enabled:
+      Object.keys(chartTimings).length > 0,
+
+    labels:
+      Object.keys(chartTimings)
+        .map(function(_, index){
+          return 'Q' + (index + 1);
+        }),
+
+    values:
+      Object.values(chartTimings)
+        .map(function(value){
+          return Number(value || 0);
+        })
+
+  },
+
+
+  comparison: {
+
+    enabled:
+      Boolean(hasTopperChart),
+
+    studentScore:
+      Number(result.score || 0),
+
+    topperScore:
+      hasTopperChart
+        ? Number(topperResult.score || 0)
+        : 0,
+
+    totalMarks:
+      Number(result.totalMarks || 0)
+
+  }
+
+};
+%>
+
+
+<textarea
+  id="resultChartData"
+  class="hidden"
+  aria-hidden="true"
+><%= JSON.stringify(resultChartData) %></textarea>
+
+
+<script>
+
+document.addEventListener(
+  'DOMContentLoaded',
+  function () {
+
+
+    const dataElement =
+      document.getElementById(
+        'resultChartData'
+      );
+
+
+    if (!dataElement) {
+      return;
+    }
+
+
+    let chartData;
+
+
+    try {
+
+      chartData =
+        JSON.parse(
+          dataElement.value ||
+          '{}'
+        );
+
+    } catch (error) {
+
+      console.error(
+        'Result chart data parse failed:',
+        error
+      );
+
+      return;
+
+    }
+
+
+    if (
+      typeof Chart ===
+      'undefined'
+    ) {
+
+      console.error(
+        'Chart.js is not loaded.'
+      );
+
+      return;
+
+    }
+
+
+    /* =====================================================
+       SUBJECT CHART
+    ====================================================== */
+
+    const subjectCanvas =
+      document.getElementById(
+        'subjectChart'
+      );
+
+
+    if (
+      subjectCanvas &&
+      chartData.subject &&
+      chartData.subject.enabled
+    ) {
+
+      const datasets = [
+
+        {
+
+          label:
+            'Your %',
+
+          data:
+            chartData.subject
+              .yourScores,
+
+          backgroundColor:
+            'rgba(19,19,48,0.8)',
+
+          borderRadius:
+            5
+
+        }
+
+      ];
+
+
+      if (
+        chartData.subject
+          .topperEnabled
+      ) {
+
+        datasets.push({
+
+          label:
+            'Topper %',
+
+          data:
+            chartData.subject
+              .topperScores,
+
+          backgroundColor:
+            'rgba(245,158,11,0.75)',
+
+          borderRadius:
+            5
+
+        });
+
+      }
+
+
+      new Chart(
+        subjectCanvas,
+        {
+
+          type:
+            'bar',
+
+          data: {
+
+            labels:
+              chartData.subject
+                .labels,
+
+            datasets:
+              datasets
+
+          },
+
+          options: {
+
+            responsive:
+              true,
+
+            maintainAspectRatio:
+              true,
+
+            plugins: {
+
+              legend: {
+
+                position:
+                  'top',
+
+                labels: {
+
+                  boxWidth:
+                    12,
+
+                  font: {
+                    size: 11
+                  }
+
+                }
+
+              }
+
+            },
+
+            scales: {
+
+              y: {
+
+                beginAtZero:
+                  true,
+
+                max:
+                  100,
+
+                ticks: {
+
+                  callback:
+                    function(value){
+
+                      return (
+                        value +
+                        '%'
+                      );
+
+                    },
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              },
+
+
+              x: {
+
+                ticks: {
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       TREND CHART
+    ====================================================== */
+
+    const trendCanvas =
+      document.getElementById(
+        'trendChart'
+      );
+
+
+    if (
+      trendCanvas &&
+      chartData.trend &&
+      chartData.trend.enabled
+    ) {
+
+      new Chart(
+        trendCanvas,
+        {
+
+          type:
+            'line',
+
+          data: {
+
+            labels:
+              chartData.trend.labels,
+
+            datasets: [
+
+              {
+
+                label:
+                  'Score %',
+
+                data:
+                  chartData.trend.values,
+
+                borderColor:
+                  '#131330',
+
+                backgroundColor:
+                  'rgba(19,19,48,0.08)',
+
+                tension:
+                  0.4,
+
+                fill:
+                  true,
+
+                pointRadius:
+                  4,
+
+                borderWidth:
+                  2
+
+              }
+
+            ]
+
+          },
+
+          options: {
+
+            responsive:
+              true,
+
+            maintainAspectRatio:
+              true,
+
+            plugins: {
+
+              legend: {
+                display:
+                  false
+              }
+
+            },
+
+            scales: {
+
+              y: {
+
+                beginAtZero:
+                  true,
+
+                max:
+                  100,
+
+                ticks: {
+
+                  callback:
+                    function(value){
+
+                      return (
+                        value +
+                        '%'
+                      );
+
+                    },
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              },
+
+
+              x: {
+
+                ticks: {
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       TIME CHART
+    ====================================================== */
+
+    const timeCanvas =
+      document.getElementById(
+        'timeChart'
+      );
+
+
+    if (
+      timeCanvas &&
+      chartData.time &&
+      chartData.time.enabled
+    ) {
+
+      new Chart(
+        timeCanvas,
+        {
+
+          type:
+            'bar',
+
+          data: {
+
+            labels:
+              chartData.time.labels,
+
+            datasets: [
+
+              {
+
+                label:
+                  'Seconds',
+
+                data:
+                  chartData.time.values,
+
+                backgroundColor:
+                  'rgba(16,185,129,0.7)',
+
+                borderRadius:
+                  4
+
+              }
+
+            ]
+
+          },
+
+          options: {
+
+            responsive:
+              true,
+
+            maintainAspectRatio:
+              true,
+
+            plugins: {
+
+              legend: {
+                display:
+                  false
+              }
+
+            },
+
+            scales: {
+
+              y: {
+
+                beginAtZero:
+                  true,
+
+                ticks: {
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              },
+
+
+              x: {
+
+                ticks: {
+
+                  font: {
+                    size: 10
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       TOPPER COMPARISON
+    ====================================================== */
+
+    const comparisonCanvas =
+      document.getElementById(
+        'comparisonChart'
+      );
+
+
+    if (
+      comparisonCanvas &&
+      chartData.comparison &&
+      chartData.comparison.enabled
+    ) {
+
+      const studentScore =
+        Number(
+          chartData.comparison
+            .studentScore ||
+          0
+        );
+
+
+      const topperScore =
+        Number(
+          chartData.comparison
+            .topperScore ||
+          0
+        );
+
+
+      const totalMarks =
+        Number(
+          chartData.comparison
+            .totalMarks ||
+          0
+        );
+
+
+      const remaining =
+        Math.max(
+          0,
+          totalMarks -
+          Math.max(
+            studentScore,
+            topperScore
+          )
+        );
+
+
+      new Chart(
+        comparisonCanvas,
+        {
+
+          type:
+            'doughnut',
+
+          data: {
+
+            labels: [
+
+              'Your Score',
+
+              'Topper Score',
+
+              'Remaining'
+
+            ],
+
+            datasets: [
+
+              {
+
+                data: [
+
+                  studentScore,
+
+                  topperScore,
+
+                  remaining
+
+                ],
+
+                backgroundColor: [
+
+                  'rgba(19,19,48,0.8)',
+
+                  'rgba(245,158,11,0.8)',
+
+                  'rgba(226,232,240,0.8)'
+
+                ],
+
+                borderWidth:
+                  0
+
+              }
+
+            ]
+
+          },
+
+          options: {
+
+            responsive:
+              true,
+
+            maintainAspectRatio:
+              true,
+
+            cutout:
+              '60%',
+
+            plugins: {
+
+              legend: {
+
+                position:
+                  'bottom',
+
+                labels: {
+
+                  boxWidth:
+                    12,
+
+                  font: {
+                    size: 11
+                  }
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+      );
+
+    }
+
+  }
+);
+
+</script>
+
+
+</body>
+</html>

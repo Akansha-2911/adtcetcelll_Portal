@@ -1,0 +1,16 @@
+SPVN CET Portal - Final Validation
+
+Validated:
+- npm run verify: 9/9 passed
+- JavaScript syntax: 43/43 passed
+- EJS compilation: 52/52 passed
+- Sidebar simplified: Tests is the single primary test-management entry
+- Legacy /admin/tests/workflow redirects to /admin/tests
+- Question Bank includes Upload Questions
+- Upload Test routes and review/details/marking flow present
+- Smart Scan / Upload Questions review can create Draft Test and continue to marking scheme
+- One Question Per Page hybrid extractor includes local PDF-text fast path and vision fallback
+- Darker text and green/golden/blue UI accents present
+- Existing multi-subject backend compatibility retained
+
+External services such as MongoDB Atlas and paid OCR APIs require valid network access, credentials and quota at runtime.

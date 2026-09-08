@@ -1,0 +1,58 @@
+{
+  "name": "cet-exam-system",
+  "version": "1.0.0",
+  "description": "CET-style Online Examination System for XYZ College",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node seeders/seed.js",
+    "seed:fresh": "node seeders/seed.js",
+    "verify": "node scripts/verify.js",
+    "preflight": "node scripts/preflight.js",
+    "check:all": "npm run verify && npm run preflight",
+    "start:production": "NODE_ENV=production node app.js",
+    "prod:check": "node scripts/productionCheck.js",
+    "db:indexes": "node scripts/ensureIndexes.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.14.0",
+    "@napi-rs/canvas": "^1.0.8",
+    "adm-zip": "^0.6.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
+    "connect-flash": "^0.1.1",
+    "connect-mongo": "^6.0.0",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.3",
+    "express-session": "^1.17.3",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "katex": "^0.16.47",
+    "mammoth": "^1.12.2",
+    "method-override": "^3.0.0",
+    "mongoose": "^9.7.2",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^7.1.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108",
+    "pdfkit": "^0.14.0",
+    "sharp": "^0.34.5",
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "allowScripts": {
+    "@google/genai@2.14.0": true,
+    "protobufjs@7.6.5": true,
+    "sharp@0.34.5": true
+  },
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=10"
+  }
+}

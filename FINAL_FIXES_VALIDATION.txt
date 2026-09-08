@@ -1,0 +1,23 @@
+SPVN CET Portal - Final Fix Validation
+Date: 2026-09-01
+
+Implemented:
+- ADT full logo retained on login pages: /adt-baramati-logo.jpeg
+- Compact ADT mark used in admin/student compact navigation areas: /adt-baramati-mark.png
+- Dashboard/document scrolling fixed for mouse wheel, trackpad and keyboard scrolling
+- Removed unsafe global overflow override that broke normal card/modal clipping
+- EJS syntax compile checked for all 54 EJS templates
+- Create Test hierarchy fixed: Course -> Subject -> Topic -> Subtopic -> Difficulty -> No. of Questions
+- Topic hierarchy merges Syllabus Manager and actual Question Bank topic/subtopic values
+- Subtopics load after Topic selection
+- Added No. of Questions selector: 5, 10, 15, 20, 25, 30, 40, 50
+- Selected question count remains persistent across hierarchy/page changes
+- Create Test JavaScript contains no EJS tags inside the script block
+- Upload Test remains available directly from admin sidebar
+
+Validation:
+- npm run verify: 9/9 passed
+- EJS compile: 54/54 passed
+- controllers/adminController.js node syntax: PASS
+- create-test inline JavaScript node syntax: PASS
+- ADT logo files present and valid image files

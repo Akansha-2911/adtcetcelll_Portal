@@ -1,0 +1,1293 @@
+<%- include('../partials/head') %>
+
+<%- include('../partials/navbar-student') %>
+
+
+<main class="min-h-screen bg-slate-50">
+
+  <div class="max-w-6xl mx-auto px-4 lg:px-6 py-8">
+
+    <%- include('../partials/flash') %>
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="mb-6">
+
+      <p class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">
+        Student Self Practice
+      </p>
+
+      <h1 class="text-2xl font-bold text-slate-900">
+        Practice Test
+      </h1>
+
+      <p class="text-sm text-slate-500 mt-1 max-w-2xl">
+        Build your own practice test using random questions from the Question Bank.
+        Practice scores do not affect official test rank, percentile or result.
+      </p>
+
+    </div>
+
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+        <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black">1</span>
+        <div><p class="text-xs font-bold text-slate-900">Choose Subject</p><p class="text-[11px] text-slate-500 mt-0.5">Physics, Chemistry, Maths or Biology</p></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+        <span class="w-9 h-9 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center font-black">2</span>
+        <div><p class="text-xs font-bold text-slate-900">Narrow the Syllabus</p><p class="text-[11px] text-slate-500 mt-0.5">Topic, subtopic and difficulty</p></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+        <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black">3</span>
+        <div><p class="text-xs font-bold text-slate-900">Start Practice</p><p class="text-[11px] text-slate-500 mt-0.5">Pick question count and begin</p></div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-[1.1fr_.9fr] gap-6">
+
+
+      <!-- ==================================================
+           PRACTICE BUILDER
+      =================================================== -->
+
+      <form
+        id="practiceBuilderForm"
+        action="/student/practice/start"
+        method="POST"
+        class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6"
+      >
+
+
+        <div class="flex items-center gap-3 mb-6">
+
+          <div
+            class="w-11 h-11 rounded-xl
+                   bg-indigo-50
+                   flex items-center justify-center
+                   text-xl"
+          >
+            🎯
+          </div>
+
+
+          <div>
+
+            <h2 class="font-bold text-slate-900">
+              Build Practice Test
+            </h2>
+
+            <p class="text-xs text-slate-500">
+              Questions will be selected randomly from Question Bank.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="grid sm:grid-cols-2 gap-4">
+
+
+          <!-- =================================================
+               SUBJECT
+          ================================================== -->
+
+          <div>
+
+            <label
+              for="practiceSubject"
+              class="block text-xs font-bold text-slate-600 mb-1.5"
+            >
+              Subject <span class="text-rose-500">*</span>
+            </label>
+
+
+            <select
+              id="practiceSubject"
+              name="subject"
+              required
+              class="w-full border border-slate-200
+                     rounded-xl px-3 py-3 text-sm
+                     bg-white text-slate-800
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-indigo-100
+                     focus:border-indigo-400"
+            >
+
+              <option value="">
+                Select Subject
+              </option>
+
+
+              <% (subjects || []).forEach(function(subject){ %>
+
+                <option value="<%= subject %>">
+                  <%= subject %>
+                </option>
+
+              <% }); %>
+
+            </select>
+
+          </div>
+
+
+          <!-- =================================================
+               TOPIC
+          ================================================== -->
+
+          <div>
+
+            <label
+              for="practiceTopic"
+              class="block text-xs font-bold text-slate-600 mb-1.5"
+            >
+              Topic
+            </label>
+
+
+            <select
+              id="practiceTopic"
+              name="topic"
+              disabled
+              class="w-full border border-slate-200
+                     rounded-xl px-3 py-3 text-sm
+                     bg-white text-slate-800
+                     disabled:bg-slate-100
+                     disabled:text-slate-400
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-indigo-100
+                     focus:border-indigo-400"
+            >
+
+              <option value="">
+                All Topics
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- =================================================
+               SUBTOPIC
+          ================================================== -->
+
+          <div>
+
+            <label
+              for="practiceSubtopic"
+              class="block text-xs font-bold text-slate-600 mb-1.5"
+            >
+              Subtopic
+              <span class="font-normal text-slate-400">
+                (Optional)
+              </span>
+            </label>
+
+
+            <select
+              id="practiceSubtopic"
+              name="subtopic"
+              disabled
+              class="w-full border border-slate-200
+                     rounded-xl px-3 py-3 text-sm
+                     bg-white text-slate-800
+                     disabled:bg-slate-100
+                     disabled:text-slate-400
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-indigo-100
+                     focus:border-indigo-400"
+            >
+
+              <option value="">
+                All Subtopics
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- =================================================
+               DIFFICULTY
+          ================================================== -->
+
+          <div>
+
+            <label
+              for="practiceDifficulty"
+              class="block text-xs font-bold text-slate-600 mb-1.5"
+            >
+              Difficulty
+            </label>
+
+
+            <select
+              id="practiceDifficulty"
+              name="difficulty"
+              class="w-full border border-slate-200
+                     rounded-xl px-3 py-3 text-sm
+                     bg-white text-slate-800
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-indigo-100
+                     focus:border-indigo-400"
+            >
+
+              <option value="All">
+                All Difficulties
+              </option>
+
+              <option value="Easy">
+                Easy
+              </option>
+
+              <option value="Medium">
+                Medium
+              </option>
+
+              <option value="Hard">
+                Hard
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- =================================================
+               NUMBER OF QUESTIONS
+          ================================================== -->
+
+          <div class="sm:col-span-2">
+
+            <div class="flex items-center justify-between gap-3 mb-1.5">
+
+              <label
+                for="practiceQuestionCount"
+                class="block text-xs font-bold text-slate-600"
+              >
+                No. of Questions
+              </label>
+
+
+              <span
+                id="availableQuestionCount"
+                class="text-xs font-semibold text-slate-400"
+              >
+                Select subject to check availability
+              </span>
+
+            </div>
+
+
+            <select
+              id="practiceQuestionCount"
+              name="questionCount"
+              class="w-full border border-slate-200
+                     rounded-xl px-3 py-3 text-sm
+                     bg-white text-slate-800
+                     focus:outline-none
+                     focus:ring-2
+                     focus:ring-indigo-100
+                     focus:border-indigo-400"
+            >
+
+              <option value="5">
+                5 Questions
+              </option>
+
+              <option value="10">
+                10 Questions
+              </option>
+
+              <option value="15">
+                15 Questions
+              </option>
+
+              <option value="20" selected>
+                20 Questions
+              </option>
+
+              <option value="25">
+                25 Questions
+              </option>
+
+              <option value="30">
+                30 Questions
+              </option>
+
+              <option value="40">
+                40 Questions
+              </option>
+
+              <option value="50">
+                50 Questions
+              </option>
+
+              <option value="75">
+                75 Questions
+              </option>
+
+              <option value="100">
+                100 Questions
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             AVAILABILITY INFORMATION
+        ================================================== -->
+
+        <div
+          id="questionAvailabilityBox"
+          class="hidden mt-5 rounded-xl
+                 border border-indigo-100
+                 bg-indigo-50
+                 px-4 py-3"
+        >
+
+          <div class="flex items-start gap-3">
+
+            <div
+              class="w-8 h-8 rounded-lg
+                     bg-white
+                     flex items-center justify-center
+                     shrink-0"
+            >
+              📚
+            </div>
+
+
+            <div>
+
+              <p class="text-sm font-bold text-indigo-900">
+                Question Bank Availability
+              </p>
+
+              <p
+                id="questionAvailabilityMessage"
+                class="text-xs text-indigo-700 mt-0.5"
+              >
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             RANDOM INFO
+        ================================================== -->
+
+        <div
+          class="mt-5 rounded-xl
+                 border border-emerald-100
+                 bg-emerald-50
+                 px-4 py-3"
+        >
+
+          <div class="flex gap-3">
+
+            <div class="text-lg">
+              🔀
+            </div>
+
+
+            <div>
+
+              <p class="text-sm font-semibold text-emerald-900">
+                Random Question Selection
+              </p>
+
+              <p class="text-xs text-emerald-700 mt-0.5 leading-relaxed">
+                Every time you start a new practice test, matching questions are
+                randomly selected from the Question Bank. Refreshing the same
+                attempt will keep the same questions.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+             START BUTTON
+        ================================================== -->
+
+        <button
+          id="startPracticeButton"
+          type="submit"
+          class="mt-6 w-full
+                 bg-slate-900
+                 text-white
+                 py-3
+                 rounded-xl
+                 font-bold
+                 hover:bg-slate-800
+                 disabled:bg-slate-300
+                 disabled:cursor-not-allowed
+                 transition-colors"
+        >
+          Start Practice Test →
+        </button>
+
+
+      </form>
+
+
+      <!-- ==================================================
+           RECENT PRACTICE
+      =================================================== -->
+
+      <div
+        class="bg-white
+               border border-slate-200
+               rounded-2xl
+               shadow-sm
+               p-6"
+      >
+
+        <div
+          class="flex items-center justify-between
+                 gap-3 mb-4"
+        >
+
+          <div>
+
+            <h2 class="font-bold text-slate-900">
+              Recent Practice
+            </h2>
+
+            <p class="text-xs text-slate-500 mt-0.5">
+              Your latest self-practice attempts.
+            </p>
+
+          </div>
+
+
+          <% if ((history || []).length) { %>
+
+            <span
+              class="px-2.5 py-1 rounded-full
+                     bg-slate-100
+                     text-xs
+                     font-bold text-slate-600"
+            >
+              <%= history.length %>
+            </span>
+
+          <% } %>
+
+        </div>
+
+
+        <% if (!(history || []).length) { %>
+
+          <div class="py-14 text-center">
+
+            <div
+              class="w-12 h-12 rounded-full
+                     bg-slate-50
+                     flex items-center justify-center
+                     mx-auto mb-3
+                     text-xl"
+            >
+              📝
+            </div>
+
+            <p class="text-sm font-semibold text-slate-500">
+              No practice attempts yet
+            </p>
+
+            <p class="text-xs text-slate-400 mt-1">
+              Create your first Practice Test.
+            </p>
+
+          </div>
+
+        <% } %>
+
+
+        <div class="space-y-3">
+
+
+          <% (history || []).forEach(function(h){
+
+            const accuracy =
+              Number(h.questionCount || 0) > 0
+                ? Math.round(
+                    (
+                      Number(h.correct || 0) /
+                      Number(h.questionCount)
+                    ) * 100
+                  )
+                : 0;
+
+
+            const accuracyClass =
+              accuracy >= 70
+                ? 'text-emerald-600 bg-emerald-50'
+                : accuracy >= 40
+                  ? 'text-amber-600 bg-amber-50'
+                  : 'text-rose-600 bg-rose-50';
+
+          %>
+
+
+            <a
+              href="/student/practice/<%= h._id %>/result"
+              class="block
+                     border border-slate-100
+                     rounded-xl
+                     p-4
+                     hover:bg-slate-50
+                     hover:border-slate-200
+                     transition-colors"
+            >
+
+
+              <div class="flex justify-between gap-3">
+
+
+                <div class="min-w-0">
+
+                  <p
+                    class="font-semibold
+                           text-sm
+                           text-slate-800
+                           truncate"
+                  >
+                    <%= h.subject %>
+
+                    <% if (h.topic) { %>
+                      <span class="text-slate-400">
+                        ·
+                      </span>
+                      <%= h.topic %>
+                    <% } %>
+
+                  </p>
+
+
+                  <% if (h.subtopic) { %>
+
+                    <p class="text-xs text-slate-500 mt-1 truncate">
+                      <%= h.subtopic %>
+                    </p>
+
+                  <% } %>
+
+
+                  <div
+                    class="flex flex-wrap
+                           items-center
+                           gap-x-2 gap-y-1
+                           text-xs
+                           text-slate-400
+                           mt-2"
+                  >
+
+                    <span>
+                      <%= h.questionCount %> questions
+                    </span>
+
+                    <span>•</span>
+
+                    <span>
+                      <%= h.difficulty || 'All' %>
+                    </span>
+
+
+                    <% if (h.submittedAt) { %>
+
+                      <span>•</span>
+
+                      <span>
+                        <%= new Date(h.submittedAt).toLocaleDateString(
+                          'en-IN',
+                          {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          }
+                        ) %>
+                      </span>
+
+                    <% } %>
+
+                  </div>
+
+                </div>
+
+
+                <div class="text-right shrink-0">
+
+                  <div
+                    class="inline-flex
+                           items-center
+                           justify-center
+                           rounded-lg
+                           px-2.5 py-1
+                           font-bold
+                           text-sm
+                           <%= accuracyClass %>"
+                  >
+                    <%= accuracy %>%
+                  </div>
+
+
+                  <p class="text-[11px] text-slate-400 mt-1">
+                    <%= h.correct || 0 %> correct
+                  </p>
+
+                </div>
+
+              </div>
+
+            </a>
+
+          <% }); %>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+
+<script>
+
+(function () {
+
+  const subjectEl =
+    document.getElementById(
+      'practiceSubject'
+    );
+
+  const topicEl =
+    document.getElementById(
+      'practiceTopic'
+    );
+
+  const subtopicEl =
+    document.getElementById(
+      'practiceSubtopic'
+    );
+
+  const difficultyEl =
+    document.getElementById(
+      'practiceDifficulty'
+    );
+
+  const questionCountEl =
+    document.getElementById(
+      'practiceQuestionCount'
+    );
+
+  const availableCountEl =
+    document.getElementById(
+      'availableQuestionCount'
+    );
+
+  const availabilityBox =
+    document.getElementById(
+      'questionAvailabilityBox'
+    );
+
+  const availabilityMessage =
+    document.getElementById(
+      'questionAvailabilityMessage'
+    );
+
+  const startButton =
+    document.getElementById(
+      'startPracticeButton'
+    );
+
+
+  /* =========================================================
+     RESET TOPICS
+  ========================================================= */
+
+  function resetTopics() {
+
+    topicEl.innerHTML =
+      '<option value="">All Topics</option>';
+
+    topicEl.disabled =
+      true;
+
+  }
+
+
+  /* =========================================================
+     RESET SUBTOPICS
+  ========================================================= */
+
+  function resetSubtopics() {
+
+    subtopicEl.innerHTML =
+      '<option value="">All Subtopics</option>';
+
+    subtopicEl.disabled =
+      true;
+
+  }
+
+
+  /* =========================================================
+     LOAD TOPICS
+  ========================================================= */
+
+  async function loadPracticeTopics() {
+
+    const subject =
+      subjectEl.value;
+
+
+    resetTopics();
+
+    resetSubtopics();
+
+
+    if (!subject) {
+
+      updateAvailableCount();
+
+      return;
+
+    }
+
+
+    topicEl.innerHTML =
+      '<option value="">Loading topics...</option>';
+
+
+    try {
+
+      const response =
+        await fetch(
+          '/student/practice/topics?subject=' +
+          encodeURIComponent(
+            subject
+          )
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          'Failed to load topics.'
+        );
+
+      }
+
+
+      const rows =
+        await response.json();
+
+
+      topicEl.innerHTML =
+        '<option value="">All Topics</option>';
+
+
+      rows.forEach(
+        function (row) {
+
+          if (
+            !row ||
+            !row.name
+          ) {
+            return;
+          }
+
+
+          const option =
+            document.createElement(
+              'option'
+            );
+
+
+          option.value =
+            row.name;
+
+
+          option.textContent =
+            row.name;
+
+
+          topicEl.appendChild(
+            option
+          );
+
+        }
+      );
+
+
+      topicEl.disabled =
+        false;
+
+
+    } catch (error) {
+
+      console.error(
+        'Unable to load Practice topics:',
+        error
+      );
+
+
+      topicEl.innerHTML =
+        '<option value="">All Topics</option>';
+
+
+      topicEl.disabled =
+        false;
+
+    }
+
+
+    updateAvailableCount();
+
+  }
+
+
+  /* =========================================================
+     LOAD SUBTOPICS
+  ========================================================= */
+
+  async function loadPracticeSubtopics() {
+
+    const subject =
+      subjectEl.value;
+
+    const topic =
+      topicEl.value;
+
+
+    resetSubtopics();
+
+
+    if (
+      !subject ||
+      !topic
+    ) {
+
+      updateAvailableCount();
+
+      return;
+
+    }
+
+
+    subtopicEl.innerHTML =
+      '<option value="">Loading subtopics...</option>';
+
+
+    try {
+
+      const params =
+        new URLSearchParams({
+
+          subject:
+            subject,
+
+          topic:
+            topic
+
+        });
+
+
+      const response =
+        await fetch(
+          '/student/practice/subtopics?' +
+          params.toString()
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          'Failed to load subtopics.'
+        );
+
+      }
+
+
+      const rows =
+        await response.json();
+
+
+      subtopicEl.innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      rows.forEach(
+        function (subtopic) {
+
+          if (!subtopic) {
+            return;
+          }
+
+
+          const option =
+            document.createElement(
+              'option'
+            );
+
+
+          option.value =
+            subtopic;
+
+
+          option.textContent =
+            subtopic;
+
+
+          subtopicEl.appendChild(
+            option
+          );
+
+        }
+      );
+
+
+      subtopicEl.disabled =
+        rows.length === 0;
+
+
+    } catch (error) {
+
+      console.error(
+        'Unable to load Practice subtopics:',
+        error
+      );
+
+
+      subtopicEl.innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      subtopicEl.disabled =
+        true;
+
+    }
+
+
+    updateAvailableCount();
+
+  }
+
+
+  /* =========================================================
+     AVAILABLE QUESTION COUNT
+  ========================================================= */
+
+  async function updateAvailableCount() {
+
+    const subject =
+      subjectEl.value;
+
+    const topic =
+      topicEl.value;
+
+    const subtopic =
+      subtopicEl.value;
+
+    const difficulty =
+      difficultyEl.value;
+
+
+    if (!subject) {
+
+      availableCountEl.textContent =
+        'Select subject to check availability';
+
+
+      availabilityBox.classList.add(
+        'hidden'
+      );
+
+
+      startButton.disabled =
+        false;
+
+
+      return;
+
+    }
+
+
+    availableCountEl.textContent =
+      'Checking Question Bank...';
+
+
+    try {
+
+      const params =
+        new URLSearchParams({
+
+          subject:
+            subject,
+
+          topic:
+            topic,
+
+          subtopic:
+            subtopic,
+
+          difficulty:
+            difficulty
+
+        });
+
+
+      const response =
+        await fetch(
+          '/student/practice/count?' +
+          params.toString()
+        );
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          'Count request failed.'
+        );
+
+      }
+
+
+      const data =
+        await response.json();
+
+
+      const count =
+        Number(
+          data.count ||
+          0
+        );
+
+
+      availableCountEl.textContent =
+        count === 1
+          ? '1 question available'
+          : count +
+            ' questions available';
+
+
+      availabilityBox.classList.remove(
+        'hidden'
+      );
+
+
+      if (
+        count <= 0
+      ) {
+
+        availabilityMessage.textContent =
+          'No matching questions are available in Question Bank. Change the selected filters.';
+
+
+        availabilityBox.classList.remove(
+          'border-indigo-100',
+          'bg-indigo-50'
+        );
+
+
+        availabilityBox.classList.add(
+          'border-rose-200',
+          'bg-rose-50'
+        );
+
+
+        availabilityMessage.className =
+          'text-xs text-rose-700 mt-0.5';
+
+
+        startButton.disabled =
+          true;
+
+
+        return;
+
+      }
+
+
+      availabilityBox.classList.remove(
+        'border-rose-200',
+        'bg-rose-50'
+      );
+
+
+      availabilityBox.classList.add(
+        'border-indigo-100',
+        'bg-indigo-50'
+      );
+
+
+      availabilityMessage.className =
+        'text-xs text-indigo-700 mt-0.5';
+
+
+      const requested =
+        Number(
+          questionCountEl.value ||
+          20
+        );
+
+
+      if (
+        requested >
+        count
+      ) {
+
+        availabilityMessage.textContent =
+          'You selected ' +
+          requested +
+          ' questions, but only ' +
+          count +
+          ' matching question(s) are available. The practice test will use all ' +
+          count +
+          ' available questions.';
+
+      } else {
+
+        availabilityMessage.textContent =
+          requested +
+          ' random question(s) will be selected from ' +
+          count +
+          ' matching Question Bank question(s).';
+
+      }
+
+
+      startButton.disabled =
+        false;
+
+
+    } catch (error) {
+
+      console.error(
+        'Unable to count Practice questions:',
+        error
+      );
+
+
+      availableCountEl.textContent =
+        'Unable to check availability';
+
+
+      availabilityBox.classList.add(
+        'hidden'
+      );
+
+
+      /*
+       * Backend still validates availability,
+       * therefore do not permanently block submit
+       * just because the count API failed.
+       */
+
+      startButton.disabled =
+        false;
+
+    }
+
+  }
+
+
+  /* =========================================================
+     EVENTS
+  ========================================================= */
+
+  subjectEl.addEventListener(
+    'change',
+    loadPracticeTopics
+  );
+
+
+  topicEl.addEventListener(
+    'change',
+    loadPracticeSubtopics
+  );
+
+
+  subtopicEl.addEventListener(
+    'change',
+    updateAvailableCount
+  );
+
+
+  difficultyEl.addEventListener(
+    'change',
+    updateAvailableCount
+  );
+
+
+  questionCountEl.addEventListener(
+    'change',
+    updateAvailableCount
+  );
+
+
+  /* =========================================================
+     PREVENT DOUBLE SUBMIT
+  ========================================================= */
+
+  const form =
+    document.getElementById(
+      'practiceBuilderForm'
+    );
+
+
+  form.addEventListener(
+    'submit',
+    function () {
+
+      if (
+        startButton.disabled
+      ) {
+        return;
+      }
+
+
+      startButton.disabled =
+        true;
+
+
+      startButton.textContent =
+        'Creating Random Practice Test...';
+
+    }
+  );
+
+
+})();
+
+</script>
+
+
+</body>
+</html>

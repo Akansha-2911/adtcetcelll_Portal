@@ -1,0 +1,566 @@
+<%- include('../partials/head') %>
+
+<div class="flex min-h-screen bg-[#f7f9fb]">
+  <%- include('../partials/sidebar-admin') %>
+
+  <main class="lg:ml-64 flex-1 min-w-0 min-h-screen">
+    <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+      <div class="flex items-center gap-4">
+        <button type="button" onclick="openSidebar()" class="lg:hidden text-slate-600">☰</button>
+        <nav class="spvn-ui-topnav flex-1">
+          <a href="/admin/organization">Organization</a>
+          <a href="/admin/tests" class="active">Test Management</a>
+          <a href="/admin/results">Reports</a>
+          <a href="/admin/analytics">Analytics</a>
+          <a href="/admin/monitor">Monitor</a>
+          <a href="/admin/topics">Syllabus</a>
+        </nav>
+      </div>
+    </header>
+
+    <%- include('../partials/test-management-tabs', { activeTab:'create' }) %>
+
+    <div class="p-5 lg:p-8 max-w-7xl mx-auto">
+      <%- include('../partials/flash') %>
+
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
+        <div>
+          <p class="spvn-kicker">QUESTION BANK</p>
+          <h1 class="spvn-ui-heading">Create Test</h1>
+          <p class="text-sm text-slate-700 mt-1">
+            Select questions only. Next, configure the marking scheme and save the test as Draft.
+            Test details and batch assignment are entered only when you publish.
+          </p>
+        </div>
+        <span class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+          DRAFT CREATION
+        </span>
+      </div>
+
+      <form action="/admin/tests" method="POST" id="createDraftForm" class="space-y-5">
+        <div class="spvn-ui-panel p-5">
+          <label class="block text-sm font-bold text-slate-900 mb-2">
+            Draft Name <span class="font-normal text-slate-500">(optional)</span>
+          </label>
+          <input
+            name="title"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-950"
+            placeholder="e.g. Physics Chapter Test Draft"
+          >
+        </div>
+
+        <!-- Safe EJS -> DOM values. No EJS is embedded inside JavaScript. -->
+        <input type="hidden" id="initialCourseValue" value="<%= filterCourse || '' %>">
+        <input type="hidden" id="initialSubjectValue" value="<%= filterSubject || '' %>">
+
+        <div class="spvn-ui-panel overflow-hidden">
+          <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-end gap-3">
+            <div class="flex-1">
+              <h2 class="font-bold text-slate-950">Select Questions from Question Bank</h2>
+              <p class="text-xs text-slate-600 mt-1">
+                Hierarchy: Course → Subject → Topic → Subtopic → Difficulty → No. of Questions.
+                Selected questions stay selected while filters or pages change.
+              </p>
+            </div>
+            <div class="text-sm font-bold text-emerald-700">
+              <span id="selectedCount">0</span> selected
+            </div>
+          </div>
+
+          <div class="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3 border-b border-slate-200 bg-slate-50">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">1. Course</label>
+              <select id="ctCourse" class="spvn-ui-filter">
+                <option value="">Select Course</option>
+                <% COURSES.forEach(function(course){ %>
+                  <option value="<%= course %>" <%= filterCourse === course ? 'selected' : '' %>><%= course %></option>
+                <% }); %>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">2. Subject</label>
+              <select id="ctSubject" class="spvn-ui-filter" disabled>
+                <option value="">Select Subject</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">3. Topic</label>
+              <select id="ctTopic" class="spvn-ui-filter" disabled>
+                <option value="">All Topics</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">4. Subtopic</label>
+              <select id="ctSubtopic" class="spvn-ui-filter" disabled>
+                <option value="">All Subtopics</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">5. Difficulty</label>
+              <select id="ctDifficulty" class="spvn-ui-filter">
+                <option value="">All Difficulty</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">6. No. of Questions</label>
+              <select id="ctLimit" class="spvn-ui-filter">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="25">25 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="40">40 Questions</option>
+                <option value="50">50 Questions</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1.5">Page</label>
+              <div class="spvn-ui-filter flex items-center justify-center text-xs font-semibold text-slate-600">
+                <span id="ctPageInfo">Page 0 of 0</span>
+              </div>
+            </div>
+
+            <div class="sm:col-span-2 xl:col-span-7 flex gap-2">
+              <input
+                id="ctSearch"
+                type="search"
+                class="spvn-ui-filter flex-1"
+                placeholder="Search question, topic or subtopic..."
+              >
+              <button type="button" id="ctSearchBtn" class="spvn-ui-btn spvn-ui-btn-blue px-5">Search</button>
+            </div>
+          </div>
+
+          <div id="hierarchyStatus" class="px-4 py-2.5 border-b border-slate-200 bg-white text-xs font-semibold text-slate-600">
+            Select a Course and Subject.
+          </div>
+
+          <div id="selectedQuestionTray" class="hidden m-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+            <div class="flex items-center justify-between gap-3">
+              <strong class="text-sm text-emerald-900">Selected Questions</strong>
+              <button type="button" id="clearSelected" class="text-xs font-bold text-rose-600 hover:text-rose-800">Clear all</button>
+            </div>
+            <div id="selectedQuestionChips" class="flex flex-wrap gap-1.5 mt-2"></div>
+          </div>
+
+          <div id="ctQuestionList" class="min-h-[320px]">
+            <div class="p-12 text-center text-sm text-slate-500">
+              Select a Course and Subject to load questions.
+            </div>
+          </div>
+
+          <div class="px-4 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
+            <span id="ctLoadStatus" class="text-xs font-semibold text-slate-600">Ready</span>
+            <div class="flex items-center gap-2">
+              <button type="button" id="ctPrevBtn" class="spvn-ui-btn spvn-ui-btn-soft" disabled>Previous</button>
+              <button type="button" id="ctNextBtn" class="spvn-ui-btn spvn-ui-btn-soft" disabled>Next</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="selectedQuestionInputs" class="hidden"></div>
+
+        <div class="flex justify-end flex-wrap gap-3">
+          <a href="/admin/tests" class="spvn-ui-btn spvn-ui-btn-soft">Cancel</a>
+          <button type="submit" class="spvn-ui-btn spvn-ui-btn-primary px-7">Next: Marking Scheme →</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  const selectedQuestions = new Map();
+  let currentQuestionPage = 1;
+  let currentQuestionTotalPages = 0;
+  let searchTimer = null;
+  let currentTopicRows = [];
+
+  function escHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(character) {
+      const map = {
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#039;'
+      };
+      return map[character];
+    });
+  }
+
+  function setHierarchyStatus(message) {
+    const element = document.getElementById('hierarchyStatus');
+    if (element) element.textContent = message;
+  }
+
+  function renderQuestionPlaceholder(message) {
+    document.getElementById('ctQuestionList').innerHTML =
+      '<div class="p-12 text-center text-sm text-slate-500">' + escHtml(message) + '</div>';
+    document.getElementById('ctLoadStatus').textContent = message;
+    document.getElementById('ctPageInfo').textContent = 'Page 0 of 0';
+    document.getElementById('ctPrevBtn').disabled = true;
+    document.getElementById('ctNextBtn').disabled = true;
+  }
+
+  function syncSelected() {
+    const tray = document.getElementById('selectedQuestionTray');
+    const chips = document.getElementById('selectedQuestionChips');
+    const inputs = document.getElementById('selectedQuestionInputs');
+
+    document.getElementById('selectedCount').textContent = selectedQuestions.size;
+    tray.classList.toggle('hidden', selectedQuestions.size === 0);
+
+    chips.innerHTML = Array.from(selectedQuestions.values()).map(function(question) {
+      return '<button type="button" data-remove="' + escHtml(question.id) +
+        '" class="text-xs bg-white border border-emerald-200 text-emerald-800 rounded-full px-2 py-1">' +
+        escHtml(question.subject || 'Question') + ' · ' +
+        escHtml(String(question.question || '').slice(0, 32)) + ' ×</button>';
+    }).join('');
+
+    inputs.innerHTML = Array.from(selectedQuestions.keys()).map(function(id) {
+      return '<input type="hidden" name="questionIds" value="' + escHtml(id) + '">';
+    }).join('');
+
+    chips.querySelectorAll('[data-remove]').forEach(function(button) {
+      button.onclick = function() {
+        selectedQuestions.delete(button.dataset.remove);
+        syncSelected();
+        loadQuestionPage(currentQuestionPage);
+      };
+    });
+  }
+
+  async function fetchJson(url) {
+    const response = await fetch(url, { headers:{ Accept:'application/json' } });
+    if (!response.ok) throw new Error('Request failed: ' + response.status);
+    return response.json();
+  }
+
+  async function fetchSubjects(course) {
+    if (!course) return [];
+    try {
+      const data = await fetchJson('/admin/ajax/subjects/' + encodeURIComponent(course));
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Subjects:', error);
+      return [];
+    }
+  }
+
+  async function fetchTopics(course, subject) {
+    if (!subject) return [];
+    try {
+      const params = new URLSearchParams();
+      if (course) params.set('course', course);
+      params.set('subject', subject);
+      const data = await fetchJson('/admin/ajax/topics?' + params.toString());
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Topics:', error);
+      return [];
+    }
+  }
+
+  async function fetchSubtopics(course, subject, topic) {
+    if (!subject || !topic) return [];
+    try {
+      const params = new URLSearchParams();
+      if (course) params.set('course', course);
+      params.set('subject', subject);
+      params.set('topic', topic);
+      const data = await fetchJson('/admin/ajax/subtopics?' + params.toString());
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Subtopics:', error);
+      return [];
+    }
+  }
+
+  async function onCourseChange() {
+    const courseSelect = document.getElementById('ctCourse');
+    const subjectSelect = document.getElementById('ctSubject');
+    const topicSelect = document.getElementById('ctTopic');
+    const subtopicSelect = document.getElementById('ctSubtopic');
+    const course = courseSelect.value;
+
+    subjectSelect.innerHTML = '<option value="">Loading Subjects...</option>';
+    topicSelect.innerHTML = '<option value="">All Topics</option>';
+    subtopicSelect.innerHTML = '<option value="">All Subtopics</option>';
+    subjectSelect.disabled = true;
+    topicSelect.disabled = true;
+    subtopicSelect.disabled = true;
+    currentTopicRows = [];
+
+    if (!course) {
+      subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+      setHierarchyStatus('Select a Course.');
+      renderQuestionPlaceholder('Select a Course and Subject to load questions.');
+      return;
+    }
+
+    const subjects = await fetchSubjects(course);
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    subjects.forEach(function(subject) {
+      const option = document.createElement('option');
+      option.value = subject;
+      option.textContent = subject;
+      subjectSelect.appendChild(option);
+    });
+    subjectSelect.disabled = false;
+    setHierarchyStatus(subjects.length + ' subject(s) available for ' + course);
+  }
+
+  async function onSubjectChange() {
+    const course = document.getElementById('ctCourse').value;
+    const subject = document.getElementById('ctSubject').value;
+    const topicSelect = document.getElementById('ctTopic');
+    const subtopicSelect = document.getElementById('ctSubtopic');
+
+    topicSelect.innerHTML = '<option value="">Loading Topics...</option>';
+    subtopicSelect.innerHTML = '<option value="">All Subtopics</option>';
+    topicSelect.disabled = true;
+    subtopicSelect.disabled = true;
+    currentTopicRows = [];
+
+    if (!subject) {
+      topicSelect.innerHTML = '<option value="">All Topics</option>';
+      setHierarchyStatus('Select a Subject.');
+      renderQuestionPlaceholder('Select a Subject to load questions.');
+      return;
+    }
+
+    currentTopicRows = await fetchTopics(course, subject);
+    topicSelect.innerHTML = '<option value="">All Topics</option>';
+
+    currentTopicRows.forEach(function(topic) {
+      const name = String(typeof topic === 'string' ? topic : (topic && topic.name ? topic.name : '')).trim();
+      if (!name) return;
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      topicSelect.appendChild(option);
+    });
+
+    topicSelect.disabled = false;
+    setHierarchyStatus(
+      currentTopicRows.length
+        ? currentTopicRows.length + ' topic(s) available for ' + subject
+        : 'No topic names found. Showing all ' + subject + ' questions.'
+    );
+    await loadQuestionPage(1);
+  }
+
+  async function onTopicChange() {
+    const course = document.getElementById('ctCourse').value;
+    const subject = document.getElementById('ctSubject').value;
+    const topic = document.getElementById('ctTopic').value;
+    const subtopicSelect = document.getElementById('ctSubtopic');
+
+    subtopicSelect.innerHTML = '<option value="">All Subtopics</option>';
+    subtopicSelect.disabled = true;
+
+    if (!topic) {
+      setHierarchyStatus('Showing all topics for ' + subject);
+      await loadQuestionPage(1);
+      return;
+    }
+
+    subtopicSelect.innerHTML = '<option value="">Loading Subtopics...</option>';
+
+    let subtopics = [];
+    const cachedTopic = currentTopicRows.find(function(row) {
+      const name = typeof row === 'string' ? row : (row && row.name ? row.name : '');
+      return String(name).toLowerCase() === String(topic).toLowerCase();
+    });
+
+    if (cachedTopic && typeof cachedTopic !== 'string' && Array.isArray(cachedTopic.subtopics)) {
+      subtopics = cachedTopic.subtopics.slice();
+    }
+    if (!subtopics.length) {
+      subtopics = await fetchSubtopics(course, subject, topic);
+    }
+
+    subtopicSelect.innerHTML = '<option value="">All Subtopics</option>';
+    const seen = new Set();
+    subtopics.forEach(function(value) {
+      const subtopic = String(typeof value === 'string' ? value : (value && value.name ? value.name : '')).trim();
+      if (!subtopic) return;
+      const key = subtopic.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      const option = document.createElement('option');
+      option.value = subtopic;
+      option.textContent = subtopic;
+      subtopicSelect.appendChild(option);
+    });
+
+    subtopicSelect.disabled = false;
+    setHierarchyStatus(
+      seen.size
+        ? seen.size + ' subtopic(s) available for ' + topic
+        : 'No subtopics found for ' + topic
+    );
+    await loadQuestionPage(1);
+  }
+
+  function buildQuestionQuery(page) {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', document.getElementById('ctLimit').value || '10');
+    params.set('course', document.getElementById('ctCourse').value || '');
+    params.set('subject', document.getElementById('ctSubject').value || '');
+    params.set('topic', document.getElementById('ctTopic').value || '');
+    params.set('subtopic', document.getElementById('ctSubtopic').value || '');
+    params.set('difficulty', document.getElementById('ctDifficulty').value || '');
+    params.set('search', document.getElementById('ctSearch').value || '');
+    return params;
+  }
+
+  async function loadQuestionPage(page) {
+    page = Math.max(1, Number(page) || 1);
+    const subject = document.getElementById('ctSubject').value;
+
+    if (!subject) {
+      renderQuestionPlaceholder('Select a Course and Subject first.');
+      return;
+    }
+
+    const list = document.getElementById('ctQuestionList');
+    list.innerHTML = '<div class="p-12 text-center text-sm text-blue-700">Loading questions...</div>';
+    document.getElementById('ctLoadStatus').textContent = 'Loading Question Bank...';
+
+    try {
+      const data = await fetchJson('/admin/ajax/test-questions?' + buildQuestionQuery(page).toString());
+      currentQuestionPage = data.page || 1;
+      currentQuestionTotalPages = data.totalPages || 0;
+
+      const requested = Number(document.getElementById('ctLimit').value || 10);
+      const shown = Array.isArray(data.questions) ? data.questions.length : 0;
+      document.getElementById('ctLoadStatus').textContent =
+        shown + ' shown · ' + (data.total || 0) + ' matching question(s)';
+      document.getElementById('ctPageInfo').textContent =
+        data.totalPages ? 'Page ' + data.page + ' of ' + data.totalPages : 'Page 0 of 0';
+      document.getElementById('ctPrevBtn').disabled = data.page <= 1;
+      document.getElementById('ctNextBtn').disabled = !data.totalPages || data.page >= data.totalPages;
+
+      const questions = Array.isArray(data.questions) ? data.questions : [];
+      if (!questions.length) {
+        list.innerHTML = '<div class="p-12 text-center text-sm text-slate-500">No questions found for the selected hierarchy.</div>';
+        return;
+      }
+
+      list.innerHTML = questions.map(function(question) {
+        const checked = selectedQuestions.has(question.id) ? 'checked' : '';
+        const topic = question.topic
+          ? '<span class="text-slate-600">' + escHtml(question.topic) + '</span>'
+          : '';
+        const subtopic = question.subtopic
+          ? '<span class="text-violet-700">' + escHtml(question.subtopic) + '</span>'
+          : '';
+        const image = question.hasImage
+          ? '<span class="text-emerald-700">Diagram/Image</span>'
+          : '';
+
+        return '<label class="flex gap-3 p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">' +
+          '<input type="checkbox" data-id="' + escHtml(question.id) + '" ' + checked + ' class="mt-1 rounded">' +
+          '<div class="min-w-0 flex-1">' +
+            '<p class="text-sm font-medium text-slate-950">' + escHtml(question.question) + '</p>' +
+            '<div class="mt-1 flex flex-wrap gap-2 text-[11px]">' +
+              '<span class="text-blue-700">' + escHtml(question.subject) + '</span>' +
+              topic + subtopic +
+              '<span class="text-slate-600">' + escHtml(question.difficulty) + '</span>' +
+              image +
+            '</div>' +
+          '</div>' +
+        '</label>';
+      }).join('');
+
+      list.querySelectorAll('[data-id]').forEach(function(checkbox) {
+        checkbox.onchange = function() {
+          const question = questions.find(function(row) {
+            return String(row.id) === String(checkbox.dataset.id);
+          });
+          if (!question) return;
+          if (checkbox.checked) selectedQuestions.set(question.id, question);
+          else selectedQuestions.delete(question.id);
+          syncSelected();
+        };
+      });
+    } catch (error) {
+      console.error('Question load:', error);
+      list.innerHTML = '<div class="p-12 text-center text-sm text-rose-600">Unable to load questions.</div>';
+      document.getElementById('ctLoadStatus').textContent = 'Question loading failed';
+    }
+  }
+
+  document.getElementById('clearSelected').onclick = function() {
+    selectedQuestions.clear();
+    syncSelected();
+    loadQuestionPage(currentQuestionPage);
+  };
+
+  document.getElementById('ctCourse').addEventListener('change', onCourseChange);
+  document.getElementById('ctSubject').addEventListener('change', onSubjectChange);
+  document.getElementById('ctTopic').addEventListener('change', onTopicChange);
+  document.getElementById('ctSubtopic').addEventListener('change', function() { loadQuestionPage(1); });
+  document.getElementById('ctDifficulty').addEventListener('change', function() { loadQuestionPage(1); });
+  document.getElementById('ctLimit').addEventListener('change', function() { loadQuestionPage(1); });
+  document.getElementById('ctSearchBtn').addEventListener('click', function() { loadQuestionPage(1); });
+  document.getElementById('ctSearch').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function() { loadQuestionPage(1); }, 350);
+  });
+  document.getElementById('ctPrevBtn').onclick = function() { loadQuestionPage(currentQuestionPage - 1); };
+  document.getElementById('ctNextBtn').onclick = function() { loadQuestionPage(currentQuestionPage + 1); };
+
+  document.getElementById('createDraftForm').onsubmit = function(event) {
+    if (!selectedQuestions.size) {
+      event.preventDefault();
+      alert('Select at least one question.');
+      return false;
+    }
+    return true;
+  };
+
+  async function initializeCreateTest() {
+    const courseSelect = document.getElementById('ctCourse');
+    const subjectSelect = document.getElementById('ctSubject');
+    const initialCourse = document.getElementById('initialCourseValue').value;
+    const initialSubject = document.getElementById('initialSubjectValue').value;
+
+    if (!initialCourse) {
+      subjectSelect.disabled = true;
+      setHierarchyStatus('Select a Course first.');
+      return;
+    }
+
+    courseSelect.value = initialCourse;
+    await onCourseChange();
+
+    if (initialSubject) {
+      const exists = Array.from(subjectSelect.options).some(function(option) {
+        return option.value === initialSubject;
+      });
+      if (exists) {
+        subjectSelect.value = initialSubject;
+        await onSubjectChange();
+      }
+    }
+  }
+
+  initializeCreateTest();
+</script>
+
+</body>
+</html>

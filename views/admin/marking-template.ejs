@@ -1,0 +1,580 @@
+<%- include('../partials/head') %>
+
+    <div class="flex min-h-screen">
+
+        <%- include('../partials/sidebar-admin') %>
+
+            <main class="lg:ml-64 flex-1 min-h-screen bg-[#f7f9fb]">
+
+
+                <!-- TOP BAR -->
+                <header class="spvn-ui-topbar sticky top-0 z-20 px-5 lg:px-8">
+
+                    <div class="flex items-center gap-4">
+
+                        <button onclick="openSidebar()" class="lg:hidden text-slate-500">
+                            ☰
+                        </button>
+
+
+                        <nav class="spvn-ui-topnav flex-1">
+
+                            <a href="/admin/groups">
+                                Organization
+                            </a>
+
+                            <a href="/admin/tests" class="active">
+                                Test Management
+                            </a>
+
+                            <a href="/admin/results">
+                                Reports
+                            </a>
+
+                            <a href="/admin/results">
+                                Analytics
+                            </a>
+
+                            <a href="/admin/tests?view=online">
+                                Monitor
+                            </a>
+
+                            <a href="/admin/content">
+                                Content
+                            </a>
+
+                        </nav>
+
+                    </div>
+
+                </header>
+
+
+                <%- include('../partials/test-management-tabs', { activeTab: 'tests' }) %>
+
+
+                    <div class="p-5 lg:p-8 max-w-[1500px] mx-auto">
+
+                        <%- include('../partials/flash') %>
+
+
+                            <!-- PAGE HEADER -->
+                            <div class="flex flex-col lg:flex-row
+               lg:items-end justify-between
+               gap-4 mb-5">
+
+                                <div>
+
+                                    <a href="/admin/tests" class="text-xs text-sky-700 font-semibold">
+                                        ← Back to Tests
+                                    </a>
+
+
+                                    <h1 class="spvn-ui-heading mt-2">
+                                        Marking Scheme
+                                    </h1>
+
+
+                                    <p class="text-sm text-slate-500 mt-1">
+
+                                        Test Name:
+
+                                        <strong>
+                                            <%= test.title %>
+                                        </strong>
+
+                                    </p>
+
+                                </div>
+
+
+                                <div class="text-sm text-slate-500">
+
+                                    Number of Questions:
+
+                                    <strong class="text-slate-800">
+                                        <%= test.questions.length %>
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+
+                            <!-- FORM -->
+                            <form method="POST" action="/admin/tests/<%= test.id %>/marking-template" id="markingForm">
+
+
+                                <!-- APPLY TO ALL -->
+                                <div class="spvn-ui-panel spvn-accent-card gold p-4 mb-4">
+
+                                    <div class="flex flex-wrap items-center gap-2">
+
+                                        <span class="text-sm font-semibold text-slate-700 mr-2">
+                                            Mark For All Questions
+                                        </span>
+
+
+                                        <input id="allPositive" type="number" step="0.25" value="1"
+                                            class="w-20 border rounded-lg px-2 py-2 text-sm" placeholder="+ marks">
+
+
+                                        <input id="allNegative" type="number" step="0.25" value="0"
+                                            class="w-20 border rounded-lg px-2 py-2 text-sm" placeholder="- marks">
+
+
+                                        <input id="allPartial" type="number" step="0.25" value="0"
+                                            class="w-20 border rounded-lg px-2 py-2 text-sm" placeholder="Partial">
+
+
+                                        <button type="button" onclick="applyAll()" class="bg-emerald-600
+                     hover:bg-emerald-700
+                     text-white
+                     text-sm font-semibold
+                     px-4 py-2
+                     rounded-lg transition">
+                                            Apply To All
+                                        </button>
+
+
+                                        <input id="markSearch" oninput="filterRows()" class="ml-auto
+                     border rounded-lg
+                     px-3 py-2
+                     text-sm min-w-56" placeholder="Search question...">
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- TABLE -->
+                                <div class="spvn-ui-panel spvn-accent-card green overflow-hidden">
+
+                                    <div class="overflow-x-auto">
+
+                                        <table class="w-full min-w-[1120px] text-sm">
+
+                                            <thead class="bg-[#607f99] text-white">
+
+                                                <tr>
+
+                                                    <th class="px-3 py-3 text-left">
+                                                        Question Id
+                                                    </th>
+
+                                                    <th class="px-3 py-3 text-left min-w-[380px]">
+                                                        Details
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Subject
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Complexity
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Positive marks
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Negative marks
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Question sub type
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Partial marks
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Answer Key
+                                                    </th>
+
+                                                    <th class="px-3 py-3">
+                                                        Bonus mark
+                                                    </th>
+
+                                                </tr>
+
+                                            </thead>
+
+
+                                            <tbody class="divide-y divide-slate-100">
+
+
+                                                <% test.questions.forEach((q, i)=> {
+
+                                                    const st =
+                                                    settingMap.get(
+                                                    String(q._id)
+                                                    );
+
+                                                    %>
+
+
+                                                    <tr class="mark-row hover:bg-slate-50" data-search="<%= (
+                      String(q.question || '') +
+                      ' ' +
+                      String(q.subject || '') +
+                      ' ' +
+                      String(q.difficulty || '')
+                    ).toLowerCase() %>">
+
+
+                                                        <!-- QUESTION ID -->
+                                                        <td class="px-3 py-4 text-slate-500">
+
+                                                            <%= String(q._id).slice(-7) %>
+
+                                                        </td>
+
+
+
+                                                        <!-- DETAILS -->
+                                                        <td class="px-3 py-4">
+
+                                                            <!-- QUESTION -->
+                                                            <div class="math-content
+                               text-slate-800
+                               font-medium
+                               leading-relaxed">
+                                                                <%= q.question %>
+                                                            </div>
+
+
+                                                            <!-- OPTIONS -->
+                                                            <div class="grid grid-cols-1 xl:grid-cols-2
+                               gap-x-5 gap-y-2
+                               mt-3 text-xs text-slate-600">
+
+
+                                                                <!-- A -->
+                                                                <div class="flex items-start gap-1.5">
+
+                                                                    <span class="font-semibold text-slate-500 shrink-0">
+                                                                        (a)
+                                                                    </span>
+
+                                                                    <span class="math-content leading-relaxed">
+                                                                        <%= q.optionA || '' %>
+                                                                    </span>
+
+                                                                </div>
+
+
+                                                                <!-- B -->
+                                                                <div class="flex items-start gap-1.5">
+
+                                                                    <span class="font-semibold text-slate-500 shrink-0">
+                                                                        (b)
+                                                                    </span>
+
+                                                                    <span class="math-content leading-relaxed">
+                                                                        <%= q.optionB || '' %>
+                                                                    </span>
+
+                                                                </div>
+
+
+                                                                <!-- C -->
+                                                                <div class="flex items-start gap-1.5">
+
+                                                                    <span class="font-semibold text-slate-500 shrink-0">
+                                                                        (c)
+                                                                    </span>
+
+                                                                    <span class="math-content leading-relaxed">
+                                                                        <%= q.optionC || '' %>
+                                                                    </span>
+
+                                                                </div>
+
+
+                                                                <!-- D -->
+                                                                <div class="flex items-start gap-1.5">
+
+                                                                    <span class="font-semibold text-slate-500 shrink-0">
+                                                                        (d)
+                                                                    </span>
+
+                                                                    <span class="math-content leading-relaxed">
+                                                                        <%= q.optionD || '' %>
+                                                                    </span>
+
+                                                                </div>
+
+
+                                                            </div>
+
+                                                        </td>
+
+
+
+                                                        <!-- SUBJECT -->
+                                                        <td class="px-3 py-4 text-center">
+
+                                                            <%= q.subject %>
+
+                                                        </td>
+
+
+
+                                                        <!-- COMPLEXITY -->
+                                                        <td class="px-3 py-4 text-center">
+
+                                                            <%= q.difficulty %>
+
+                                                        </td>
+
+
+
+                                                        <!-- POSITIVE -->
+                                                        <td class="px-3 py-4">
+
+                                                            <input class="positive-field
+                               w-20 border
+                               rounded px-2 py-1.5" type="number" step="0.25" name="positive_<%= q._id %>"
+                                                                value="<%= st?.positiveMarks ?? q.marks ?? 1 %>">
+
+                                                        </td>
+
+
+
+                                                        <!-- NEGATIVE -->
+                                                        <td class="px-3 py-4">
+
+                                                            <input class="negative-field
+                               w-20 border
+                               rounded px-2 py-1.5" type="number" step="0.25" name="negative_<%= q._id %>"
+                                                                value="<%= st?.negativeMarks ?? q.negativeMarks ?? test.negativeMarking ?? 0 %>">
+
+                                                        </td>
+
+
+
+                                                        <!-- SUB TYPE -->
+                                                        <td class="px-3 py-4">
+
+                                                            <select name="subtype_<%= q._id %>"
+                                                                class="border rounded px-2 py-1.5">
+
+                                                                <option value="Single Selection" <%=(st?.questionSubType
+                                                                    || 'Single Selection' )==='Single Selection'
+                                                                    ? 'selected' : '' %>
+                                                                    >
+                                                                    Single Selection
+                                                                </option>
+
+                                                                <option value="Multi Selection"
+                                                                    <%=st?.questionSubType==='Multi Selection'
+                                                                    ? 'selected' : '' %>
+                                                                    >
+                                                                    Multi Selection
+                                                                </option>
+
+                                                                <option value="Numerical"
+                                                                    <%=st?.questionSubType==='Numerical' ? 'selected'
+                                                                    : '' %>
+                                                                    >
+                                                                    Numerical
+                                                                </option>
+
+                                                            </select>
+
+                                                        </td>
+
+
+
+                                                        <!-- PARTIAL -->
+                                                        <td class="px-3 py-4">
+
+                                                            <input class="partial-field
+                               w-20 border
+                               rounded px-2 py-1.5" type="number" step="0.25" name="partial_<%= q._id %>"
+                                                                value="<%= st?.partialMarks ?? 0 %>">
+
+                                                        </td>
+
+
+
+                                                        <!-- ANSWER -->
+                                                        <td class="px-3 py-4">
+
+                                                            <select name="answer_<%= q._id %>"
+                                                                class="border rounded px-2 py-1.5">
+
+                                                                <% ['A','B','C','D'].forEach(a=> { %>
+
+                                                                    <option value="<%= a %>" <%=(st?.answerKey ||
+                                                                        q.correctAnswer)===a ? 'selected' : '' %>
+                                                                        >
+                                                                        <%= a %>
+                                                                    </option>
+
+                                                                    <% }) %>
+
+                                                            </select>
+
+                                                        </td>
+
+
+
+                                                        <!-- BONUS -->
+                                                        <td class="px-3 py-4">
+
+                                                            <input class="w-20 border rounded px-2 py-1.5" type="number"
+                                                                step="0.25" name="bonus_<%= q._id %>"
+                                                                value="<%= st?.bonusMark ?? 0 %>">
+
+                                                        </td>
+
+
+                                                    </tr>
+
+
+                                                    <% }) %>
+
+
+                                            </tbody>
+
+                                        </table>
+
+                                    </div>
+
+
+
+                                    <!-- BOTTOM BUTTONS -->
+                                    <div class="px-4 py-4
+                   bg-white border-t
+                   flex justify-end gap-3">
+
+                                        <a href="/admin/tests" class="px-5 py-2.5
+                     rounded-lg border
+                     text-sm font-semibold
+                     hover:bg-slate-50">
+                                            Cancel
+                                        </a>
+
+
+                                        <button type="submit" class="bg-emerald-600
+                     hover:bg-emerald-700
+                     text-white
+                     px-5 py-2.5
+                     rounded-lg
+                     text-sm font-semibold
+                     transition">
+                                            Save as Draft
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </form>
+
+                    </div>
+
+            </main>
+
+    </div>
+
+
+
+    <script>
+
+        function applyAll() {
+
+            const positive =
+                document.getElementById(
+                    'allPositive'
+                ).value;
+
+
+            const negative =
+                document.getElementById(
+                    'allNegative'
+                ).value;
+
+
+            const partial =
+                document.getElementById(
+                    'allPartial'
+                ).value;
+
+
+            document
+                .querySelectorAll(
+                    '.positive-field'
+                )
+                .forEach(
+                    input => {
+                        input.value = positive;
+                    }
+                );
+
+
+            document
+                .querySelectorAll(
+                    '.negative-field'
+                )
+                .forEach(
+                    input => {
+                        input.value = negative;
+                    }
+                );
+
+
+            document
+                .querySelectorAll(
+                    '.partial-field'
+                )
+                .forEach(
+                    input => {
+                        input.value = partial;
+                    }
+                );
+
+        }
+
+
+
+        function filterRows() {
+
+            const query =
+                document
+                    .getElementById(
+                        'markSearch'
+                    )
+                    .value
+                    .toLowerCase()
+                    .trim();
+
+
+            document
+                .querySelectorAll(
+                    '.mark-row'
+                )
+                .forEach(
+                    row => {
+
+                        row.style.display =
+                            row.dataset.search.includes(query)
+                                ? ''
+                                : 'none';
+
+                    }
+                );
+
+        }
+
+    </script>
+
+    </body>
+
+    </html>

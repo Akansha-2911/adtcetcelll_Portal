@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head><%- include('../partials/head',{title}) %></head>
+
+<body class="bg-slate-50">
+    <div class="min-h-screen flex"><%- include('../partials/sidebar-admin') %>
+            <main class="lg:ml-64 flex-1 min-w-0">
+                <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8">
+                    <nav class="spvn-ui-topnav"><a href="/admin/tests" class="active">Test Management</a><a
+                            href="/admin/results">Reports</a><a href="/admin/analytics">Analytics</a><a
+                            href="/admin/monitor">Monitor</a></nav>
+                </header><%- include('../partials/test-management-tabs',{activeTab:'upload'}) %>
+                    <div class="p-5 lg:p-8 max-w-5xl mx-auto"><%- include('../partials/flash') %>
+                            <div class="mb-5">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 mb-2">
+                                    <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Gemini AI Smart Scan Engine
+                                </span>
+                                <h1 class="spvn-ui-heading">Upload Test</h1>
+                                <p class="text-sm text-slate-700 mt-1">Upload complete test papers in any format (PDF, Word, or Images). Our AI accurately detects multiple questions per page, math formulas, physics equations, diagrams, and options.</p>
+                            </div>
+                            <form action="/admin/tests/upload-test/extract" method="POST" enctype="multipart/form-data"
+                                class="spvn-ui-panel p-6 space-y-6" id="uploadTestForm"><input type="hidden"
+                                    name="extractionMode" value="smart_scan">
+                                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-950">
+                                    <strong>✨ Smart Multi-Question Scanner</strong>
+                                    <div class="mt-1">Supports any page count and questions per page. Accurately extracts complex math equations, fractions, roots, subscripts, and crops diagrams.</div>
+                                </div>
+                                <div>
+                                    <h2 class="font-bold text-slate-950 mb-3">1. Upload Test Files</h2>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div><label class="spvn-ui-form-label">Question Paper *</label><input
+                                                type="file" name="questionFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp" required
+                                                class="w-full border border-slate-300 rounded-xl p-3 bg-white">
+                                            <p class="text-xs text-slate-600 mt-1">Supports PDF, Word (.doc, .docx), and Images (.png, .jpg, .webp).</p>
+                                        </div>
+                                        <div><label class="spvn-ui-form-label">Solution / Answer Key <span
+                                                    class="font-normal text-slate-500">(optional)</span></label><input
+                                                type="file" name="solutionFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp"
+                                                class="w-full border border-slate-300 rounded-xl p-3 bg-white">
+                                            <p class="text-xs text-slate-600 mt-1">Optional separate answer key or solution document.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h2 class="font-bold text-slate-950 mb-3">2. Default Question Details</h2>
+                                    <div class="grid md:grid-cols-3 gap-4">
+                                        <div><label class="spvn-ui-form-label">Subject *</label><select name="subject"
+                                                required class="spvn-ui-filter">
+                                                <option value="">Select Subject</option>
+                                                <% (subjects||[]).forEach(s=>{ %><option value="<%= s %>">
+                                                        <%= s %>
+                                                    </option>
+                                                    <% }) %>
+                                            </select></div>
+                                        <div><label class="spvn-ui-form-label">Topic</label><input name="topic"
+                                                class="spvn-ui-filter" placeholder="Optional"></div>
+                                        <div><label class="spvn-ui-form-label">Subtopic</label><input name="subtopic"
+                                                class="spvn-ui-filter" placeholder="Optional"></div>
+                                        <div><label class="spvn-ui-form-label">Difficulty</label><select
+                                                name="difficulty" class="spvn-ui-filter">
+                                                <option>Easy</option>
+                                                <option selected>Medium</option>
+                                                <option>Hard</option>
+                                            </select></div>
+                                        <div><label class="spvn-ui-form-label">Marks / Question</label><input
+                                                type="number" name="marks" value="1" min="0" step="0.25"
+                                                class="spvn-ui-filter"></div>
+                                        <div><label class="spvn-ui-form-label">Negative Marks</label><input
+                                                type="number" name="negativeMarks" value="0" min="0" step="0.25"
+                                                class="spvn-ui-filter"></div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-950">
+                                    Flow: <strong>Upload PDF → Review Questions → Add Draft Details → Marking Scheme →
+                                        Save Draft.</strong> Nothing is published automatically.</div>
+                                <div class="flex justify-end gap-3"><a href="/admin/tests"
+                                        class="spvn-ui-btn spvn-ui-btn-soft">Cancel</a><button id="extractBtn"
+                                        class="spvn-ui-btn spvn-ui-btn-primary px-7">Extract & Review →</button></div>
+                            </form>
+                    </div>
+            </main>
+    </div>
+    <script>document.getElementById('uploadTestForm').addEventListener('submit', () => { const b = document.getElementById('extractBtn'); b.disabled = true; b.textContent = 'Extracting… Please wait'; b.classList.add('opacity-60', 'cursor-not-allowed'); });</script>
+</body>
+
+</html>

@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+
+  <title>
+    <%= typeof title !=='undefined' ? title : 'CET Exam Portal' %>
+      —
+      <%= typeof collegeShort !== 'undefined' && collegeShort ? collegeShort : (process.env.COLLEGE_SHORT_NAME || 'SPVN') %>
+  </title>
+
+
+  <!-- PWA -->
+
+  <link rel="manifest" href="/manifest.json">
+
+  <meta name="theme-color" content="#f8fafc">
+
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <meta name="apple-mobile-web-app-title" content="CET Exam">
+
+  <meta name="application-name" content="CET Exam">
+
+
+  <!-- ICONS -->
+
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
+
+
+  <!-- FONT -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+
+
+  <!-- KATEX -->
+
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+
+
+  <!-- TAILWIND -->
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+
+    tailwind.config = {
+
+      theme: {
+
+        extend: {
+
+          colors: {
+
+            navy: {
+              50: '#f0f4ff',
+              100: '#e0e9ff',
+              200: '#c7d7fe',
+              300: '#a5bbfd',
+              400: '#8199f8',
+              500: '#6171f1',
+              600: '#4f55e6',
+              700: '#4140cc',
+              800: '#3534a6',
+              900: '#1e1f5e',
+              950: '#131330'
+            },
+
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+
+          },
+
+          fontFamily: {
+
+            sans: [
+              '"Inter"',
+              'Arial',
+              'sans-serif'
+            ],
+
+            mono: [
+              '"JetBrains Mono"',
+              'monospace'
+            ]
+
+          },
+
+          boxShadow: {
+
+            card:
+              '0 1px 3px rgba(15,23,42,.06)',
+
+            'card-md':
+              '0 5px 18px rgba(15,23,42,.07)',
+
+            'card-lg':
+              '0 16px 40px rgba(15,23,42,.09)'
+
+          }
+
+        }
+
+      }
+
+    };
+
+  </script>
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+
+    html {
+      scroll-behavior: auto !important;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      min-height: 100vh;
+
+      overscroll-behavior-y: auto;
+
+      font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+
+      background: #f8fafc !important;
+
+      color: #0f172a !important;
+
+      touch-action: manipulation;
+
+    }
+
+
+    main {
+
+      overflow: visible !important;
+
+      scroll-behavior: auto !important;
+
+    }
+
+
+    /* ==============================
+       TEXT & HIGH VISIBILITY CONTRAST
+    =============================== */
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+
+      color: #0f172a !important;
+
+      font-weight: 700;
+
+    }
+
+
+    p {
+
+      color: #334155;
+
+    }
+
+
+    label {
+
+      color: #1e293b;
+
+      font-weight: 600;
+
+    }
+
+
+    .text-slate-900,
+    .text-slate-800 {
+
+      color: #0f172a !important;
+
+    }
+
+
+    .text-slate-700 {
+
+      color: #1e293b !important;
+
+    }
+
+
+    .text-slate-600 {
+
+      color: #334155 !important;
+
+    }
+
+
+    .text-slate-500 {
+
+      color: #475569 !important;
+
+    }
+
+
+    .text-slate-400 {
+
+      color: #64748b !important;
+
+    }
+
+
+    /* ==============================
+       INPUT
+    =============================== */
+
+    input,
+    select,
+    textarea {
+
+      color: #111827 !important;
+
+      background: #ffffff !important;
+
+      border-color: #cfd9e3 !important;
+
+    }
+
+
+    input::placeholder,
+    textarea::placeholder {
+
+      color: #718096 !important;
+
+    }
+
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+
+      outline: none;
+
+      border-color: #25836b !important;
+
+      box-shadow:
+        0 0 0 3px rgba(37, 131, 107, .14);
+
+    }
+
+
+    /* ==============================
+       SIDEBAR
+    =============================== */
+
+    .sidebar-link {
+
+      position: relative;
+
+      border-radius: 9px !important;
+
+    }
+
+
+    #mainSidebar {
+
+      background: #ffffff !important;
+
+      color: #334155 !important;
+
+      border-right:
+        1px solid #e3eaf1 !important;
+
+      box-shadow:
+        6px 0 24px rgba(41, 72, 101, .05) !important;
+
+    }
+
+
+    #mainSidebar .border-white\/10 {
+
+      border-color: #e7edf3 !important;
+
+    }
+
+
+    #mainSidebar .text-white\/70,
+    #mainSidebar .text-white\/50,
+    #mainSidebar .text-white\/40,
+    #mainSidebar .text-white\/30 {
+
+      color: #667b8f !important;
+
+    }
+
+
+    #mainSidebar .text-white {
+
+      color: #25435d !important;
+
+    }
+
+
+    #mainSidebar .sidebar-link {
+
+      color: #334155 !important;
+
+      font-weight: 600;
+
+    }
+
+
+    #mainSidebar .sidebar-link:hover {
+
+      background: #f0f9ff !important;
+
+      color: #0284c7 !important;
+
+    }
+
+
+    #mainSidebar .sidebar-link.active {
+
+      background: #e0f2fe !important;
+
+      color: #0369a1 !important;
+
+      font-weight: 800;
+
+    }
+
+
+    #mainSidebar .sidebar-link.active::before {
+
+      content: '';
+
+      position: absolute;
+
+      left: 0;
+
+      top: 50%;
+
+      transform:
+        translateY(-50%);
+
+      width: 3px;
+
+      height: 60%;
+
+      background: #2f80c7;
+
+      border-radius:
+        0 2px 2px 0;
+
+    }
+
+
+    /* ==============================
+       ADMIN TOP NAVIGATION
+    =============================== */
+
+    .spvn-ui-topbar,
+    .spvn-topbar {
+
+      background:
+        rgba(255,
+          255,
+          255,
+          .98) !important;
+
+      border-bottom:
+        1px solid #e2e8f0 !important;
+
+    }
+
+
+    .spvn-ui-topnav,
+    .admin-top-navigation {
+
+      display: flex !important;
+
+      align-items: center !important;
+
+      gap: 32px !important;
+
+      min-height: 62px;
+
+      width: 100%;
+
+      overflow-x: auto;
+
+      white-space: nowrap;
+
+    }
+
+
+    .spvn-ui-topnav a,
+    .admin-top-navigation a {
+
+      display: inline-flex !important;
+
+      flex: 0 0 auto;
+
+      align-items: center;
+
+      justify-content: center;
+
+      min-height: 62px;
+
+      padding:
+        0 2px !important;
+
+      margin:
+        0 !important;
+
+      color: #334155 !important;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+      text-decoration: none;
+
+      border-bottom:
+        3px solid transparent;
+
+    }
+
+
+    .spvn-ui-topnav a:hover,
+    .admin-top-navigation a:hover {
+
+      color: #0f172a !important;
+
+    }
+
+
+    .spvn-ui-topnav a.active,
+    .admin-top-navigation a.active {
+
+      color: #075985 !important;
+
+      border-bottom-color: #0284c7;
+
+    }
+
+
+    /* ==============================
+       TEST SUB NAVIGATION
+    =============================== */
+
+    .test-sub-navigation {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 28px;
+
+      min-height: 56px;
+
+      padding:
+        0 30px;
+
+      background: #ffffff;
+
+      border-bottom:
+        1px solid #e2e8f0;
+
+      overflow-x: auto;
+
+      white-space: nowrap;
+
+    }
+
+
+    .test-sub-navigation a,
+    .spvn-ui-subtab {
+
+      display: inline-flex;
+
+      flex: 0 0 auto;
+
+      align-items: center;
+
+      justify-content: center;
+
+      min-height: 56px;
+
+      padding:
+        0 1px;
+
+      margin: 0;
+
+      color: #475569;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+      border-bottom:
+        2px solid transparent;
+
+      white-space: nowrap;
+
+    }
+
+
+    .test-sub-navigation a:hover,
+    .spvn-ui-subtab:hover {
+
+      color: #0f172a;
+
+    }
+
+
+    .test-sub-navigation a.active,
+    .spvn-ui-subtab.active {
+
+      color: #0369a1;
+
+      border-bottom-color: #0284c7;
+
+      font-weight: 800;
+
+    }
+
+
+    /* ==============================
+       ACTION BUTTONS
+    =============================== */
+
+    .spvn-action-row {
+
+      display: flex;
+
+      align-items: center;
+
+      flex-wrap: wrap;
+
+      gap: 12px;
+
+    }
+
+
+    .spvn-action-btn {
+
+      display: inline-flex !important;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: 8px;
+
+      min-height: 44px;
+
+      padding:
+        0 20px !important;
+
+      border-radius:
+        11px !important;
+
+      font-size:
+        14px !important;
+
+      font-weight:
+        800 !important;
+
+      text-decoration:
+        none !important;
+
+      white-space:
+        nowrap;
+
+      transition:
+        transform .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+
+    }
+
+
+    .spvn-action-btn:hover {
+
+      transform:
+        translateY(-1px);
+
+    }
+
+
+    .spvn-action-green {
+
+      background:
+        linear-gradient(135deg,
+          #239f69,
+          #168657) !important;
+
+      color: #ffffff !important;
+
+      box-shadow:
+        0 6px 16px rgba(22, 134, 87, .14);
+
+    }
+
+
+    .spvn-action-blue {
+
+      background:
+        linear-gradient(135deg,
+          #277bb8,
+          #1f669d) !important;
+
+      color: #ffffff !important;
+
+      box-shadow:
+        0 6px 16px rgba(31, 102, 157, .14);
+
+    }
+
+
+    .spvn-action-soft-green {
+
+      background: #ecfdf5 !important;
+
+      color: #126f4a !important;
+
+      border:
+        1px solid #a7dfc6 !important;
+
+    }
+
+
+    .spvn-action-soft-blue {
+
+      background: #eff7fd !important;
+
+      color: #1f669d !important;
+
+      border:
+        1px solid #bddbef !important;
+
+    }
+
+
+    /* ==============================
+       GENERAL CARDS
+    =============================== */
+
+    .spvn-card,
+    .spvn-ui-panel,
+    .spvn-stat {
+
+      background: #ffffff !important;
+
+      border:
+        1px solid #e3eaf1 !important;
+
+      border-radius: 14px;
+
+      box-shadow:
+        0 4px 18px rgba(34, 67, 96, .045) !important;
+
+    }
+
+
+    .card-lift {
+
+      transition:
+        transform .18s ease,
+        box-shadow .18s ease;
+
+    }
+
+
+    .card-lift:hover {
+
+      transform:
+        translateY(-2px);
+
+      box-shadow:
+        0 8px 24px rgba(15, 23, 42, .08);
+
+    }
+
+
+    .spvn-page {
+
+      max-width: 1600px;
+
+      margin:
+        0 auto;
+
+    }
+
+
+    .spvn-kicker {
+
+      font-size: .68rem;
+
+      text-transform: uppercase;
+
+      letter-spacing: .12em;
+
+      font-weight: 700;
+
+      color: #6d8296;
+
+    }
+
+
+    .spvn-page-title {
+
+      font-size: 1.35rem;
+
+      font-weight: 800;
+
+      color: #111827 !important;
+
+      letter-spacing: -.02em;
+
+    }
+
+
+    /* ==============================
+       TABLES
+    =============================== */
+
+    .spvn-table-wrap {
+
+      overflow: auto;
+
+      border:
+        1px solid #dfe8f0;
+
+      border-radius: 12px;
+
+      background: #ffffff;
+
+    }
+
+
+    .spvn-ui-table {
+
+      width: 100%;
+
+      border-collapse:
+        separate;
+
+      border-spacing: 0;
+
+      min-width: 860px;
+
+    }
+
+
+    .spvn-ui-table th {
+
+      background:
+        linear-gradient(180deg,
+          #f1f5f9,
+          #e2e8f0) !important;
+
+      color: #0f172a !important;
+
+      text-align: left;
+
+      padding:
+        .85rem .95rem;
+
+      font-size: .8rem;
+
+      font-weight: 800;
+
+      text-transform: uppercase;
+
+      letter-spacing: .02em;
+
+    }
+
+
+    .spvn-ui-table td {
+
+      padding:
+        .85rem .95rem;
+
+      border-bottom:
+        1px solid #e2e8f0;
+
+      color: #1e293b !important;
+
+      font-size: .875rem;
+
+      font-weight: 500;
+
+      vertical-align: middle;
+
+    }
+
+
+    .spvn-ui-table tbody tr:hover td {
+
+      background: #f8fafc;
+
+    }
+
+
+    /* ==============================
+       OLD BUTTON SUPPORT
+    =============================== */
+
+    .spvn-ui-btn {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: .45rem;
+
+      min-height: 38px;
+
+      padding:
+        .6rem 1.05rem;
+
+      border-radius: 9px;
+
+      font-size: .875rem;
+
+      font-weight: 700;
+
+    }
+
+
+    .spvn-ui-btn-primary {
+
+      background: #10b981 !important;
+
+      color: #ffffff !important;
+
+    }
+
+
+    .spvn-ui-btn-blue {
+
+      background: #0284c7 !important;
+
+      color: #ffffff !important;
+
+    }
+
+
+    .spvn-ui-btn-soft {
+
+      background: #f0f9ff;
+
+      color: #0369a1;
+
+      border:
+        1px solid #bae6fd;
+
+    }
+
+
+    .spvn-ui-filter {
+
+      width: 100%;
+
+      min-height: 42px;
+
+      padding:
+        .65rem .85rem;
+
+      border:
+        1px solid #cbd5e1;
+
+      border-radius: 9px;
+
+      background: #ffffff;
+
+      color: #0f172a;
+
+      font-size: .875rem;
+
+      font-weight: 500;
+
+    }
+
+
+    /* ==============================
+       QUESTION & MATH TYPOGRAPHY
+    =============================== */
+
+    .question-text,
+    .exam-question {
+
+      font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif !important;
+
+      font-weight: 600 !important;
+
+      color: #0f172a !important;
+
+      letter-spacing: -0.01em;
+
+    }
+
+
+    .math-content,
+    .math-preview {
+
+      font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif !important;
+
+      color: #0f172a !important;
+
+      white-space: pre-line;
+
+      overflow-wrap: anywhere;
+
+    }
+
+
+    .math-content,
+    .math-preview {
+
+      white-space: pre-line;
+
+      overflow-wrap: anywhere;
+
+    }
+
+
+    .math-content .katex,
+    .math-preview .katex {
+
+      font-size: 1.08em;
+
+    }
+
+
+    /* ==============================
+       SCROLLBAR
+    =============================== */
+
+    ::-webkit-scrollbar {
+
+      width: 6px;
+
+      height: 6px;
+
+    }
+
+
+    ::-webkit-scrollbar-track {
+
+      background: transparent;
+
+    }
+
+
+    ::-webkit-scrollbar-thumb {
+
+      background: #cbd5e1;
+
+      border-radius: 10px;
+
+    }
+
+
+    @media(max-width:1100px) {
+
+      .spvn-ui-topnav,
+      .admin-top-navigation {
+
+        gap: 22px !important;
+
+      }
+
+      .test-sub-navigation {
+
+        gap: 20px;
+
+        padding:
+          0 20px;
+
+      }
+
+    }
+
+
+    @media(max-width:767px) {
+
+      .spvn-ui-topnav,
+      .admin-top-navigation {
+
+        min-height: 54px;
+
+        gap: 20px !important;
+
+      }
+
+
+      .spvn-ui-topnav a,
+      .admin-top-navigation a {
+
+        min-height: 54px;
+
+        font-size: 13px;
+
+      }
+
+
+      .spvn-action-row {
+
+        gap: 9px;
+
+      }
+
+
+      .spvn-action-btn {
+
+        min-height: 42px;
+
+        padding:
+          0 15px !important;
+
+        font-size:
+          13px !important;
+
+      }
+
+
+      input,
+      select,
+      textarea {
+
+        font-size: 16px !important;
+
+      }
+
+    }
+
+    /* ==========================================================
+       MOBILE RESPONSIVENESS & DYNAMIC PINCH-ZOOM ENGINE
+       - Initial fit: 1.0x scale on mobile opening (fits screen neatly).
+       - Pinch zoom: Fully enabled (1.0x to 5.0x zoom) on all mobile browsers.
+       - Screen update: Dynamic visual viewport adaptation; full horizontal/vertical pan.
+       - Input focus: 16px minimum font size on mobile to prevent iOS Safari auto-zoom.
+    ========================================================== */
+
+    html,
+    body {
+      min-height: 100% !important;
+      height: auto !important;
+      overflow-y: auto !important;
+      overscroll-behavior-y: auto !important;
+    }
+
+    body {
+      position: static !important;
+      touch-action: manipulation !important;
+    }
+
+    /* Desktop layout safety (keeps clean single document scrollbar) */
+    @media (min-width: 769px) {
+      html,
+      body {
+        overflow-x: hidden !important;
+      }
+
+      main {
+        overflow-x: hidden !important;
+      }
+    }
+
+    /* Mobile screens: full pan-and-zoom adaptation */
+    @media (max-width: 768px) {
+      html,
+      body {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      body {
+        touch-action: auto !important; /* Allows full native pinch-to-zoom and multi-touch gestures */
+      }
+
+      main {
+        overflow-x: visible !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+      }
+
+      /* Prevent iOS Safari from forcing auto-zoom on input tap while keeping pinch-zoom active */
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    main {
+      height: auto !important;
+      min-height: 100vh !important;
+      max-height: none !important;
+      overflow-y: visible !important;
+      scroll-behavior: auto !important;
+    }
+
+    .flex.min-h-screen {
+      height: auto !important;
+      min-height: 100vh !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    /* Keep horizontal-only wrappers working */
+    .overflow-x-auto {
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Sidebar itself may scroll independently */
+    #mainSidebar {
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
+
+    #mainSidebar nav {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Normal page scrolling */
+    .spvn-page {
+      overflow: visible !important;
+    }
+
+    @media (min-width: 1024px) {
+      main {
+        margin-bottom: 0;
+      }
+    }
+
+    /* Cards/modals keep their intended clipping and internal scroll behavior. */
+    .overflow-hidden { overflow: hidden !important; }
+    .overflow-y-auto { overflow-y: auto !important; }
+
+  </style>
+
+</head>
+
+
+<body class="min-h-screen bg-slate-50 text-slate-800">
+
+
+  <script src="/pwa.js?v=3.0" defer></script>
+
+
+  <script src="/vendor/katex/katex.min.js" defer></script>
+
+
+  <script src="/vendor/katex/contrib/auto-render.min.js" defer></script>
+
+
+  <script src="/math-render.js?v=2.1" defer></script>

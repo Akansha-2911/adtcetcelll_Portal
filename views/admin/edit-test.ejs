@@ -1,0 +1,2946 @@
+<%- include('../partials/head') %>
+
+  <div class="flex min-h-screen">
+
+    <%- include('../partials/sidebar-admin') %>
+
+      <main class="lg:ml-64 flex-1 min-h-screen">
+
+        <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-5 lg:px-8 py-4">
+
+          <button onclick="openSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800 mr-3 shrink-0">
+
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+
+            </svg>
+
+          </button>
+
+
+          <div class="flex items-center gap-3">
+
+            <a href="/admin/tests" class="text-slate-400 hover:text-slate-600">
+
+              ←
+
+            </a>
+
+            <h1 class="text-lg font-bold text-slate-900">
+              Edit Test
+            </h1>
+
+          </div>
+
+        </header>
+
+
+        <div class="p-5 lg:p-8 max-w-4xl mx-auto">
+
+          <%- include('../partials/flash') %>
+
+
+            <form action="/admin/tests/<%= test.id %>/edit" method="POST" enctype="multipart/form-data"
+              class="space-y-6">
+
+
+              <!-- ============================== -->
+              <!-- Basic Info -->
+              <!-- ============================== -->
+
+              <div class="bg-white rounded-xl border border-slate-200 p-6">
+
+                <h3 class="font-bold text-slate-900 mb-4">
+                  📝 Test Details
+                </h3>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+
+                  <div class="md:col-span-2">
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Title *
+                    </label>
+
+                    <input type="text" name="title" required value="<%= test.title %>"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
+                      placeholder="e.g. CET Mock Test 1 — Physics" />
+
+                  </div>
+
+
+                  <div class="md:col-span-2">
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Description
+                    </label>
+
+                    <textarea name="description" rows="2"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"><%= test.description || '' %></textarea>
+
+                  </div>
+
+
+                  <!-- Course -->
+
+                  <div class="md:col-span-2">
+
+                    <label class="block text-sm font-semibold mb-2">
+                      Course
+                    </label>
+
+
+                    <div class="flex flex-wrap gap-2">
+
+                      <% COURSES.forEach(c=> { %>
+
+                        <label
+                          class="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors">
+
+                          <input type="checkbox" name="courses" value="<%= c %>" class="rounded" <%=(test.course ||
+                            []).includes(c) ? 'checked' : '' %> />
+
+                          <span class="text-sm font-medium text-slate-700">
+                            <%= c %>
+                          </span>
+
+                        </label>
+
+                        <% }) %>
+
+                    </div>
+
+                  </div>
+
+
+                  <!-- Subject -->
+
+                  <div class="md:col-span-2">
+
+                    <label class="block text-sm font-semibold mb-2">
+                      Subject
+                    </label>
+
+
+                    <div class="flex flex-wrap gap-2">
+
+                      <% SUBJECTS.forEach(s=> { %>
+
+                        <label
+                          class="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors">
+
+                          <input type="checkbox" name="subjects" value="<%= s %>" class="rounded" <%=(test.subject ||
+                            []).includes(s) ? 'checked' : '' %> />
+
+                          <span class="text-sm font-medium text-slate-700">
+                            <%= s %>
+                          </span>
+
+                        </label>
+
+                        <% }) %>
+
+                    </div>
+
+                  </div>
+
+
+                  <!-- Duration -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Duration (minutes) *
+                    </label>
+
+                    <input type="number" name="duration" value="<%= test.duration %>" min="5" required
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500" />
+
+                  </div>
+
+
+                  <!-- Negative Marking -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Negative Marking
+                    </label>
+
+                    <input type="number" name="negativeMarking" value="<%= test.negativeMarking %>" step="0.25" min="0"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500" />
+
+                  </div>
+
+
+                  <!-- Start Time -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Start Time
+                    </label>
+
+                    <input type="datetime-local" name="startTime" value="<%= formatDateTimeLocal(test.startTime) %>"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
+
+                  </div>
+
+
+                  <!-- End Time -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      End Time
+                    </label>
+
+                    <input type="datetime-local" name="endTime" value="<%= formatDateTimeLocal(test.endTime) %>"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
+
+                  </div>
+
+
+                  <!-- Instructions -->
+
+                  <div class="md:col-span-2">
+
+                    <label class="block text-sm font-semibold mb-1.5">
+                      Instructions
+                    </label>
+
+                    <textarea name="instructions" rows="2"
+                      class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
+                      placeholder="Instructions for students..."><%= test.instructions || '' %></textarea>
+
+                  </div>
+
+                </div>
+
+
+                <div class="flex flex-wrap gap-5 mt-4">
+
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
+
+                    <input type="checkbox" name="shuffleQuestions" value="on" <%=test.shuffleQuestions !==false
+                      ? 'checked' : '' %>
+                    class="rounded" />
+
+                    Shuffle Questions Within Each Section
+
+                  </label>
+
+
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
+
+                    <input type="checkbox" name="shuffleOptions" value="on" <%=test.shuffleOptions ? 'checked' : '' %>
+                    class="rounded" />
+
+                    Shuffle Options
+
+                  </label>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- ============================== -->
+              <!-- Anti-Cheat -->
+              <!-- ============================== -->
+
+              <div class="bg-white rounded-xl border border-slate-200 p-6">
+
+                <h3 class="font-bold text-slate-900 mb-1 flex items-center gap-2">
+                  🔒 Anti-Cheat & Proctoring
+                </h3>
+
+                <p class="text-xs text-slate-500 mb-4">
+                  Control exam security behaviour. Violations are always logged regardless of these settings.
+                </p>
+
+
+                <div class="grid grid-cols-1 gap-5">
+
+
+                  <!-- Auto-submit -->
+
+                  <div class="border border-slate-200 rounded-xl p-4">
+
+                    <div class="flex items-center justify-between mb-3">
+
+
+                      <div>
+
+                        <p class="text-sm font-semibold text-slate-800">
+                          Auto-Submit on Violation
+                        </p>
+
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Exam is force-submitted when limits are exceeded
+                        </p>
+
+                      </div>
+
+
+                      <label class="relative inline-flex items-center cursor-pointer">
+
+                        <input type="checkbox" name="autoSubmitOnViolation" value="on" id="autoSubmitToggle"
+                          onchange="toggleAutoSubmit(this.checked)" class="sr-only peer" <%=test.autoSubmitOnViolation
+                          ? 'checked' : '' %> />
+
+                        <div
+                          class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600">
+                        </div>
+
+                      </label>
+
+                    </div>
+
+
+                    <div id="violationLimits" class="space-y-3 <%= test.autoSubmitOnViolation ? '' : 'hidden' %>">
+
+
+                      <div>
+
+                        <label class="text-xs font-semibold text-slate-600 block mb-1">
+
+                          Max Tab Switches allowed
+
+                          <span class="text-red-500">
+                            *
+                          </span>
+
+                        </label>
+
+
+                        <div class="flex items-center gap-2">
+
+                          <input type="range" name="maxTabSwitches" id="tabRange" min="1" max="10"
+                            value="<%= test.maxTabSwitches || 3 %>"
+                            oninput="document.getElementById('tabVal').textContent=this.value"
+                            class="flex-1 accent-red-600" />
+
+                          <span id="tabVal" class="text-sm font-bold text-red-600 w-6 text-center">
+
+                            <%= test.maxTabSwitches || 3 %>
+
+                          </span>
+
+                        </div>
+
+
+                        <p class="text-xs text-slate-400 mt-0.5">
+                          Exam auto-submits after this many tab switches
+                        </p>
+
+                      </div>
+
+
+                      <div>
+
+                        <label class="text-xs font-semibold text-slate-600 block mb-1">
+                          Max Focus Losses allowed
+                        </label>
+
+
+                        <div class="flex items-center gap-2">
+
+                          <input type="range" name="maxFocusLosses" id="focusRange" min="1" max="15"
+                            value="<%= test.maxFocusLosses || 5 %>"
+                            oninput="document.getElementById('focusVal').textContent=this.value"
+                            class="flex-1 accent-orange-500" />
+
+                          <span id="focusVal" class="text-sm font-bold text-orange-600 w-6 text-center">
+
+                            <%= test.maxFocusLosses || 5 %>
+
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+
+                  <!-- Restrictions -->
+
+                  <div class="border border-slate-200 rounded-xl p-4 space-y-3">
+
+                    <p class="text-sm font-semibold text-slate-800 mb-2">
+                      Exam Restrictions
+                    </p>
+
+
+                    <!-- Copy Paste -->
+
+                    <div class="flex items-center justify-between">
+
+                      <div>
+
+                        <p class="text-sm text-slate-700">
+                          Block Copy / Paste
+                        </p>
+
+                        <p class="text-xs text-slate-400">
+                          Prevents Ctrl+C, Ctrl+V, right-click
+                        </p>
+
+                      </div>
+
+
+                      <label class="relative inline-flex items-center cursor-pointer">
+
+                        <input type="checkbox" name="blockCopyPaste" value="on" class="sr-only peer"
+                          <%=test.blockCopyPaste !==false ? 'checked' : '' %> />
+
+                        <div
+                          class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800">
+                        </div>
+
+                      </label>
+
+                    </div>
+
+
+                    <!-- Fullscreen -->
+
+                    <div class="flex items-center justify-between">
+
+                      <div>
+
+                        <p class="text-sm text-slate-700">
+                          Require Fullscreen
+                        </p>
+
+                        <p class="text-xs text-slate-400">
+                          Force fullscreen; exit counts as violation
+                        </p>
+
+                      </div>
+
+
+                      <label class="relative inline-flex items-center cursor-pointer">
+
+                        <input type="checkbox" name="requireFullscreen" value="on" class="sr-only peer"
+                          <%=test.requireFullscreen ? 'checked' : '' %> />
+
+                        <div
+                          class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800">
+                        </div>
+
+                      </label>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <div
+                  class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2">
+
+                  <span class="text-base">
+                    ⚠
+                  </span>
+
+                  <span>
+                    All violations (tab switches, focus losses, fullscreen exits) are always
+                    <strong>logged and visible</strong>
+                    to admin in the result page regardless of these settings.
+                  </span>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- ============================== -->
+              <!-- Assign Groups -->
+              <!-- ============================== -->
+
+              <div class="bg-white rounded-xl border border-slate-200 p-6">
+
+                <h3 class="font-bold text-slate-900 mb-4">
+                  👥 Assign to Groups
+                </h3>
+
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+
+                  <% if (!groups.length) { %>
+
+                    <p class="text-sm text-slate-400 col-span-3">
+                      No groups yet. Create groups first.
+                    </p>
+
+                    <% } %>
+
+
+                      <% groups.forEach(g=> { %>
+
+                        <label
+                          class="flex items-center gap-2 p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+
+                          <input type="checkbox" name="groupIds" value="<%= g.id %>" class="rounded" <%=(test.groups ||
+                            []) .map(x=> x.id || x.toString())
+                          .includes(g.id)
+                          ? 'checked'
+                          : '' %> />
+
+                          <span class="text-sm font-medium text-slate-700">
+                            <%= g.name %>
+                          </span>
+
+                        </label>
+
+                        <% }) %>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- ============================== -->
+              <!-- Select Questions -->
+              <!-- ============================== -->
+
+              <div class="bg-white rounded-xl border border-slate-200 p-6">
+
+                <div class="flex items-center justify-between mb-4">
+
+                  <h3 class="font-bold text-slate-900">
+                    ❓ Select Questions
+                  </h3>
+
+                  <span id="selCount" class="text-sm font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">
+
+                    0 selected
+
+                  </span>
+
+                </div>
+
+
+
+                <!-- Filters -->
+
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-3">
+
+                  <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                    Filter by syllabus hierarchy
+                  </p>
+
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+
+
+                    <!-- Course -->
+
+                    <div>
+
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        Course
+                      </label>
+
+                      <select id="ctCourse" onchange="onCtCourseChange(this.value)"
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+
+                        <option value="">
+                          All Courses
+                        </option>
+
+                        <% COURSES.forEach(c=> { %>
+
+                          <option value="<%= c %>">
+                            <%= c %>
+                          </option>
+
+                          <% }) %>
+
+                      </select>
+
+                    </div>
+
+
+                    <!-- Subject -->
+
+                    <div>
+
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        Subject
+                      </label>
+
+                      <select id="ctSubject" onchange="onCtSubjectChange(this.value)" disabled
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+
+                        <option value="">
+                          Select course first
+                        </option>
+
+                      </select>
+
+                    </div>
+
+
+                    <!-- Unit -->
+
+                    <div>
+
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        Unit
+                      </label>
+
+                      <select id="ctTopic" onchange="onCtTopicChange(this.value)" disabled
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+
+                        <option value="">
+                          All Units
+                        </option>
+
+                      </select>
+
+                    </div>
+
+
+                    <!-- Subtopic -->
+
+                    <div>
+
+                      <label class="block text-xs font-semibold text-slate-500 mb-1">
+                        Subtopic
+                      </label>
+
+                      <select id="ctSubtopic" onchange="applyCtFilters()" disabled
+                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+
+                        <option value="">
+                          All Subtopics
+                        </option>
+
+                      </select>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="flex items-center justify-between mt-2.5" id="ctBreadcrumb" style="display:none">
+
+                    <div class="flex items-center gap-1.5 flex-wrap" id="ctBreadcrumbInner">
+                    </div>
+
+                    <button type="button" onclick="resetCtFilters()"
+                      class="text-xs text-slate-400 hover:text-slate-700 font-medium shrink-0 transition-colors">
+
+                      Clear filters
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+
+
+                <!-- Difficulty -->
+
+                <div class="flex flex-wrap gap-1.5 mb-3 items-center">
+
+
+                  <button type="button" onclick="filterDiff(event, '')"
+                    class="diff-chip active text-xs px-3 py-1 rounded-full font-semibold bg-slate-900 text-white transition-all">
+
+                    All
+
+                  </button>
+
+
+                  <button type="button" onclick="filterDiff(event, 'Easy')"
+                    class="diff-chip text-xs px-3 py-1 rounded-full font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all">
+
+                    Easy
+
+                  </button>
+
+
+                  <button type="button" onclick="filterDiff(event, 'Medium')"
+                    class="diff-chip text-xs px-3 py-1 rounded-full font-semibold bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-all">
+
+                    Medium
+
+                  </button>
+
+
+                  <button type="button" onclick="filterDiff(event, 'Hard')"
+                    class="diff-chip text-xs px-3 py-1 rounded-full font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-all">
+
+                    Hard
+
+                  </button>
+
+
+
+                  <div class="ml-auto flex items-center gap-2">
+
+
+                    <select id="ctSort" onchange="applyCtSort()"
+                      class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all">
+
+                      <option value="subject">
+                        Sort: Subject → Topic
+                      </option>
+
+                      <option value="difficulty">
+                        Sort: Difficulty
+                      </option>
+
+                      <option value="newest">
+                        Sort: Newest
+                      </option>
+
+                    </select>
+
+
+                    <input type="text" placeholder="Search questions..." id="ctSearch" onkeyup="applyCtFilters()"
+                      class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900 w-40 transition-all" />
+
+                  </div>
+
+                </div>
+
+
+
+                <!-- Question list -->
+
+                <div class="border border-slate-200 rounded-xl overflow-hidden max-h-96 overflow-y-auto"
+                  id="ctQuestionList">
+
+
+                  <% if (!questions.length) { %>
+
+                    <p class="p-6 text-sm text-slate-400 text-center">
+
+                      No questions in bank.
+
+                      <a href="/admin/questions" class="text-navy-600 hover:underline">
+
+                        Add questions first →
+
+                      </a>
+
+                    </p>
+
+                    <% } %>
+
+
+                      <% let lastSubj='' , lastTopic='' ; %>
+
+
+                        <% questions.forEach((q, i)=> { %>
+
+
+                          <% if (q.subject !==lastSubj) { lastSubj=q.subject; lastTopic='' ; %>
+
+                            <div class="q-group-header px-4 py-2 bg-blue-50 border-b border-blue-100 sticky top-0 z-[1]"
+                              data-subj="<%= q.subject %>" data-topic="" data-subtopic="">
+
+                              <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                📚 <%= q.subject %>
+                              </span>
+
+                            </div>
+
+                            <% } %>
+
+
+
+                              <% if (q.topic && q.topic !==lastTopic) { lastTopic=q.topic; %>
+
+                                <div class="q-group-header px-5 py-1.5 bg-purple-50 border-b border-purple-100"
+                                  data-subj="<%= q.subject %>" data-topic="<%= q.topic %>" data-subtopic="">
+
+                                  <span class="text-xs font-semibold text-purple-600">
+                                    📌 <%= q.topic %>
+                                  </span>
+
+                                  <% if (q.subtopic) { %>
+
+                                    <span class="text-purple-400 mx-1">
+                                      ›
+                                    </span>
+
+                                    <span class="text-xs text-purple-500">
+                                      <%= q.subtopic %>
+                                    </span>
+
+                                    <% } %>
+
+                                </div>
+
+                                <% } %>
+
+
+
+                                  <label
+                                    class="q-item flex items-start gap-3 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
+                                    data-subj="<%= q.subject %>" data-topic="<%= q.topic || '' %>"
+                                    data-subtopic="<%= q.subtopic || '' %>" data-diff="<%= q.difficulty %>"
+                                    data-text="<%= q.question.toLowerCase() %>" data-idx="<%= i %>">
+
+
+                                    <input type="checkbox" name="questionIds" value="<%= q.id %>" onchange="updCount()"
+                                      class="mt-0.5 rounded shrink-0" <%=(test.questions || []) .map(x=> x.id ||
+                                    x.toString())
+                                    .includes(q.id)
+                                    ? 'checked'
+                                    : '' %> />
+
+
+                                    <div class="flex-1 min-w-0">
+
+
+                                      <p class="math-content math-clamp-2 text-sm text-slate-800 leading-snug">
+
+                                        <%= q.question %>
+
+                                      </p>
+
+
+                                      <div class="flex flex-wrap gap-1.5 mt-1.5 items-center">
+
+
+                                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium">
+                                          <%= q.subject %>
+                                        </span>
+
+
+                                        <% if (q.topic) { %>
+
+                                          <span class="text-slate-300 text-xs">
+                                            ›
+                                          </span>
+
+                                          <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                                            <%= q.topic %>
+                                          </span>
+
+                                          <% } %>
+
+
+                                            <% if (q.subtopic) { %>
+
+                                              <span class="text-slate-300 text-xs">
+                                                ›
+                                              </span>
+
+                                              <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">
+                                                <%= q.subtopic %>
+                                              </span>
+
+                                              <% } %>
+
+
+                                                <span class="text-xs <%= q.difficulty === 'Easy'
+                        ? 'bg-green-100 text-green-700'
+                        : q.difficulty === 'Hard'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700' %> px-2 py-0.5 rounded">
+
+                                                  <%= q.difficulty %>
+
+                                                </span>
+
+
+                                                <span class="text-xs text-slate-400 ml-auto">
+                                                  <%= q.marks %> mk
+                                                </span>
+
+
+                                      </div>
+
+                                    </div>
+
+                                  </label>
+
+                                  <% }) %>
+
+                </div>
+
+
+
+                <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
+
+                  <button type="button" onclick="selectAllVisible()"
+                    class="hover:text-slate-900 font-medium transition-colors">
+
+                    ✅ Select all visible
+
+                  </button>
+
+
+                  <button type="button" onclick="deselectAll()"
+                    class="hover:text-red-600 font-medium transition-colors">
+
+                    ✕ Deselect all
+
+                  </button>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- ============================== -->
+              <!-- PDF Upload -->
+              <!-- ============================== -->
+
+              <div class="bg-white rounded-xl border border-slate-200 p-6">
+
+
+                <div class="flex items-center justify-between gap-2 mb-1 flex-wrap">
+
+
+                  <div class="flex items-center gap-2">
+
+                    <h3 class="font-bold text-slate-900">
+                      📄 Upload Test via PDF
+                    </h3>
+
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+
+                      Optional
+
+                    </span>
+
+                  </div>
+
+
+                  <!-- FIXED DOWNLOAD -->
+
+                  <a href="#"
+                    onclick="downloadFile('/admin/tests/template/pdf', 'SPVN_Test_PDF_Template.pdf'); return false;"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+
+
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+
+                    </svg>
+
+
+                    Download PDF Template
+
+                  </a>
+
+                </div>
+
+
+
+                <p class="text-xs text-slate-500 mb-4">
+
+                  Upload a question paper PDF
+                  (<strong>1 question per page</strong>)
+                  and a separate model answers / solution PDF.
+
+                  Questions can include
+                  <strong>embedded images/diagrams</strong>
+                  — they render automatically for students.
+
+                  <a href="#"
+                    onclick="downloadFile('/admin/tests/template/pdf', 'SPVN_Test_PDF_Template.pdf'); return false;"
+                    class="text-indigo-600 hover:underline font-medium">
+
+                    Download template
+
+                  </a>
+
+                  to see the expected format.
+
+                </p>
+
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+                  <!-- Question PDF -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+
+                      📝 Question Paper PDF
+
+                      <span class="text-xs text-slate-400 font-normal ml-1">
+                        (1 question per page)
+                      </span>
+
+                    </label>
+
+
+                    <div id="qPdfDrop" onclick="document.getElementById('questionPdf').click()"
+                      class="relative border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all group">
+
+
+                      <div id="qPdfIcon" class="flex flex-col items-center gap-2">
+
+
+                        <svg class="w-9 h-9 text-slate-300 group-hover:text-blue-400 transition-colors" fill="none"
+                          stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+
+                        </svg>
+
+
+                        <p class="text-sm text-slate-400 group-hover:text-blue-500 font-medium">
+
+                          Click to upload question PDF
+
+                        </p>
+
+
+                        <p class="text-xs text-slate-300">
+                          PDF only · Max 20 MB
+                        </p>
+
+
+                      </div>
+
+
+
+                      <div id="qPdfPreview" class="hidden flex-col items-center gap-2">
+
+
+                        <svg class="w-9 h-9 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                          stroke-width="1.5">
+
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+
+                        </svg>
+
+
+                        <p id="qPdfName" class="text-sm font-semibold text-green-700 break-all">
+                        </p>
+
+
+                        <p id="qPdfPages" class="text-xs text-slate-400">
+                        </p>
+
+
+                        <button type="button" onclick="clearPdf('question', event)"
+                          class="text-xs text-red-500 hover:text-red-700 font-medium mt-1">
+
+                          ✕ Remove
+
+                        </button>
+
+
+                      </div>
+
+                    </div>
+
+
+                    <input type="file" id="questionPdf" name="questionPdf" accept="application/pdf" class="hidden"
+                      onchange="handlePdfSelect(this, 'question')" />
+
+                  </div>
+
+
+
+                  <!-- Answer PDF -->
+
+                  <div>
+
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+
+                      ✅ Model Answers / Solution PDF
+
+                      <span class="text-xs text-slate-400 font-normal ml-1">
+                        (answer key / solutions)
+                      </span>
+
+                    </label>
+
+
+                    <div id="sPdfDrop" onclick="document.getElementById('solutionPdf').click()"
+                      class="relative border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition-all group">
+
+
+                      <div id="sPdfIcon" class="flex flex-col items-center gap-2">
+
+
+                        <svg class="w-9 h-9 text-slate-300 group-hover:text-green-400 transition-colors" fill="none"
+                          stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+
+                        </svg>
+
+
+                        <p class="text-sm text-slate-400 group-hover:text-green-600 font-medium">
+
+                          Click to upload answer PDF
+
+                        </p>
+
+
+                        <p class="text-xs text-slate-300">
+                          PDF only · Max 20 MB
+                        </p>
+
+
+                      </div>
+
+
+
+                      <div id="sPdfPreview" class="hidden flex-col items-center gap-2">
+
+
+                        <svg class="w-9 h-9 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                          stroke-width="1.5">
+
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+
+                        </svg>
+
+
+                        <p id="sPdfName" class="text-sm font-semibold text-green-700 break-all">
+                        </p>
+
+
+                        <p id="sPdfPages" class="text-xs text-slate-400">
+                        </p>
+
+
+                        <button type="button" onclick="clearPdf('solution', event)"
+                          class="text-xs text-red-500 hover:text-red-700 font-medium mt-1">
+
+                          ✕ Remove
+
+                        </button>
+
+
+                      </div>
+
+                    </div>
+
+
+                    <input type="file" id="solutionPdf" name="solutionPdf" accept="application/pdf" class="hidden"
+                      onchange="handlePdfSelect(this, 'solution')" />
+
+                  </div>
+
+                </div>
+
+
+
+                <!-- Info -->
+
+                <div
+                  class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2 text-xs text-blue-700">
+
+
+                  <span class="text-base shrink-0">
+                    ℹ️
+                  </span>
+
+
+                  <div>
+
+                    <span>
+
+                      The question PDF must have
+                      <strong>exactly 1 question per page</strong>.
+
+                      Page count = question count.
+
+                      Total marks = pages × marks/question.
+
+                    </span>
+
+
+                    <span class="block mt-1">
+
+                      Questions
+                      <strong>with images or diagrams</strong>
+                      are fully supported — embed the image directly into the PDF page.
+
+                    </span>
+
+
+                    <a href="#"
+                      onclick="downloadFile('/admin/tests/template/pdf', 'SPVN_Test_PDF_Template.pdf'); return false;"
+                      class="inline-flex items-center gap-1 mt-1.5 text-indigo-700 font-semibold hover:underline">
+
+
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+
+                      </svg>
+
+
+                      Download sample PDF template
+
+                    </a>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+
+              <!-- Save -->
+
+              <div class="flex gap-4">
+
+
+                <button type="submit"
+                  class="flex-1 bg-navy-950 text-white font-bold py-4 rounded-xl hover:bg-navy-800 transition-colors text-base shadow-lg">
+
+                  Save Changes
+
+                </button>
+
+
+                <a href="/admin/tests"
+                  class="px-8 py-4 border-2 border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50">
+
+                  Cancel
+
+                </a>
+
+              </div>
+
+
+            </form>
+
+        </div>
+
+      </main>
+
+  </div>
+
+
+
+  <script>
+
+    /* ======================================================
+       DOWNLOAD WITHOUT OPENING BLANK PDF SCREEN
+    ====================================================== */
+
+    async function downloadFile(url, fallbackFileName) {
+
+      try {
+
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            'Download failed with status ' + response.status
+          );
+
+        }
+
+
+        const blob = await response.blob();
+
+
+        let fileName = fallbackFileName;
+
+
+        const disposition =
+          response.headers.get('content-disposition');
+
+
+        if (disposition) {
+
+          const utf8Match =
+            disposition.match(
+              /filename\*=UTF-8''([^;]+)/i
+            );
+
+
+          const normalMatch =
+            disposition.match(
+              /filename="?([^"]+)"?/i
+            );
+
+
+          if (
+            utf8Match &&
+            utf8Match[1]
+          ) {
+
+            fileName =
+              decodeURIComponent(
+                utf8Match[1]
+              );
+
+          }
+
+          else if (
+            normalMatch &&
+            normalMatch[1]
+          ) {
+
+            fileName =
+              normalMatch[1].trim();
+
+          }
+
+        }
+
+
+        const blobUrl =
+          window.URL.createObjectURL(blob);
+
+
+        const link =
+          document.createElement('a');
+
+
+        link.href =
+          blobUrl;
+
+
+        link.download =
+          fileName;
+
+
+        link.style.display =
+          'none';
+
+
+        document.body.appendChild(link);
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        setTimeout(() => {
+
+          window.URL.revokeObjectURL(
+            blobUrl
+          );
+
+        }, 1500);
+
+      }
+
+      catch (error) {
+
+        console.error(
+          'File download error:',
+          error
+        );
+
+
+        alert(
+          'Unable to download the file. Please try again.'
+        );
+
+      }
+
+    }
+
+
+
+    /* ======================================================
+       COUNTER
+    ====================================================== */
+
+    function updCount() {
+
+      const n =
+        document.querySelectorAll(
+          'input[name="questionIds"]:checked'
+        ).length;
+
+
+      document.getElementById(
+        'selCount'
+      ).textContent =
+        n + ' selected';
+
+    }
+
+
+
+    /* ======================================================
+       FILTER STATE
+    ====================================================== */
+
+    const ctState = {
+
+      course: '',
+      subject: '',
+      topic: '',
+      subtopic: '',
+      diff: '',
+      search: ''
+
+    };
+
+
+
+    /* ======================================================
+       APPLY FILTERS
+    ====================================================== */
+
+    function applyCtFilters() {
+
+      ctState.course =
+        document.getElementById(
+          'ctCourse'
+        ).value;
+
+
+      ctState.subject =
+        document.getElementById(
+          'ctSubject'
+        ).value;
+
+
+      ctState.topic =
+        document.getElementById(
+          'ctTopic'
+        ).value;
+
+
+      ctState.subtopic =
+        document.getElementById(
+          'ctSubtopic'
+        ).value;
+
+
+      ctState.diff =
+        document.querySelector(
+          '.diff-chip.active'
+        )?.dataset.diff || '';
+
+
+      ctState.search =
+        (
+          document.getElementById(
+            'ctSearch'
+          ).value || ''
+        ).toLowerCase();
+
+
+
+      document.querySelectorAll(
+        '.q-item'
+      ).forEach(row => {
+
+
+        const matchSubj =
+          !ctState.subject ||
+          row.dataset.subj ===
+          ctState.subject;
+
+
+        const matchTopic =
+          !ctState.topic ||
+          row.dataset.topic ===
+          ctState.topic;
+
+
+        const matchSub =
+          !ctState.subtopic ||
+          row.dataset.subtopic ===
+          ctState.subtopic;
+
+
+        const matchDiff =
+          !ctState.diff ||
+          row.dataset.diff ===
+          ctState.diff;
+
+
+        const matchSearch =
+          !ctState.search ||
+          row.dataset.text.includes(
+            ctState.search
+          );
+
+
+        row.style.display =
+          (
+            matchSubj &&
+            matchTopic &&
+            matchSub &&
+            matchDiff &&
+            matchSearch
+          )
+            ? ''
+            : 'none';
+
+      });
+
+
+
+      document.querySelectorAll(
+        '.q-group-header'
+      ).forEach(header => {
+
+
+        if (!header.dataset.topic) {
+
+
+          const subj =
+            header.dataset.subj;
+
+
+          const hasVisible =
+            [
+              ...document.querySelectorAll(
+                '.q-item'
+              )
+            ].some(
+              r =>
+                r.dataset.subj === subj &&
+                r.style.display !== 'none'
+            );
+
+
+          header.style.display =
+            hasVisible
+              ? ''
+              : 'none';
+
+        }
+
+        else {
+
+
+          const subj =
+            header.dataset.subj;
+
+
+          const topic =
+            header.dataset.topic;
+
+
+          const hasVisible =
+            [
+              ...document.querySelectorAll(
+                '.q-item'
+              )
+            ].some(
+              r =>
+                r.dataset.subj === subj &&
+                r.dataset.topic === topic &&
+                r.style.display !== 'none'
+            );
+
+
+          header.style.display =
+            hasVisible
+              ? ''
+              : 'none';
+
+        }
+
+      });
+
+
+      updateBreadcrumb();
+
+    }
+
+
+
+    /* ======================================================
+       COURSE
+    ====================================================== */
+
+    async function onCtCourseChange(course) {
+
+      const subjectSelect =
+        document.getElementById(
+          'ctSubject'
+        );
+
+
+      const topicSelect =
+        document.getElementById(
+          'ctTopic'
+        );
+
+
+      const subtopicSelect =
+        document.getElementById(
+          'ctSubtopic'
+        );
+
+
+      subjectSelect.innerHTML =
+        '<option value="">All Subjects</option>';
+
+
+      topicSelect.innerHTML =
+        '<option value="">All Units</option>';
+
+
+      subtopicSelect.innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      subjectSelect.disabled =
+        !course;
+
+
+      topicSelect.disabled =
+        true;
+
+
+      subtopicSelect.disabled =
+        true;
+
+
+      if (course) {
+
+        const subjects =
+          await fetchSubjects(
+            course
+          );
+
+
+        subjects.forEach(
+          subject => {
+
+            subjectSelect.innerHTML +=
+              `<option value="${subject}">${subject}</option>`;
+
+          }
+        );
+
+      }
+
+
+      applyCtFilters();
+
+    }
+
+
+
+    /* ======================================================
+       SUBJECT
+    ====================================================== */
+
+    async function onCtSubjectChange(subject) {
+
+      const topicSelect =
+        document.getElementById(
+          'ctTopic'
+        );
+
+
+      const subtopicSelect =
+        document.getElementById(
+          'ctSubtopic'
+        );
+
+
+      topicSelect.innerHTML =
+        '<option value="">All Units</option>';
+
+
+      subtopicSelect.innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      topicSelect.disabled =
+        !subject;
+
+
+      subtopicSelect.disabled =
+        true;
+
+
+      if (subject) {
+
+
+        const topics =
+          await fetchTopics(
+
+            document.getElementById(
+              'ctCourse'
+            ).value,
+
+            subject
+
+          );
+
+
+        topics.forEach(
+          topic => {
+
+            topicSelect.innerHTML +=
+              `<option value="${topic.name}">${topic.name}</option>`;
+
+          }
+        );
+
+      }
+
+
+      applyCtFilters();
+
+    }
+
+
+
+    /* ======================================================
+       TOPIC
+    ====================================================== */
+
+    async function onCtTopicChange(topic) {
+
+
+      const subtopicSelect =
+        document.getElementById(
+          'ctSubtopic'
+        );
+
+
+      const course =
+        document.getElementById(
+          'ctCourse'
+        ).value;
+
+
+      const subject =
+        document.getElementById(
+          'ctSubject'
+        ).value;
+
+
+      subtopicSelect.innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      subtopicSelect.disabled =
+        !topic;
+
+
+      if (topic) {
+
+
+        const subs =
+          await fetchSubtopics(
+            course,
+            subject,
+            topic
+          );
+
+
+        subs.forEach(
+          sub => {
+
+            subtopicSelect.innerHTML +=
+              `<option value="${sub}">${sub}</option>`;
+
+          }
+        );
+
+      }
+
+
+      applyCtFilters();
+
+    }
+
+
+
+    /* ======================================================
+       DIFFICULTY
+    ====================================================== */
+
+    function filterDiff(event, diff) {
+
+
+      document.querySelectorAll(
+        '.diff-chip'
+      ).forEach(button => {
+
+
+        button.classList.remove(
+          'active',
+          'bg-slate-900',
+          'text-white'
+        );
+
+
+        if (!button.dataset.diff) {
+
+          button.dataset.diff =
+            button.textContent.trim() === 'All'
+              ? ''
+              : button.textContent.trim();
+
+        }
+
+      });
+
+
+      event.currentTarget.classList.add(
+        'active',
+        'bg-slate-900',
+        'text-white'
+      );
+
+
+      ctState.diff =
+        diff;
+
+
+      applyCtFilters();
+
+    }
+
+
+
+    /* ======================================================
+       RESET
+    ====================================================== */
+
+    function resetCtFilters() {
+
+
+      document.getElementById(
+        'ctCourse'
+      ).value = '';
+
+
+      document.getElementById(
+        'ctSubject'
+      ).innerHTML =
+        '<option value="">Select course first</option>';
+
+
+      document.getElementById(
+        'ctTopic'
+      ).innerHTML =
+        '<option value="">All Units</option>';
+
+
+      document.getElementById(
+        'ctSubtopic'
+      ).innerHTML =
+        '<option value="">All Subtopics</option>';
+
+
+      document.getElementById(
+        'ctSubject'
+      ).disabled = true;
+
+
+      document.getElementById(
+        'ctTopic'
+      ).disabled = true;
+
+
+      document.getElementById(
+        'ctSubtopic'
+      ).disabled = true;
+
+
+      document.getElementById(
+        'ctSearch'
+      ).value = '';
+
+
+      document.querySelectorAll(
+        '.diff-chip'
+      ).forEach(
+        button =>
+          button.classList.remove(
+            'active',
+            'bg-slate-900',
+            'text-white'
+          )
+      );
+
+
+      document.querySelector(
+        '.diff-chip'
+      ).classList.add(
+        'active',
+        'bg-slate-900',
+        'text-white'
+      );
+
+
+      Object.keys(
+        ctState
+      ).forEach(
+        key =>
+          ctState[key] = ''
+      );
+
+
+      document.querySelectorAll(
+        '.q-item,.q-group-header'
+      ).forEach(
+        row =>
+          row.style.display = ''
+      );
+
+
+      updateBreadcrumb();
+
+    }
+
+
+
+    /* ======================================================
+       BREADCRUMB
+    ====================================================== */
+
+    function updateBreadcrumb() {
+
+
+      const crumb =
+        document.getElementById(
+          'ctBreadcrumb'
+        );
+
+
+      const inner =
+        document.getElementById(
+          'ctBreadcrumbInner'
+        );
+
+
+      const parts =
+        [];
+
+
+      if (ctState.course) {
+
+        parts.push(
+          `<span class="bg-slate-900 text-white px-2 py-0.5 rounded-full text-xs font-semibold">${ctState.course}</span>`
+        );
+
+      }
+
+
+      if (ctState.subject) {
+
+        parts.push(
+          `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">${ctState.subject}</span>`
+        );
+
+      }
+
+
+      if (ctState.topic) {
+
+        parts.push(
+          `<span class="text-slate-400 text-xs">›</span>
+       <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-semibold">${ctState.topic}</span>`
+        );
+
+      }
+
+
+      if (ctState.subtopic) {
+
+        parts.push(
+          `<span class="text-slate-400 text-xs">›</span>
+       <span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-xs font-semibold">${ctState.subtopic}</span>`
+        );
+
+      }
+
+
+      inner.innerHTML =
+        parts.join('');
+
+
+      crumb.style.display =
+        parts.length
+          ? 'flex'
+          : 'none';
+
+    }
+
+
+
+    /* ======================================================
+       SELECT
+    ====================================================== */
+
+    function selectAllVisible() {
+
+
+      document.querySelectorAll(
+        '.q-item'
+      ).forEach(row => {
+
+
+        if (
+          row.style.display !==
+          'none'
+        ) {
+
+          const checkbox =
+            row.querySelector(
+              'input[type="checkbox"]'
+            );
+
+
+          if (checkbox) {
+
+            checkbox.checked =
+              true;
+
+          }
+
+        }
+
+      });
+
+
+      updCount();
+
+    }
+
+
+
+    function deselectAll() {
+
+
+      document.querySelectorAll(
+        'input[name="questionIds"]'
+      ).forEach(
+        checkbox =>
+          checkbox.checked = false
+      );
+
+
+      updCount();
+
+    }
+
+
+
+    /* ======================================================
+       AJAX
+    ====================================================== */
+
+    async function fetchSubjects(course) {
+
+      try {
+
+        const response =
+          await fetch(
+            `/admin/ajax/subjects/${encodeURIComponent(course)}`
+          );
+
+
+        return await response.json();
+
+      }
+
+      catch {
+
+        return [];
+
+      }
+
+    }
+
+
+
+    async function fetchTopics(course, subject) {
+
+      try {
+
+        const response =
+          await fetch(
+
+            `/admin/ajax/topics?course=${encodeURIComponent(course)}&subject=${encodeURIComponent(subject)}`
+
+          );
+
+
+        return await response.json();
+
+      }
+
+      catch {
+
+        return [];
+
+      }
+
+    }
+
+
+
+    async function fetchSubtopics(
+      course,
+      subject,
+      topic
+    ) {
+
+      try {
+
+        const response =
+          await fetch(
+
+            `/admin/ajax/subtopics?course=${encodeURIComponent(course)}&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}`
+
+          );
+
+
+        return await response.json();
+
+      }
+
+      catch {
+
+        return [];
+
+      }
+
+    }
+
+
+
+    /* ======================================================
+       SORT
+    ====================================================== */
+
+    function applyCtSort() {
+
+
+      const sort =
+        document.getElementById(
+          'ctSort'
+        ).value;
+
+
+      const list =
+        document.getElementById(
+          'ctQuestionList'
+        );
+
+
+      const items =
+        [
+          ...list.querySelectorAll(
+            '.q-item'
+          )
+        ].map(
+          el => ({
+
+            el,
+
+            subj:
+              el.dataset.subj || '',
+
+            topic:
+              el.dataset.topic || '',
+
+            subtopic:
+              el.dataset.subtopic || '',
+
+            diff:
+              el.dataset.diff || '',
+
+            idx:
+              parseInt(
+                el.dataset.idx || '0'
+              )
+
+          })
+        );
+
+
+      const diffOrder = {
+
+        Easy: 0,
+        Medium: 1,
+        Hard: 2
+
+      };
+
+
+      items.sort(
+        (a, b) => {
+
+
+          if (
+            sort ===
+            'difficulty'
+          ) {
+
+
+            const diff =
+              (
+                diffOrder[a.diff] ??
+                9
+              ) -
+              (
+                diffOrder[b.diff] ??
+                9
+              );
+
+
+            if (diff !== 0) {
+
+              return diff;
+
+            }
+
+
+            return (
+              a.subj.localeCompare(
+                b.subj
+              ) ||
+              a.topic.localeCompare(
+                b.topic
+              )
+            );
+
+          }
+
+
+          else if (
+            sort ===
+            'newest'
+          ) {
+
+            return (
+              b.idx -
+              a.idx
+            );
+
+          }
+
+
+          else {
+
+            return (
+              a.subj.localeCompare(
+                b.subj
+              ) ||
+              a.topic.localeCompare(
+                b.topic
+              ) ||
+              a.subtopic.localeCompare(
+                b.subtopic
+              )
+            );
+
+          }
+
+        }
+      );
+
+
+      list.querySelectorAll(
+        '.q-item, .q-group-header'
+      ).forEach(
+        element =>
+          element.remove()
+      );
+
+
+      let lastSubj =
+        null;
+
+
+      let lastTopic =
+        null;
+
+
+      items.forEach(
+        ({
+          el,
+          subj,
+          topic,
+          subtopic,
+          diff
+        }) => {
+
+
+          if (
+            sort ===
+            'subject'
+          ) {
+
+
+            if (
+              subj !==
+              lastSubj
+            ) {
+
+
+              lastSubj =
+                subj;
+
+
+              lastTopic =
+                null;
+
+
+              const header =
+                document.createElement(
+                  'div'
+                );
+
+
+              header.className =
+                'q-group-header px-4 py-2 bg-blue-50 border-b border-blue-100 sticky top-0 z-[1]';
+
+
+              header.dataset.subj =
+                subj;
+
+
+              header.dataset.topic =
+                '';
+
+
+              header.dataset.subtopic =
+                '';
+
+
+              header.innerHTML =
+                '<span class="text-xs font-bold text-blue-700 uppercase tracking-wider">📚 ' +
+                (
+                  subj ||
+                  'No Subject'
+                ) +
+                '</span>';
+
+
+              list.appendChild(
+                header
+              );
+
+            }
+
+
+
+            if (
+              topic &&
+              topic !==
+              lastTopic
+            ) {
+
+
+              lastTopic =
+                topic;
+
+
+              const topicHeader =
+                document.createElement(
+                  'div'
+                );
+
+
+              topicHeader.className =
+                'q-group-header px-5 py-1.5 bg-purple-50 border-b border-purple-100';
+
+
+              topicHeader.dataset.subj =
+                subj;
+
+
+              topicHeader.dataset.topic =
+                topic;
+
+
+              topicHeader.dataset.subtopic =
+                '';
+
+
+              topicHeader.innerHTML =
+                '<span class="text-xs font-semibold text-purple-600">📌 ' +
+                topic +
+                '</span>' +
+                (
+                  subtopic
+                    ?
+                    '<span class="text-purple-400 mx-1">›</span><span class="text-xs text-purple-500">' +
+                    subtopic +
+                    '</span>'
+                    :
+                    ''
+                );
+
+
+              list.appendChild(
+                topicHeader
+              );
+
+            }
+
+          }
+
+
+          else if (
+            sort ===
+            'difficulty'
+          ) {
+
+
+            if (
+              diff !==
+              lastSubj
+            ) {
+
+
+              lastSubj =
+                diff;
+
+
+              const difficultyHeader =
+                document.createElement(
+                  'div'
+                );
+
+
+              const colors = {
+
+                Easy:
+                  'bg-green-50 border-green-100 text-green-700',
+
+                Medium:
+                  'bg-yellow-50 border-yellow-100 text-yellow-700',
+
+                Hard:
+                  'bg-red-50 border-red-100 text-red-700'
+
+              };
+
+
+              const className =
+                colors[diff] ||
+                'bg-slate-50 border-slate-100 text-slate-600';
+
+
+              difficultyHeader.className =
+                'q-group-header px-4 py-2 border-b sticky top-0 z-[1] ' +
+                className;
+
+
+              difficultyHeader.dataset.subj =
+                '';
+
+
+              difficultyHeader.dataset.topic =
+                '';
+
+
+              difficultyHeader.dataset.subtopic =
+                '';
+
+
+              difficultyHeader.innerHTML =
+                '<span class="text-xs font-bold uppercase tracking-wider">' +
+                (
+                  diff ||
+                  'No Difficulty'
+                ) +
+                '</span>';
+
+
+              list.appendChild(
+                difficultyHeader
+              );
+
+            }
+
+          }
+
+
+          list.appendChild(
+            el
+          );
+
+        }
+      );
+
+
+      applyCtFilters();
+
+    }
+
+
+
+    /* ======================================================
+       ANTI-CHEAT
+    ====================================================== */
+
+    function toggleAutoSubmit(checked) {
+
+      const limits =
+        document.getElementById(
+          'violationLimits'
+        );
+
+
+      if (checked) {
+
+        limits.classList.remove(
+          'hidden'
+        );
+
+      }
+
+      else {
+
+        limits.classList.add(
+          'hidden'
+        );
+
+      }
+
+    }
+
+
+
+    /* ======================================================
+       PDF UPLOAD
+    ====================================================== */
+
+    function handlePdfSelect(
+      input,
+      type
+    ) {
+
+
+      const prefix =
+        type === 'question'
+          ? 'q'
+          : 's';
+
+
+      const file =
+        input.files[0];
+
+
+      if (!file) {
+
+        return;
+
+      }
+
+
+      if (
+        file.type !==
+        'application/pdf'
+      ) {
+
+        alert(
+          'Please select a PDF file only.'
+        );
+
+
+        input.value =
+          '';
+
+
+        return;
+
+      }
+
+
+      if (
+        file.size >
+        20 *
+        1024 *
+        1024
+      ) {
+
+        alert(
+          'File size must be under 20 MB.'
+        );
+
+
+        input.value =
+          '';
+
+
+        return;
+
+      }
+
+
+      document.getElementById(
+        prefix +
+        'PdfIcon'
+      ).classList.add(
+        'hidden'
+      );
+
+
+      const preview =
+        document.getElementById(
+          prefix +
+          'PdfPreview'
+        );
+
+
+      preview.classList.remove(
+        'hidden'
+      );
+
+
+      preview.classList.add(
+        'flex'
+      );
+
+
+      document.getElementById(
+        prefix +
+        'PdfName'
+      ).textContent =
+        file.name;
+
+
+      const sizeMB =
+        (
+          file.size /
+          (
+            1024 *
+            1024
+          )
+        ).toFixed(2);
+
+
+      document.getElementById(
+        prefix +
+        'PdfPages'
+      ).textContent =
+        'Size: ' +
+        sizeMB +
+        ' MB';
+
+
+      const drop =
+        document.getElementById(
+          prefix +
+          'PdfDrop'
+        );
+
+
+      drop.classList.remove(
+        'border-dashed',
+        'border-slate-300'
+      );
+
+
+      drop.classList.add(
+        'border-solid',
+        type === 'question'
+          ? 'border-blue-400'
+          : 'border-green-400'
+      );
+
+    }
+
+
+
+    function clearPdf(
+      type,
+      event
+    ) {
+
+
+      event.stopPropagation();
+
+
+      const prefix =
+        type === 'question'
+          ? 'q'
+          : 's';
+
+
+      const inputId =
+        type === 'question'
+          ? 'questionPdf'
+          : 'solutionPdf';
+
+
+      document.getElementById(
+        inputId
+      ).value = '';
+
+
+      document.getElementById(
+        prefix +
+        'PdfIcon'
+      ).classList.remove(
+        'hidden'
+      );
+
+
+      const preview =
+        document.getElementById(
+          prefix +
+          'PdfPreview'
+        );
+
+
+      preview.classList.add(
+        'hidden'
+      );
+
+
+      preview.classList.remove(
+        'flex'
+      );
+
+
+      document.getElementById(
+        prefix +
+        'PdfName'
+      ).textContent = '';
+
+
+      document.getElementById(
+        prefix +
+        'PdfPages'
+      ).textContent = '';
+
+
+      const drop =
+        document.getElementById(
+          prefix +
+          'PdfDrop'
+        );
+
+
+      drop.classList.add(
+        'border-dashed',
+        'border-slate-300'
+      );
+
+
+      drop.classList.remove(
+        'border-solid',
+        'border-blue-400',
+        'border-green-400'
+      );
+
+    }
+
+
+
+    /* ======================================================
+       DRAG / DROP
+    ====================================================== */
+
+    [
+      'qPdfDrop',
+      'sPdfDrop'
+    ].forEach(
+      function (id) {
+
+
+        const el =
+          document.getElementById(
+            id
+          );
+
+
+        if (!el) {
+
+          return;
+
+        }
+
+
+        el.addEventListener(
+          'dragover',
+          function (e) {
+
+            e.preventDefault();
+
+
+            el.classList.add(
+              'ring-2',
+              'ring-blue-300'
+            );
+
+          }
+        );
+
+
+        el.addEventListener(
+          'dragleave',
+          function () {
+
+            el.classList.remove(
+              'ring-2',
+              'ring-blue-300'
+            );
+
+          }
+        );
+
+
+        el.addEventListener(
+          'drop',
+          function (e) {
+
+
+            e.preventDefault();
+
+
+            el.classList.remove(
+              'ring-2',
+              'ring-blue-300'
+            );
+
+
+            const type =
+              id ===
+                'qPdfDrop'
+                ? 'question'
+                : 'solution';
+
+
+            const inputId =
+              type ===
+                'question'
+                ? 'questionPdf'
+                : 'solutionPdf';
+
+
+            const input =
+              document.getElementById(
+                inputId
+              );
+
+
+            if (
+              e.dataTransfer.files.length
+            ) {
+
+
+              try {
+
+
+                const dt =
+                  new DataTransfer();
+
+
+                dt.items.add(
+                  e.dataTransfer.files[0]
+                );
+
+
+                input.files =
+                  dt.files;
+
+
+              }
+
+              catch (err) {
+
+                console.warn(
+                  err
+                );
+
+              }
+
+
+              handlePdfSelect(
+                input,
+                type
+              );
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+
+
+    /* ======================================================
+       INITIALIZE
+    ====================================================== */
+
+    document.querySelectorAll(
+      '.diff-chip'
+    ).forEach(
+      button => {
+
+
+        const text =
+          button.textContent.trim();
+
+
+        button.dataset.diff =
+          text === 'All'
+            ? ''
+            : text;
+
+      }
+    );
+
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      function () {
+
+        updCount();
+
+        toggleAutoSubmit(
+          document.getElementById(
+            'autoSubmitToggle'
+          )?.checked || false
+        );
+
+      }
+    );
+
+  </script>
+
+  </body>
+
+  </html>

@@ -1,0 +1,10 @@
+SPVN CET Portal - Math/Science Rendering + Login UI fixes
+
+1. Fixed logical negation/sim handling: \sim is no longer converted to the unrelated ¬ symbol during import.
+2. Fixed square-root rendering, including OCR/plain forms such as √(-9), converting them safely to KaTeX \sqrt{-9}.
+3. Preserved structural LaTeX for \sqrt{} and \frac{}{} during AI/import cleanup to prevent equations from becoming ambiguous plain text.
+4. Added radical normalization for text/PDF export paths.
+5. Improved student login page with a lighter background, clearer contrast, readable system font stack, and brighter primary action colors.
+6. KaTeX rendering remains enabled for Math/Physics/Chemistry equations, fractions, roots, superscripts/subscripts, logical operators, matrices, and symbols.
+
+Note: √(-9) itself is not a rational real number; it equals 3i in complex numbers. The renderer now displays the expression correctly instead of visually corrupting it.

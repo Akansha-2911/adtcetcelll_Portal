@@ -1,0 +1,1098 @@
+<%- include('../partials/head') %>
+  <style>
+    body {
+      overflow: hidden
+    }
+
+    .opt-box {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      transition: border-color .15s, background .15s;
+      cursor: pointer
+    }
+
+    .opt-box:hover {
+      border-color: #8199f8;
+      background: #f8faff
+    }
+
+    .opt-box.selected {
+      border-color: #131330;
+      background: #f0f4ff
+    }
+
+    .palette-btn {
+      width: 34px;
+      height: 34px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s
+    }
+
+    #timer.warning {
+      background: rgba(253, 230, 138, .3);
+      color: #d97706
+    }
+
+    #timer.urgent {
+      background: rgba(254, 202, 202, .4);
+      color: #dc2626;
+      animation: pulse 1s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.04)
+      }
+    }
+
+    .timer-warning {
+      animation: pulse 1s infinite
+    }
+
+    .exam-shell {
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)
+    }
+
+    .subject-tab {
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      transition: .15s
+    }
+
+    .subject-tab:hover {
+      border-color: #a5b4fc;
+      color: #3730a3
+    }
+
+    .subject-tab.active {
+      background: #1e1b4b;
+      color: #fff;
+      border-color: #1e1b4b;
+      box-shadow: 0 8px 20px rgba(30, 27, 75, .14)
+    }
+
+    .subject-tab.locked {
+      opacity: .45;
+      cursor: not-allowed;
+      background: #f8fafc
+    }
+
+    .save-indicator {
+      transition: .2s
+    }
+
+    .palette-btn.current {
+      outline: 3px solid rgba(30, 27, 75, .18);
+      outline-offset: 2px
+    }
+
+    @media(max-width:767px) {
+      body {
+        overflow-y: auto !important;
+        touch-action: auto !important;
+      }
+
+      #examContainer {
+        height: auto !important;
+        min-height: 100vh !important;
+      }
+
+      .mobile-exam-actions {
+        display: flex
+      }
+
+      .question-actions {
+        gap: .35rem
+      }
+
+      .question-actions button {
+        padding: .45rem .6rem
+      }
+
+      .exam-main {
+        padding-bottom: 64px
+      }
+    }
+
+    /* =========================================================
+       COMPACT QUESTION + OPTIONS LAYOUT
+       Fixes excessive vertical spacing
+    ========================================================= */
+
+    .exam-question-content {
+      padding: 18px 24px !important;
+    }
+
+    .question-text {
+      margin: 0 0 14px 0 !important;
+      font-size: 16px !important;
+      line-height: 1.55 !important;
+    }
+
+    #optionsContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px !important;
+    }
+
+    .opt-box {
+      border: 1.5px solid #dbe3ef;
+      border-radius: 12px;
+      padding: 12px 16px !important;
+      min-height: 64px !important;
+      height: auto !important;
+      display: block;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .opt-box:hover {
+      border-color: #38bdf8;
+      background: #f8fafc;
+    }
+
+    .opt-box.selected {
+      border-color: #0284c7;
+      background: #f0f9ff;
+      box-shadow: 0 0 0 2px rgba(2, 132, 199, .2);
+    }
+
+    .opt-box > div {
+      align-items: center !important;
+    }
+
+    .opt-key {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      margin-top: 0 !important;
+      flex-shrink: 0;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+    }
+
+    .opt-box .math-content {
+      padding-top: 0 !important;
+      font-size: 15px !important;
+      line-height: 1.45 !important;
+    }
+
+    .opt-box img {
+      margin-top: 8px !important;
+      margin-left: 42px !important;
+      max-height: 180px !important;
+    }
+
+    .question-image-wrap {
+      margin-bottom: 14px !important;
+    }
+
+    .question-header {
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+      min-height: 54px;
+    }
+
+    .exam-navigation {
+      padding-top: 11px !important;
+      padding-bottom: 11px !important;
+      min-height: 62px;
+    }
+
+    @media (min-width: 1024px) {
+      .exam-question-content {
+        padding: 18px 28px !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .exam-question-content {
+        padding: 14px !important;
+      }
+
+      .question-text {
+        font-size: 15px !important;
+        margin-bottom: 12px !important;
+      }
+
+      .opt-box {
+        padding: 10px 12px !important;
+        min-height: 56px !important;
+      }
+
+      .opt-box .math-content {
+        font-size: 14px !important;
+      }
+
+      #optionsContainer {
+        gap: 8px !important;
+      }
+
+      .exam-navigation {
+        min-height: 58px;
+      }
+    }
+
+  </style>
+
+  <div class="h-screen flex flex-col exam-shell" id="examContainer">
+
+    <!-- Topbar -->
+    <div class="bg-navy-950 text-white px-4 py-2.5 flex items-center justify-between flex-shrink-0 select-none">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="font-bold text-sm hidden sm:block text-white/80 shrink-0">
+          <%= collegeShort %>
+        </span>
+        <span class="text-white/30 hidden sm:block">|</span>
+        <span class="text-sm font-medium truncate">
+          <%= test.title %>
+        </span>
+        <% if (currentSection) { %>
+          <span
+            class="hidden sm:inline-flex bg-indigo-500/30 border border-indigo-300/30 text-indigo-100 text-[10px] font-bold px-2.5 py-1 rounded-full">
+            <%= currentSection.name %> Section
+          </span>
+        <% } %>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <div id="violationBar"
+          class="<%= violations>0?'flex':'hidden' %> items-center gap-1.5 bg-rose-600 rounded-lg px-3 py-1.5 text-xs font-bold">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span id="violationCount">
+            <%= violations %>
+          </span> Violation<span id="violPlural">
+            <%= violations!==1?'s':'' %>
+          </span>
+        </div>
+        <button onclick="toggleFullscreen()"
+          class="text-white/60 hover:text-white text-xs hidden sm:flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+          Fullscreen
+        </button>
+        <div id="timer"
+          class="flex items-center gap-2 bg-white/15 border border-white/20 rounded-lg px-3 py-1.5 font-mono font-bold text-sm">
+          <svg class="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="timerDisplay">--:--:--</span>
+        </div>
+        <span class="text-xs text-white/50 hidden md:block">
+          <%= currentUser.rollNo %>
+        </span>
+      </div>
+    </div>
+
+    <!-- Warn banner -->
+    <div id="warnBanner"
+      class="hidden bg-rose-600 text-white text-center text-sm font-semibold py-2 px-4 flex-shrink-0"></div>
+    <% if (cetSectionFlow && currentSection && sectionQuestionNumber===1) { %>
+      <div
+        class="bg-indigo-50 border-b border-indigo-100 text-indigo-800 text-center text-xs font-semibold py-2 px-4 flex-shrink-0">
+        <%= ['Physics','Chemistry'].includes(currentSection.name)
+          ? 'Physics and Chemistry are both available. Visit every question in both subjects to unlock Mathematics/Biology.'
+          : `${currentSection.name} is now unlocked.` %>
+      </div>
+      <% } %>
+
+        <% if (sectionState && sectionState.sections && sectionState.sections.length > 0) { %>
+          <div
+            class="bg-white border-b border-slate-200 px-4 lg:px-6 py-2.5 flex items-center gap-2 overflow-x-auto flex-shrink-0">
+            <span class="text-[10px] uppercase tracking-[.18em] font-extrabold text-slate-400 mr-1">Sections</span>
+            <% sectionState.sections.forEach(section=> {
+              const firstQ = section.questionNumbers && section.questionNumbers[0];
+              const isActive = currentSection && currentSection.name === section.name;
+              const answeredCount = section.answeredCount || 0;
+              const totalCount = section.totalQuestions || (section.questionIds ? section.questionIds.length : 0);
+            %>
+              <% if (section.locked) { %>
+                <span class="subject-tab locked whitespace-nowrap" title="Complete the required sections to unlock">
+                  <%= section.name %> 🔒
+                </span>
+              <% } else { %>
+                <a href="/exam/<%= test.id %>/question/<%= firstQ %>" onclick="saveAndNav(event, this.href)"
+                  class="subject-tab whitespace-nowrap <%= isActive ? 'active':'' %> flex items-center gap-1.5">
+                  <span><%= section.name %></span>
+                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full <%= isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600' %>">
+                    <%= answeredCount %>/<%= totalCount %>
+                  </span>
+                </a>
+              <% } %>
+            <% }) %>
+            <div class="ml-auto hidden sm:flex items-center gap-2 text-[11px] text-slate-500 shrink-0">
+              <span id="saveIndicator"
+                class="save-indicator inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">●
+                Saved</span>
+            </div>
+          </div>
+          <% } else { %>
+            <div class="bg-white border-b border-slate-200 px-4 lg:px-6 py-2 flex justify-end flex-shrink-0">
+              <span id="saveIndicator"
+                class="save-indicator inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold">●
+                Saved</span>
+            </div>
+            <% } %>
+
+              <div class="flex flex-1 overflow-hidden exam-main">
+                <!-- Question panel -->
+                <div class="flex-1 flex flex-col overflow-hidden bg-white">
+
+                  <!-- Question header -->
+                  <div
+                    class="question-header flex items-center justify-between px-5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                      <span class="bg-navy-950 text-white text-xs font-bold px-3 py-1 rounded-full">Q <%= questionNumber
+                          %> / <%= totalQuestions %></span>
+                      <% if (currentSection) { %>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
+                          <%= currentSection.name %>
+                            <%= sectionQuestionNumber %>/<%= currentSection.questionIds.length %>
+                        </span>
+                        <% } %>
+                          <span class="text-xs text-slate-400 hidden sm:block">
+                            <%= question.subject %>
+                              <% if(question.topic){%> &rsaquo; <%= question.topic %>
+                                  <% } %> &middot; <%= question.difficulty %> &middot; <%= question.marks %> mark(s)
+                          </span>
+                    </div>
+                    <div class="flex items-center gap-2 question-actions">
+                      <button type="button" onclick="togglePalette()"
+                        class="md:hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700">Palette</button>
+                      <span class="text-xs text-slate-400 hidden sm:block">This Q: <span id="qTimer"
+                          class="font-mono font-semibold text-slate-600">0s</span></span>
+                      <button id="markReviewBtn" onclick="toggleMark()"
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors <%= isMarked?'bg-violet-600 text-white border-violet-600':'border-slate-200 text-slate-600 hover:border-violet-300' %>">
+                        <%= isMarked?'Marked':'Mark for Review' %>
+                      </button>
+                      <button onclick="clearAnswer()"
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Clear</button>
+                    </div>
+                  </div>
+
+                  <!-- Question content -->
+                  <div class="flex-1 overflow-y-auto exam-question-content">
+                    <p class="math-content question-text font-medium text-slate-900">
+                      <%= question.question %>
+                    </p>
+                    <% if (question.questionImage) { %>
+                      <div class="question-image-wrap overflow-x-auto"><img src="<%= question.questionImage %>" alt="Question"
+                          class="block w-auto h-auto max-w-full rounded-xl border border-slate-200 bg-white"
+                          loading="eager" decoding="async" /></div>
+                      <% } %>
+
+                        <div id="optionsContainer">
+                          <% options.forEach(opt=> { %>
+                            <div class="opt-box <%= selectedAnswer===opt.key?'selected':'' %>"
+                              onclick="selectOption('<%= opt.key %>', this)">
+                              <div class="flex items-start gap-3">
+                                <span
+                                  class="opt-key w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5
+                <%= selectedAnswer===opt.key?'bg-navy-950 border-navy-950 text-white':'border-slate-300 text-slate-500' %>">
+                                  <%= opt.key %>
+                                </span>
+                                <span class="math-content text-sm text-slate-800 leading-relaxed pt-0.5">
+                                  <%= opt.value %>
+                                </span>
+                              </div>
+                              <% if (opt.image) { %>
+                                <img src="<%= opt.image %>" alt="Option <%= opt.key %>"
+                                  class="max-w-full max-h-36 rounded-xl border border-slate-200 object-contain mt-2 ml-10" />
+                                <% } %>
+                            </div>
+                            <% }) %>
+                        </div>
+                  </div>
+
+                  <!-- Navigation -->
+                  <div class="exam-navigation border-t border-slate-100 px-5 flex items-center bg-white flex-shrink-0 relative">
+
+                    <!-- Prev Button (Left) -->
+                    <% if (questionNumber> 1) { %>
+                      <a href="/exam/<%= test.id %>/question/<%= questionNumber-1 %>"
+                        onclick="saveAndNav(event, this.href)"
+                        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm absolute left-5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>Prev
+                      </a>
+                      <% } %>
+
+                        <!-- Center: Save & Next OR Save & Review -->
+                        <div class="mx-auto">
+                          <% if (questionNumber < totalQuestions) { %>
+                            <!-- Normal: Save & Next -->
+                            <a href="/exam/<%= test.id %>/question/<%= questionNumber+1 %>"
+                              onclick="saveAndNav(event, this.href)"
+                              class="flex items-center gap-2 bg-navy-950 hover:bg-navy-900 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
+                              <% const isSectionLast = currentSection &&
+                                currentSection.questionNumbers &&
+                                currentSection.questionNumbers[currentSection.questionNumbers.length-1] === questionNumber;
+                                %>
+                                <% const nextSection = isSectionLast && sectionState && sectionState.sections ? sectionState.sections[currentSection.index+1] :
+                                  null; %>
+                                  <%= nextSection && !nextSection.locked ? `Save & Start ${nextSection.name}`
+                                    : 'Save & Next' %>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                      stroke-width="2.5">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                            </a>
+                            <% } else { %>
+                              <!-- Last Question: Save & Review -->
+                              <button type="button" onclick="openReviewModal()"
+                                class="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                  stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Save &amp; Review
+                              </button>
+                              <% } %>
+                        </div>
+
+                        <!-- Right: Submit Exam (only on last question) -->
+                        <% if (questionNumber===totalQuestions) { %>
+                          <button type="button" onclick="submitConfirm()"
+                            class="absolute right-5 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Submit Exam
+                          </button>
+                          <% } %>
+                  </div>
+                </div>
+
+                <!-- Palette panel -->
+                <div id="paletteSidebar"
+                  class="fixed md:relative inset-y-0 right-0 w-72 md:w-56 bg-white border-l border-slate-200 flex flex-col flex-shrink-0 overflow-hidden z-40 transform translate-x-full md:translate-x-0 transition-transform duration-300 shadow-2xl md:shadow-none">
+                  <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                    <p class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Question Palette</p>
+                    <div class="grid grid-cols-2 gap-1 text-[10px] text-slate-500">
+                      <span class="flex items-center gap-1"><span
+                          class="w-3 h-3 rounded bg-emerald-500 inline-block"></span>Answered</span>
+                      <span class="flex items-center gap-1"><span
+                          class="w-3 h-3 rounded bg-rose-500 inline-block"></span>Not Ans.</span>
+                      <span class="flex items-center gap-1"><span
+                          class="w-3 h-3 rounded bg-violet-500 inline-block"></span>Marked</span>
+                      <span class="flex items-center gap-1"><span
+                          class="w-3 h-3 rounded bg-slate-300 inline-block"></span>Not Visited</span>
+                    </div>
+                  </div>
+                  <div class="flex-1 overflow-y-auto p-3">
+                    <% const hasSections = Boolean(sectionState && sectionState.sections && sectionState.sections.length > 0); %>
+                    <div class="<%= hasSections ? 'space-y-3.5' : 'flex flex-wrap gap-1.5' %>">
+                      <% let paletteSubject = ''; paletteStatus.forEach(p => {
+                        const bg =
+                        p.status==='answered'?'background:#10b981;color:#fff':p.status==='marked'?'background:#8b5cf6;color:#fff':p.status==='answered-marked'?'background:#6d28d9;color:#fff':p.status==='not-answered'?'background:#f43f5e;color:#fff':'background:#e2e8f0;color:#475569';
+                        %>
+                        <% if (hasSections && p.subject && p.subject !== paletteSubject) { paletteSubject = p.subject; %>
+                          <% if (p.num !== 1) { %>
+                        </div>
+                      </div>
+                      <% } %>
+                      <div class="rounded-xl border border-slate-100 bg-slate-50/50 p-2.5">
+                        <div class="flex items-center justify-between mb-2">
+                          <p class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                            <span><%= p.subject %></span>
+                            <% if (p.locked) { %><span class="text-xs">🔒</span><% } %>
+                          </p>
+                          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600">
+                            <%= paletteStatus.filter(q => q.subject === p.subject && ['answered', 'answered-marked'].includes(q.status)).length %>/<%= paletteStatus.filter(q => q.subject === p.subject).length %>
+                          </span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                          <% } %>
+                            <% if (p.locked) { %>
+                              <span class="palette-btn bg-slate-100 text-slate-300 cursor-not-allowed"
+                                title="Section is locked">
+                                <%= p.num %>
+                              </span>
+                              <% } else { %>
+                                <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+                                  onclick="saveAndNav(event, this.href)"
+                                  class="palette-btn <%= p.num===questionNumber?'current scale-110':'' %>"
+                                  style="<%= bg %>">
+                                  <%= p.num %>
+                                </a>
+                                <% } %>
+                                  <% }) %>
+                                    <% if (hasSections && paletteStatus.length) { %>
+                        </div>
+                      </div>
+                      <% } %>
+                  </div>
+                </div>
+                <div class="border-t border-slate-100 p-4 text-xs text-slate-600 space-y-1.5">
+                  <% const answered=paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
+                    <% const marked=paletteStatus.filter(p=>['marked','answered-marked'].includes(p.status)).length %>
+                      <div class="flex justify-between"><span>Answered</span><span class="font-bold text-emerald-600">
+                          <%= answered %>
+                        </span></div>
+                      <div class="flex justify-between"><span>Unanswered</span><span class="font-bold text-rose-500">
+                          <%= totalQuestions-answered %>
+                        </span></div>
+                      <div class="flex justify-between"><span>Marked</span><span class="font-bold text-violet-600">
+                          <%= marked %>
+                        </span></div>
+                      <div class="flex justify-between border-t border-slate-100 pt-1.5"><span>Total</span><span
+                          class="font-bold">
+                          <%= totalQuestions %>
+                        </span></div>
+                </div>
+              </div>
+  </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="reviewModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-card-lg w-full max-w-lg p-6 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <h3 class="text-lg font-bold text-slate-900">Review Your Answers</h3>
+        <button type="button" onclick="closeReviewModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center text-sm flex-shrink-0">
+        <div>
+          <p id="reviewAnsweredCount" class="text-2xl font-bold text-emerald-600">
+            <%= paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Answered</p>
+        </div>
+        <div>
+          <p id="reviewUnansweredCount" class="text-2xl font-bold text-rose-500">
+            <%= totalQuestions - paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Unanswered</p>
+        </div>
+        <div>
+          <p id="reviewMarkedCount" class="text-2xl font-bold text-violet-600">
+            <%= paletteStatus.filter(p=>['marked','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Marked</p>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto mb-4 space-y-1">
+        <% paletteStatus.forEach(p=> {
+          const statusColor =
+          p.status==='answered'?'text-emerald-600':p.status==='marked'?'text-violet-600':p.status==='answered-marked'?'text-purple-700':p.status==='not-answered'?'text-rose-500':'text-slate-400';
+          const statusText =
+          p.status==='answered'?'Answered':p.status==='marked'?'Marked':p.status==='answered-marked'?'Ans+Marked':p.status==='not-answered'?'Not Answered':'Not Visited';
+          %>
+          <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+            onclick="saveAndNav(event, this.href); closeReviewModal();" data-review-question="<%= p.num %>"
+            data-review-status="<%= p.status %>" data-review-subject="<%= p.subject || '' %>"
+            class="review-question-row flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+            <div class="flex items-center gap-3">
+              <span data-review-badge
+                class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center <%= p.status==='answered'?'bg-emerald-500 text-white':p.status==='marked'?'bg-violet-500 text-white':p.status==='answered-marked'?'bg-purple-700 text-white':p.status==='not-answered'?'bg-rose-500 text-white':'bg-slate-200 text-slate-500' %>">
+                <%= p.num %>
+              </span>
+              <span class="text-sm font-medium text-slate-700">Question <%= p.num %></span>
+              <% if (p.subject) { %>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600"><%= p.subject %></span>
+              <% } %>
+            </div>
+            <span data-review-status-text class="text-xs font-semibold <%= statusColor %>">
+              <%= statusText %>
+            </span>
+          </a>
+          <% }) %>
+      </div>
+
+      <div class="flex gap-3 flex-shrink-0">
+        <button type="button" onclick="closeReviewModal()"
+          class="flex-1 border-2 border-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-sm">Back
+          to Exam</button>
+        <button type="button" onclick="submitConfirm(); closeReviewModal();"
+          class="flex-1 bg-rose-600 text-white font-bold py-2.5 rounded-xl hover:bg-rose-700 transition-colors text-sm">Submit
+          Exam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit confirm modal -->
+  <div id="submitModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-card-lg w-full max-w-md p-8 text-center">
+      <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-slate-900 mb-2">Submit Exam?</h3>
+      <p class="text-slate-500 text-sm mb-5">Once submitted, you cannot change your answers.</p>
+      <div class="grid grid-cols-3 gap-3 bg-slate-50 rounded-xl p-4 mb-5 text-sm">
+        <div>
+          <p class="text-2xl font-bold text-emerald-600">
+            <%= paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Answered</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-rose-500">
+            <%= totalQuestions-paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Unanswered</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-violet-600">
+            <%= paletteStatus.filter(p=>['marked','answered-marked'].includes(p.status)).length %>
+          </p>
+          <p class="text-xs text-slate-500">Marked</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="saveAndSubmit()"
+          class="flex-1 bg-rose-600 text-white font-bold py-3 rounded-xl hover:bg-rose-700 transition-colors">Yes,
+          Submit</button>
+        <button type="button" onclick="document.getElementById('submitModal').classList.add('hidden')"
+          class="flex-1 border-2 border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab-switch auto-submit overlay -->
+  <div id="tabSwitchOverlay" class="hidden fixed inset-0 z-[999] bg-black/90 flex items-center justify-center p-6">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-8 text-center shadow-card-lg">
+      <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900 mb-2">Tab Switch Detected</h2>
+      <p class="text-slate-600 text-sm mb-6 leading-relaxed">You have left the exam window. This is a
+        violation.<br><strong class="text-rose-600">Auto-submitting in:</strong></p>
+      <div class="text-6xl font-bold text-rose-600 mb-6 timer-warning" id="tabCountdown">3</div>
+      <p class="text-xs text-slate-400">This incident has been logged.</p>
+    </div>
+  </div>
+
+  <!-- Manual submit form -->
+  <form id="manualSubmitForm" action="/exam/<%= test.id %>/submit" method="POST" class="hidden"></form>
+
+  <!-- Single auto-submit form (only one!) -->
+  <form id="autoSubmitForm" action="/exam/<%= test.id %>/submit" method="POST" class="hidden">
+    <input type="hidden" name="auto" value="true" />
+  </form>
+
+  <script>
+    // ── Core vars ──────────────────────────────────────────────────────────────
+    const TEST_ID = '<%= test.id %>';
+    const QUESTION_ID = '<%= question.id %>';
+    let currentAnswer = '<%= selectedAnswer || "" %>';
+    let markedForReview = <%- isMarked ? 'true' : 'false' %>;
+    let qElapsed = 0;
+    let navInProgress = false;
+
+    // ── Per-test anti-cheat settings (from admin) ────────────────────────────
+    const SETTINGS = {
+      autoSubmitOnViolation: <%- test.autoSubmitOnViolation ? 'true' : 'false' %>,
+      maxTabSwitches: <%= test.maxTabSwitches || 3 %>,
+      maxFocusLosses:  <%= test.maxFocusLosses || 5 %>,
+      blockCopyPaste:  <%- test.blockCopyPaste !== false ? 'true' : 'false' %>,
+      requireFullscreen: <%- test.requireFullscreen ? 'true' : 'false' %>,
+    };
+    let tabSwitchCount = <%= (result && result.cheatingFlags && result.cheatingFlags.tabSwitches) || 0 %>;
+    let focusLossCount = <%= (result && result.cheatingFlags && result.cheatingFlags.focusLosses) || 0 %>;
+
+    // ── Timer ──────────────────────────────────────────────────────────────────
+    const fmt = s => `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    const NO_TIME_LIMIT = <%- test.noTimeLimit ? 'true' : 'false' %>;
+    let remaining = <%= test.noTimeLimit ? 0 : remaining %>;
+    const timerEl = document.getElementById('timer');
+    const timerDisplay = document.getElementById('timerDisplay');
+    timerDisplay.textContent = NO_TIME_LIMIT ? 'No Limit' : fmt(remaining);
+
+    const countdown = NO_TIME_LIMIT ? null : setInterval(() => {
+      remaining--;
+      timerDisplay.textContent = fmt(Math.max(0, remaining));
+      // Reset timer classes cleanly before setting new ones
+      timerEl.classList.remove('warning', 'urgent');
+      if (remaining <= 60) timerEl.classList.add('urgent');
+      else if (remaining <= 300) timerEl.classList.add('warning');
+      if (remaining <= 0) { clearInterval(countdown); allowLeave(); document.getElementById('autoSubmitForm').submit(); }
+    }, 1000);
+
+    // Per-question timer
+    const qTimerEl = document.getElementById('qTimer');
+    setInterval(() => {
+      qElapsed++;
+      qTimerEl.textContent = qElapsed > 60 ? `${Math.floor(qElapsed / 60)}m ${qElapsed % 60}s` : `${qElapsed}s`;
+    }, 1000);
+
+    // ── Select option (click on box) ───────────────────────────────────────────
+    function selectOption(key, boxEl) {
+      // Clear all boxes
+      document.querySelectorAll('.opt-box').forEach(b => {
+        b.classList.remove('selected');
+        const keySpan = b.querySelector('.opt-key');
+        if (keySpan) { keySpan.className = keySpan.className.replace('bg-navy-950 border-navy-950 text-white', '').trim() + ' border-slate-300 text-slate-500'; }
+      });
+      // Select clicked
+      boxEl.classList.add('selected');
+      const keySpan = boxEl.querySelector('.opt-key');
+      if (keySpan) { keySpan.className = keySpan.className.replace('border-slate-300 text-slate-500', '').trim() + ' bg-navy-950 border-navy-950 text-white'; }
+      currentAnswer = key;
+
+      // Auto-clear "Mark for Review" when student answers — answered takes priority
+      if (markedForReview) {
+        markedForReview = false;
+        const btn = document.getElementById('markReviewBtn');
+        btn.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors border-slate-200 text-slate-600 hover:border-violet-300';
+        btn.textContent = 'Mark for Review';
+      }
+
+      saveToServer(key);
+    }
+
+    // ── Clear answer ───────────────────────────────────────────────────────────
+    function clearAnswer() {
+      document.querySelectorAll('.opt-box').forEach(b => {
+        b.classList.remove('selected');
+        const ks = b.querySelector('.opt-key');
+        if (ks) { ks.className = ks.className.replace('bg-navy-950 border-navy-950 text-white', '').trim() + ' border-slate-300 text-slate-500'; }
+      });
+      currentAnswer = '';
+      saveToServer('');
+    }
+
+    // ── Mark for review ────────────────────────────────────────────────────────
+    function toggleMark() {
+      markedForReview = !markedForReview;
+      const btn = document.getElementById('markReviewBtn');
+      if (markedForReview) {
+        btn.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors bg-violet-600 text-white border-violet-600';
+        btn.textContent = 'Marked';
+      } else {
+        btn.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors border-slate-200 text-slate-600 hover:border-violet-300';
+        btn.textContent = 'Mark for Review';
+      }
+      saveToServer(currentAnswer);
+    }
+
+    // ── Save to server (with offline fallback) ───────────────────────────────
+    function saveToServer(ans) {
+      const payload = { questionId: QUESTION_ID, answer: ans, markForReview: markedForReview, timeSpent: qElapsed };
+      const url = `/exam/${TEST_ID}/save-answer`;
+      const saveIndicator = document.getElementById('saveIndicator');
+      const setSaveState = (text, tone) => {
+        if (!saveIndicator) return;
+        const tones = {
+          saved: 'bg-emerald-50 text-emerald-700',
+          saving: 'bg-amber-50 text-amber-700',
+          offline: 'bg-rose-50 text-rose-700'
+        };
+        saveIndicator.textContent = `● ${text}`;
+        saveIndicator.className = `save-indicator inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${tones[tone] || tones.saved} text-[11px] font-bold`;
+      };
+      setSaveState('Saving...', 'saving');
+
+      if (!navigator.onLine) {
+        if (typeof window.queueOfflineAnswer === 'function') window.queueOfflineAnswer(url, payload);
+        setSaveState('Offline · queued', 'offline');
+        console.warn('[Exam] Offline — answer queued for sync');
+        return Promise.resolve({ success: false, queued: true });
+      }
+
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(r => r.json()).then(data => {
+        setSaveState(data.success ? 'Saved' : 'Save failed', data.success ? 'saved' : 'offline');
+        return data;
+      }).catch(() => {
+        if (typeof window.queueOfflineAnswer === 'function') window.queueOfflineAnswer(url, payload);
+        setSaveState('Retry queued', 'offline');
+        return { success: false, queued: true };
+      });
+    }
+
+    // ── Navigate with save (wait for save before nav) ──────────────────────────
+    function saveAndNav(e, href) {
+      e.preventDefault();
+      if (navInProgress) return;
+      navInProgress = true;
+      saveToServer(currentAnswer).finally(() => { allowLeave(); window.location.href = href; });
+    }
+
+    // ── Mobile question palette ───────────────────────────────────────────────
+    function togglePalette() {
+      const sidebar = document.getElementById('paletteSidebar');
+      const overlay = document.getElementById('paletteOverlay');
+      if (!sidebar || !overlay) return;
+      const opening = sidebar.classList.contains('translate-x-full');
+      sidebar.classList.toggle('translate-x-full', !opening);
+      overlay.classList.toggle('hidden', !opening);
+    }
+
+    // ── Submit confirm ─────────────────────────────────────────────────────────
+    function submitConfirm() { document.getElementById('submitModal').classList.remove('hidden'); }
+
+    // ── Review Modal Functions ────────────────────────────────────────────────
+    function _reviewStatusMeta(status) {
+      if (status === 'answered') return { text: 'Answered', textClass: 'text-emerald-600', badgeClass: 'bg-emerald-500 text-white' };
+      if (status === 'marked') return { text: 'Marked', textClass: 'text-violet-600', badgeClass: 'bg-violet-500 text-white' };
+      if (status === 'answered-marked') return { text: 'Ans+Marked', textClass: 'text-purple-700', badgeClass: 'bg-purple-700 text-white' };
+      if (status === 'not-answered') return { text: 'Not Answered', textClass: 'text-rose-500', badgeClass: 'bg-rose-500 text-white' };
+      return { text: 'Not Visited', textClass: 'text-slate-400', badgeClass: 'bg-slate-200 text-slate-500' };
+    }
+
+    function _setReviewRowStatus(row, status) {
+      if (!row) return;
+      row.dataset.reviewStatus = status;
+
+      const meta = _reviewStatusMeta(status);
+      const badge = row.querySelector('[data-review-badge]');
+      const statusText = row.querySelector('[data-review-status-text]');
+
+      if (badge) {
+        badge.className = 'w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ' + meta.badgeClass;
+      }
+
+      if (statusText) {
+        statusText.textContent = meta.text;
+        statusText.className = 'text-xs font-semibold ' + meta.textClass;
+      }
+    }
+
+    function _refreshReviewCounts() {
+      const rows = [...document.querySelectorAll('.review-question-row')].filter(row => !row.classList.contains('hidden'));
+
+      let answered = 0;
+      let marked = 0;
+
+      rows.forEach(row => {
+        const status = row.dataset.reviewStatus || 'not-visited';
+        if (status === 'answered' || status === 'answered-marked') answered++;
+        if (status === 'marked' || status === 'answered-marked') marked++;
+      });
+
+      const answeredEl = document.getElementById('reviewAnsweredCount');
+      const unansweredEl = document.getElementById('reviewUnansweredCount');
+      const markedEl = document.getElementById('reviewMarkedCount');
+
+      if (answeredEl) answeredEl.textContent = answered;
+      if (unansweredEl) unansweredEl.textContent = Math.max(0, rows.length - answered);
+      if (markedEl) markedEl.textContent = marked;
+    }
+
+    function _refreshCurrentQuestionInReview() {
+      const row = document.querySelector('[data-review-question="<%= questionNumber %>"]');
+      if (!row) return;
+
+      let status = 'not-answered';
+
+      if (currentAnswer && markedForReview) status = 'answered-marked';
+      else if (currentAnswer) status = 'answered';
+      else if (markedForReview) status = 'marked';
+
+      _setReviewRowStatus(row, status);
+    }
+
+    function openReviewModal() {
+      // IMPORTANT: do not open the modal until the LAST/current answer is saved.
+      saveToServer(currentAnswer).then((data) => {
+        if (!data || (!data.success && !data.queued)) {
+          showWarnBanner('Current answer could not be saved. Please try again.', 'danger');
+          return;
+        }
+
+        // Server-rendered palette is from page-load time, so update current Q locally
+        // before calculating the review counts.
+        _refreshCurrentQuestionInReview();
+        _refreshReviewCounts();
+
+        document.getElementById('reviewModal').classList.remove('hidden');
+      });
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').classList.add('hidden');
+    }
+
+    // ── Fullscreen ─────────────────────────────────────────────────────────────
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => { });
+      else document.exitFullscreen?.();
+    }
+    window.addEventListener('load', () => setTimeout(() => document.documentElement.requestFullscreen?.().catch(() => { }), 600));
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && SETTINGS.requireFullscreen) {
+        reportViolation('fullscreenExit');
+        showWarnBanner('⚠ Fullscreen exited! Click the fullscreen button to re-enter.', 'danger');
+      }
+    });
+
+    // ── Violation report ───────────────────────────────────────────────────────
+    function reportViolation(type, onAutoSubmit) {
+      return fetch(`/exam/${TEST_ID}/report-violation`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      }).then(r => r.json()).then(d => {
+        if (d.violations !== undefined) {
+          document.getElementById('violationCount').textContent = d.violations;
+          document.getElementById('violPlural').textContent = d.violations !== 1 ? 's' : '';
+          document.getElementById('violationBar').classList.remove('hidden');
+          document.getElementById('violationBar').classList.add('flex');
+        }
+        // Update local counts
+        if (type === 'tabSwitch') tabSwitchCount = d.tabSwitches || tabSwitchCount + 1;
+        if (type === 'focusLoss') focusLossCount = d.focusLosses || focusLossCount + 1;
+
+        // Show remaining warnings
+        if (SETTINGS.autoSubmitOnViolation && type === 'tabSwitch') {
+          const remaining = Math.max(0, SETTINGS.maxTabSwitches - tabSwitchCount);
+          if (remaining > 0) {
+            showWarnBanner(`⚠ Tab switch detected! ${remaining} more allowed before auto-submit.`, d.warningLevel === 'danger' ? 'danger' : 'warning');
+          }
+        }
+        // Auto-submit if server says so
+        if (d.autoSubmit) {
+          showAutoSubmitOverlay(d.warningMsg || 'Exam auto-submitted due to violations.');
+        }
+        return d;
+      }).catch(() => { });
+    }
+
+    function showWarnBanner(msg, level = 'warning') {
+      const b = document.getElementById('warnBanner');
+      b.textContent = msg;
+      b.className = b.className.replace(/bg-\S+/g, '');
+      b.classList.add(level === 'danger' ? 'bg-red-700' : 'bg-amber-600');
+      b.classList.remove('hidden');
+      setTimeout(() => b.classList.add('hidden'), 6000);
+    }
+
+    function showAutoSubmitOverlay(msg) {
+      const overlay = document.getElementById('tabSwitchOverlay');
+      const msgEl = document.getElementById('tabSwitchMsg');
+      if (msgEl) msgEl.textContent = msg;
+      overlay.classList.remove('hidden');
+      let count = 5;
+      document.getElementById('tabCountdown').textContent = count;
+      const t = setInterval(() => {
+        count--;
+        document.getElementById('tabCountdown').textContent = count;
+        if (count <= 0) {
+          clearInterval(t);
+          saveToServer(currentAnswer).finally(() => { allowLeave(); document.getElementById('autoSubmitForm').submit(); });
+        }
+      }, 1000);
+    }
+
+    // ── Anti-cheat: tab switch detection ────────────────────────────────────
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        reportViolation('tabSwitch');
+      }
+    });
+    let blurTimer;
+    window.addEventListener('blur', () => {
+      blurTimer = setTimeout(() => {
+        if (!document.hasFocus()) reportViolation('focusLoss');
+      }, 800);
+    });
+    window.addEventListener('focus', () => clearTimeout(blurTimer));
+
+    // Block copy/paste if enabled by admin
+    if (SETTINGS.blockCopyPaste) {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('copy', e => e.preventDefault());
+      document.addEventListener('cut', e => e.preventDefault());
+      document.addEventListener('paste', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.key === 's')) e.preventDefault();
+      });
+    }
+
+    // Fullscreen: only force if admin enabled requireFullscreen
+    if (SETTINGS.requireFullscreen) {
+      window.addEventListener('load', () => setTimeout(() => document.documentElement.requestFullscreen?.().catch(() => { }), 600));
+    }
+    window.addEventListener('focus', () => clearTimeout(blurTimer));
+
+    // ── Security ───────────────────────────────────────────────────────────────
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('cut', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) || (e.ctrlKey && ['u', 's', 'a'].includes(e.key))) e.preventDefault();
+    });
+    // ── Auto-submit on leave (beacon) ──────────────────────────────────────────
+    let _leaveAllowed = false;
+    function allowLeave() { _leaveAllowed = true; }
+
+    function _beforeUnload(e) {
+      if (_leaveAllowed) return;
+      // Save current answer + trigger auto-submit via beacon (works even on navigation)
+      const blob = new Blob([JSON.stringify({
+        questionId: '<%= question._id %>',
+        answer: currentAnswer,
+        markForReview: document.getElementById('markReviewCheck')?.checked ? 'true' : 'false',
+        timeSpent: 0,
+      })], { type: 'application/json' });
+      navigator.sendBeacon('/exam/<%= test.id %>/leave', blob);
+      // Show browser confirmation so student can cancel accidental navigation
+      e.preventDefault();
+      e.returnValue = 'Your current answer will be saved, but please use the in-app Prev/Next buttons to navigate.';
+    }
+    window.addEventListener('beforeunload', _beforeUnload);
+    function saveAndSubmit() {
+      allowLeave();
+      saveToServer(currentAnswer).finally(() => {
+        document.getElementById('manualSubmitForm').submit();
+      });
+    }
+
+    // CET-style keyboard shortcuts: 1-4 select A-D, C clears, M marks for review.
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (e.target && e.target.tagName || '').toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag)) return;
+      const keys = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
+      if (keys[e.key]) {
+        const box = [...document.querySelectorAll('.opt-box')].find(el => el.querySelector('.opt-key')?.textContent.trim() === keys[e.key]);
+        if (box) selectOption(keys[e.key], box);
+      } else if (e.key.toLowerCase() === 'c') clearAnswer();
+      else if (e.key.toLowerCase() === 'm') toggleMark();
+    });
+  </script>
+  <div id="paletteOverlay" class="hidden fixed inset-0 bg-black/40 z-30 md:hidden" onclick="togglePalette()"></div>
+  </body>
+
+  </html>

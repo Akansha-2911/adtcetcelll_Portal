@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen bg-[#f8fafc]">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-w-0">
+    <header class="spvn-topbar sticky top-0 z-10 px-5 lg:px-8 py-4 flex items-center gap-3">
+      <button onclick="openSidebar()" class="lg:hidden p-2 rounded-lg border bg-white">☰</button>
+      <div><p class="spvn-kicker">Content</p><h1 class="spvn-page-title">Content Management</h1></div>
+      <div class="ml-auto flex gap-2">
+        <a href="/admin/questions/smart-import" class="spvn-ui-btn spvn-ui-btn-primary">↑ Upload Questions</a>
+        <a href="/admin/questions" class="spvn-ui-btn spvn-ui-btn-blue">Question Bank</a>
+      </div>
+    </header>
+    <div class="p-5 lg:p-8 max-w-[1500px] mx-auto">
+      <%- include('../partials/flash') %>
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="spvn-stat spvn-accent-card p-5"><p class="spvn-kicker">Question Bank</p><div class="text-3xl font-black text-slate-900 mt-2"><%= questionCount %></div><p class="text-sm mt-1">Active questions</p></div>
+        <div class="spvn-stat spvn-accent-card green p-5"><p class="spvn-kicker">Syllabus</p><div class="text-3xl font-black text-slate-900 mt-2"><%= syllabusCount %></div><p class="text-sm mt-1">Active units/topics</p></div>
+        <div class="spvn-stat spvn-accent-card gold p-5"><p class="spvn-kicker">Classification</p><div class="text-3xl font-black text-slate-900 mt-2"><%= classificationPercent %>%</div><p class="text-sm mt-1">Questions mapped to syllabus</p></div>
+      </div>
+      <div class="grid xl:grid-cols-2 gap-5">
+        <section class="spvn-card p-5">
+          <div class="flex items-center justify-between mb-4"><div><p class="spvn-kicker">Subjects</p><h2 class="spvn-section-title">Question coverage</h2></div><a href="/admin/questions" class="text-sm font-bold text-blue-700">Manage →</a></div>
+          <div class="space-y-3"><% (subjectStats||[]).forEach(row=>{ %><div class="border rounded-xl p-3"><div class="flex items-center justify-between"><strong><%= row.subject %></strong><span class="spvn-chip"><%= row.total %> questions</span></div><div class="grid grid-cols-3 text-xs mt-2 gap-2"><span>Easy <b><%= row.easy %></b></span><span>Medium <b><%= row.medium %></b></span><span>Hard <b><%= row.hard %></b></span></div></div><% }) %></div>
+        </section>
+        <section class="spvn-card p-5">
+          <div class="flex items-center justify-between mb-4"><div><p class="spvn-kicker">Courses</p><h2 class="spvn-section-title">Syllabus structure</h2></div><a href="/admin/topics" class="text-sm font-bold text-emerald-700">Syllabus Manager →</a></div>
+          <div class="space-y-3"><% (courseStats||[]).forEach(row=>{ %><div class="border rounded-xl p-3 flex items-center justify-between"><strong><%= row.course %></strong><div class="text-xs text-right"><div><b><%= row.units %></b> units</div><div><b><%= row.subtopics %></b> subtopics</div></div></div><% }) %></div>
+        </section>
+      </div>
+      <section class="spvn-card p-5 mt-5">
+        <div class="flex items-center justify-between mb-4"><div><p class="spvn-kicker">Recent</p><h2 class="spvn-section-title">Recently added questions</h2></div><a href="/admin/questions/smart-import" class="spvn-ui-btn spvn-ui-btn-primary">Upload Question Paper</a></div>
+        <div class="divide-y"><% (recentQuestions||[]).forEach(q=>{ %><div class="py-3 flex gap-3"><span class="spvn-chip"><%= q.subject %></span><div class="min-w-0"><div class="math-content font-semibold text-slate-900 truncate"><%= q.question %></div><div class="text-xs mt-1"><%= q.topic || 'Unclassified' %> · <%= q.difficulty %></div></div></div><% }) %><% if(!(recentQuestions||[]).length){ %><div class="spvn-empty p-8 text-center">No questions yet.</div><% } %></div>
+      </section>
+    </div>
+  </main>
+</div>
+</body></html>

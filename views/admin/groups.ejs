@@ -1,0 +1,575 @@
+<%- include('../partials/head') %>
+<div class="flex min-h-screen">
+  <%- include('../partials/sidebar-admin') %>
+  <main class="lg:ml-64 flex-1 min-h-screen">
+    <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8 flex items-center gap-4">
+      <button onclick="openSidebar()" class="lg:hidden text-slate-500 hover:text-slate-800">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex-1"><nav class="spvn-ui-topnav"><a href="/admin/groups" class="active">Organization</a><a href="/admin/tests">Test Management</a><a href="/admin/results">Reports</a><a href="/admin/results">Analytics</a><a href="/admin/tests?view=online">Monitor</a><a href="/admin/content">Content</a></nav>
+        <h1 class="sr-only">Groups &amp; Batches</h1>
+        <p class="text-xs text-slate-400"><%= groups.length %> active groups</p>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <button onclick="document.getElementById('assignModal').classList.remove('hidden')"
+          class="flex items-center gap-1.5 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          <span class="hidden sm:inline">Assign Member</span>
+        </button>
+        <button onclick="document.getElementById('createGroupModal').classList.remove('hidden')"
+          class="flex items-center gap-1.5 bg-navy-950 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-navy-900 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span class="hidden sm:inline">Create Group</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-5 lg:p-8">
+      <%- include('../partials/flash') %>
+      <%
+        const totalAssignedStudents = groups.reduce((sum, group) => sum + (group.members?.length || 0), 0);
+        const courseCount = new Set(groups.map(group => group.course).filter(Boolean)).size;
+      %>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Batches</p><p class="text-2xl font-bold text-slate-900 mt-1"><%= groups.length %></p></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Students</p><p class="text-2xl font-bold text-navy-700 mt-1"><%= totalAssignedStudents %></p></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Courses</p><p class="text-2xl font-bold text-indigo-600 mt-1"><%= courseCount %></p></div>
+      </div>
+
+      <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-3 mb-6 flex flex-col sm:flex-row gap-3">
+        <label class="relative flex-1">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+          <input id="batchSearch" type="search" oninput="filterBatches()" placeholder="Search batch, student name or roll number…" class="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"/>
+        </label>
+        <select id="batchCourseFilter" onchange="filterBatches()" class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-navy-500">
+          <option value="">All courses</option>
+          <% COURSES.forEach(course => { %><option value="<%= course.toLowerCase() %>"><%= course %></option><% }) %>
+        </select>
+        <div class="flex items-center px-3 text-xs text-slate-500"><strong id="visibleBatchCount" class="text-slate-800 mr-1"><%= groups.length %></strong> shown</div>
+      </div>
+
+      <div class="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1180px] text-sm">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 uppercase text-[11px] tracking-wide">
+                <th class="px-4 py-3 text-left font-bold">Batch</th>
+                <th class="px-4 py-3 text-left font-bold">Course</th>
+                <th class="px-4 py-3 text-left font-bold">Academic Year</th>
+                <th class="px-4 py-3 text-left font-bold">Students</th>
+                <th class="px-4 py-3 text-left font-bold">Duration</th>
+                <th class="px-4 py-3 text-left font-bold">Status</th>
+                <th class="px-4 py-3 text-right font-bold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="batchTableBody" class="divide-y divide-slate-100">
+              <% groups.forEach(g => {
+                const studentCount = g.members ? g.members.filter(m => m.GroupMember?.role === 'student').length : 0;
+                const searchText = [g.name, g.description, g.academicYear, g.course, ...(g.members || []).flatMap(member => [member.name, member.rollNo])].filter(Boolean).join(' ').toLowerCase();
+              %>
+              <tr class="batch-row hover:bg-slate-50 transition-colors cursor-pointer" data-search="<%= searchText %>" data-course="<%= (g.course || '').toLowerCase() %>" onclick="openBatchRow(event, '/admin/groups/<%= g.id %>')">
+                <td class="px-4 py-4 align-middle">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-navy-100 flex items-center justify-center shrink-0">
+                      <svg class="w-4.5 h-4.5 text-navy-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                      <a href="/admin/groups/<%= g.id %>" class="font-bold text-slate-900 hover:text-blue-700"><%= g.name %></a>
+                      <p class="text-xs text-slate-500 mt-0.5 max-w-[280px] truncate"><%= g.description || 'No description' %></p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-slate-800 font-medium"><%= g.course || '—' %></td>
+                <td class="px-4 py-4"><span class="inline-flex text-[11px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">AY <%= g.academicYear %></span></td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-900"><%= studentCount %></span>
+                    <span class="text-xs text-slate-500">students</span>
+                    <% if (g.members && g.members.length > 0) { %>
+                    <div class="flex -space-x-1.5 ml-1">
+                      <% g.members.slice(0,4).forEach(m => { %>
+                      <div class="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-blue-700 font-bold text-[9px]" title="<%= m.name %>"><%= m.name.charAt(0).toUpperCase() %></div>
+                      <% }) %>
+                      <% if (g.members.length > 4) { %><div class="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-slate-600 font-bold text-[9px]">+<%= g.members.length - 4 %></div><% } %>
+                    </div>
+                    <% } %>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-slate-600 whitespace-nowrap">
+                  <%= g.startDate ? new Date(g.startDate).toLocaleDateString('en-IN') : '—' %>
+                  <span class="text-slate-300 mx-1">→</span>
+                  <%= g.endDate ? new Date(g.endDate).toLocaleDateString('en-IN') : '—' %>
+                </td>
+                <td class="px-4 py-4">
+                  <span class="inline-flex text-[10px] font-bold px-2.5 py-1 rounded-full <%= g.status==='inactive'?'bg-slate-100 text-slate-600':g.status==='completed'?'bg-blue-50 text-blue-700':'bg-emerald-50 text-emerald-700' %>"><%= (g.status||'active').toUpperCase() %></span>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                    <button onclick="event.stopPropagation(); openAddStudent('<%= g.id %>', `<%= g.name.replace(/`/g, '\\`') %>` )" class="px-2.5 py-1.5 rounded-lg bg-navy-950 text-white text-[11px] font-semibold hover:bg-navy-900">+ Student</button>
+                    <button onclick="event.stopPropagation(); openBulkImport('<%= g.id %>', `<%= g.name.replace(/`/g, '\\`') %>` )" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[11px] font-semibold hover:bg-slate-50">Bulk Import</button>
+                    <a href="/admin/groups/<%= g.id %>/credentials-pdf" onclick="event.stopPropagation()" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[11px] font-semibold hover:bg-slate-50">Credentials</a>
+                    <button onclick="event.stopPropagation(); openEditGroup('<%= g.id %>', `<%= g.name.replace(/`/g, '\\`') %>`, `<%= (g.description||'').replace(/`/g, '\\`') %>`, '<%= g.academicYear %>', '<%= g.course||'' %>', '<%= g.status||'active' %>', '<%= g.startDate ? new Date(g.startDate).toISOString().slice(0,10) : '' %>', '<%= g.endDate ? new Date(g.endDate).toISOString().slice(0,10) : '' %>')" class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 flex items-center justify-center" title="Edit batch">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button onclick="event.stopPropagation(); openDeleteGroup('<%= g.id %>', `<%= g.name.replace(/`/g, '\\`') %>` )" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center" title="Delete batch">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+              <% if (groups.length === 0) { %>
+              <tr><td colspan="7" class="px-6 py-16 text-center"><p class="font-semibold text-slate-600">No groups yet.</p><p class="text-xs text-slate-400 mt-1">Create a group to start assigning students.</p></td></tr>
+              <% } %>
+              <tr id="noBatchResults" class="hidden"><td colspan="7" class="px-6 py-14 text-center"><p class="font-semibold text-slate-600">No matching batch found.</p><p class="text-xs text-slate-400 mt-1">Try another batch, student, roll number or course.</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Add Single Student to Batch Modal -->
+<div id="addStudentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <div><h3 class="font-bold text-slate-900">Add Student</h3><p class="text-xs text-slate-400 mt-0.5" id="addStudentBatchLabel"></p></div>
+      <button onclick="document.getElementById('addStudentModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <form action="/admin/students" method="POST" id="addStudentForm" class="p-6 space-y-4">
+      <input type="hidden" name="groupId" id="addStudentGroupId"/>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+        <input type="text" name="name" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="Student full name"/>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Roll Number *</label>
+        <input type="text" name="rollNo" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="2024CE001"/>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Parent Contact No</label>
+        <input type="text" name="parentContact" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="10-digit mobile number"/>
+      </div>
+      <div class="bg-navy-50 border border-navy-100 rounded-xl px-4 py-3 flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-navy-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="text-xs text-navy-700">Password auto-generated as <strong>CET@</strong> + last 4 digits of Roll No</p>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-navy-950 text-white font-semibold py-3 rounded-xl hover:bg-navy-900 transition-colors">Create Student</button>
+        <button type="button" onclick="document.getElementById('addStudentModal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Bulk Import per-batch Modal -->
+<div id="bulkImportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <div>
+        <h3 class="font-bold text-slate-900 text-base">📥 Import Students to Batch</h3>
+        <p class="text-xs text-slate-400 mt-0.5" id="bulkImportBatchLabel"></p>
+      </div>
+      <button onclick="document.getElementById('bulkImportModal').classList.add('hidden')"
+        class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <!-- Step 1: Download Template -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm">1</div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-blue-900">Download Excel Template</p>
+            <p class="text-xs text-blue-700 mt-0.5 mb-3">Start with our pre-formatted template to avoid errors. Fill in student details and re-upload.</p>
+            <a href="/admin/groups/template/download"
+              class="inline-flex items-center gap-2 bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Download Template (.xlsx)
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Column Guide -->
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm">2</div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-800 mb-2">Required Columns in File</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-200">
+                    <th class="text-left px-2 py-1.5 text-slate-600 font-semibold rounded-l-lg">Column</th>
+                    <th class="text-left px-2 py-1.5 text-slate-600 font-semibold">Example</th>
+                    <th class="text-left px-2 py-1.5 text-slate-600 font-semibold rounded-r-lg">Required?</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <% [
+                    ['Name', 'Arjun Mehta', '✅ Yes'],
+                    ['Roll No', '2024CE001', '✅ Yes'],
+                    ['Email', 'arjun@example.com', '❌ Optional'],
+                    ['Phone', '9876543210', '❌ Optional'],
+                    ['Parent Contact No', '9876543200', '❌ Optional'],
+                  ].forEach(([col, ex, req]) => { %>
+                  <tr>
+                    <td class="px-2 py-1.5 font-mono font-semibold text-slate-700"><%= col %></td>
+                    <td class="px-2 py-1.5 text-slate-500"><%= ex %></td>
+                    <td class="px-2 py-1.5 <%= req.includes('Yes') ? 'text-green-600' : 'text-slate-400' %> font-medium"><%= req %></td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <p class="text-xs text-slate-400 mt-2">⚠ Duplicate Roll Nos are automatically rejected and reported.</p>
+            <p class="text-xs text-slate-400 mt-0.5">🔑 Default password = <span class="font-mono font-semibold">CET@XXXX</span> (last 4 digits of Roll No)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload -->
+      <form id="bulkImportForm" action="" method="POST" enctype="multipart/form-data" class="space-y-3">
+        <input type="hidden" name="groupId" id="bulkImportGroupId"/>
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-sm">3</div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-800 mb-2">Upload Your Filled File</p>
+            <label id="dropZone"
+              class="block border-2 border-dashed border-slate-200 hover:border-green-400 rounded-xl p-5 text-center cursor-pointer transition-colors group">
+              <svg class="w-8 h-8 text-slate-300 group-hover:text-green-500 mx-auto mb-2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+              <p class="text-sm font-medium text-slate-600 group-hover:text-green-700" id="dropLabel">Click to choose or drag & drop</p>
+              <p class="text-xs text-slate-400 mt-0.5">Supports .csv, .xlsx, .xls — max 10MB</p>
+              <input type="file" name="csvFile" id="importFile" accept=".csv,.xlsx,.xls" required class="sr-only"
+                onchange="onFileSelected(this)"/>
+            </label>
+          </div>
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button type="submit" id="importSubmitBtn"
+            class="flex-1 bg-green-600 text-white font-semibold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import Students
+          </button>
+          <button type="button" onclick="document.getElementById('bulkImportModal').classList.add('hidden')"
+            class="px-5 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAddStudent(groupId, groupName) {
+  document.getElementById('addStudentGroupId').value = groupId;
+  document.getElementById('addStudentBatchLabel').textContent = 'Batch: ' + groupName;
+  document.getElementById('addStudentModal').classList.remove('hidden');
+}
+
+function toggleImportSection(checked) {
+  const section = document.getElementById('importSection');
+  const label   = document.getElementById('cgSubmitLabel');
+  const fileInput = document.getElementById('cgFileInput');
+  if (checked) {
+    section.classList.remove('hidden');
+    label.textContent = 'Create Batch & Import';
+  } else {
+    section.classList.add('hidden');
+    label.textContent = 'Create Batch';
+    // Clear file input
+    fileInput.value = '';
+    document.getElementById('cgDropLabel').textContent = 'Click to choose or drag & drop';
+    document.getElementById('cgDropZone').classList.remove('border-green-500','bg-green-50');
+  }
+}
+
+function onCGFileSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  document.getElementById('cgDropLabel').textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  const zone = document.getElementById('cgDropZone');
+  zone.classList.remove('border-slate-300');
+  zone.classList.add('border-green-500', 'bg-green-50');
+}
+
+function openBulkImport(groupId, groupName) {
+  document.getElementById('bulkImportGroupId').value = groupId;
+  document.getElementById('bulkImportBatchLabel').textContent = '📂 Batch: ' + groupName;
+  document.getElementById('bulkImportForm').action = '/admin/groups/' + groupId + '/bulk-import';
+  // Reset file input
+  document.getElementById('importFile').value = '';
+  document.getElementById('dropLabel').textContent = 'Click to choose or drag & drop';
+  document.getElementById('dropZone').classList.remove('border-green-400','bg-green-50');
+  document.getElementById('bulkImportModal').classList.remove('hidden');
+}
+
+function onFileSelected(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const label = document.getElementById('dropLabel');
+  const zone  = document.getElementById('dropZone');
+  label.textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  zone.classList.add('border-green-400', 'bg-green-50');
+}
+
+// Drag & drop support
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('dropZone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-green-400','bg-green-50'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('border-green-400','bg-green-50'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    const input = document.getElementById('importFile');
+    input.files = e.dataTransfer.files;
+    onFileSelected(input);
+  });
+});
+</script>
+<div id="createGroupModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95vh] overflow-y-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+      <div>
+        <h3 class="font-bold text-slate-900 text-base">Create New Batch</h3>
+        <p class="text-xs text-slate-400 mt-0.5">Fill details &amp; optionally import students via Excel/CSV</p>
+      </div>
+      <button onclick="document.getElementById('createGroupModal').classList.add('hidden')"
+        class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form action="/admin/groups" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+
+      <!-- ── Batch Details ── -->
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Group Name *</label>
+        <input type="text" name="name" required
+          class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+          placeholder="e.g. PCM Batch A 2024"/>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Description</label>
+        <textarea name="description" rows="2"
+          class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all resize-none"
+          placeholder="Optional description"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
+        <input type="text" name="academicYear" value="<%= academicYear %>"
+          class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"/>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"><option value="">Select course</option><% COURSES.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div>
+        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label><select name="status" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Start Date</label><input type="date" name="startDate" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"/></div>
+        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">End Date</label><input type="date" name="endDate" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"/></div>
+      </div>
+
+      <!-- ── Divider ── -->
+      <div class="relative my-2">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+        <div class="relative flex justify-center">
+          <span class="bg-white px-3 text-xs text-slate-400 font-semibold uppercase tracking-wider">Import Students (Optional)</span>
+        </div>
+      </div>
+
+      <!-- ── Import Section (always visible) ── -->
+      <div id="importSection" class="space-y-4">
+
+        <!-- Download template -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0 text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-blue-900 mb-0.5">Start with the template</p>
+            <p class="text-xs text-blue-600 mb-2">Pre-formatted with correct columns and sample data</p>
+            <a href="/admin/groups/template/download" target="_blank"
+              class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download student_import_template.xlsx
+            </a>
+          </div>
+        </div>
+
+        <!-- Column guide -->
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <p class="text-xs font-bold text-slate-600 mb-2">Required Columns</p>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span><span class="font-mono font-semibold text-slate-700">Name</span><span class="text-slate-400">required</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span><span class="font-mono font-semibold text-slate-700">Roll No</span><span class="text-slate-400">required</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span><span class="font-mono text-slate-600">Email</span><span class="text-slate-400">optional</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span><span class="font-mono text-slate-600">Phone</span><span class="text-slate-400">optional</span></div>
+            <div class="flex items-center gap-1.5 col-span-2"><span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span><span class="font-mono text-slate-600">Parent Contact No</span><span class="text-slate-400">optional</span></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-2.5 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Default password = <span class="font-mono font-bold">CET@XXXX</span> (last 4 digits of Roll No)
+          </p>
+        </div>
+
+        <!-- File drop zone -->
+        <label id="cgDropZone"
+          class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 hover:border-slate-900 rounded-xl p-6 cursor-pointer transition-colors group">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center transition-colors">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <p class="text-sm font-semibold text-slate-700 group-hover:text-slate-900" id="cgDropLabel">Click to choose or drag & drop</p>
+          <p class="text-xs text-slate-400">Excel (.xlsx, .xls) or CSV — max 10MB</p>
+          <input type="file" name="csvFile" id="cgFileInput" accept=".csv,.xlsx,.xls" class="sr-only"
+            onchange="onCGFileSelect(this)"/>
+        </label>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-3 pt-2">
+        <button type="submit" id="cgSubmitBtn"
+          class="flex-1 bg-slate-900 text-white font-semibold py-3.5 rounded-xl hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          Create Batch
+        </button>
+        <button type="button" onclick="document.getElementById('createGroupModal').classList.add('hidden')"
+          class="px-6 border border-slate-200 text-slate-700 font-semibold py-3.5 rounded-xl hover:bg-slate-50 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Assign Member Modal -->
+<div id="assignModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <h3 class="font-bold text-slate-900">Assign Member to Group</h3>
+      <button onclick="document.getElementById('assignModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form action="/admin/groups/assign-member" method="POST" class="p-6 space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Group *</label>
+        <select name="groupId" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
+          <option value="">Select group</option>
+          <% groups.forEach(g => { %><option value="<%= g.id %>"><%= g.name %></option><% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Student *</label>
+        <select name="userId" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
+          <option value="">Select student</option>
+          <% students.forEach(s => { %><option value="<%= s.id %>"><%= s.name %> (<%= s.rollNo %>)</option><% }) %>
+        </select>
+        <input type="hidden" name="role" value="student"/>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-navy-950 text-white font-semibold py-3 rounded-xl hover:bg-navy-900 transition-colors">Assign</button>
+        <button type="button" onclick="document.getElementById('assignModal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Edit Group Modal -->
+<div id="editGroupModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md">
+    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+      <h3 class="font-bold text-slate-900">Edit Batch</h3>
+      <button onclick="document.getElementById('editGroupModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <form id="editGroupForm" action="" method="POST" class="p-6 space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Group Name *</label>
+        <input type="text" name="name" id="editGroupName" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Description</label>
+        <textarea name="description" id="editGroupDescription" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
+        <input type="text" name="academicYear" id="editGroupAY" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" id="editGroupCourse" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="">None</option><% COURSES.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label><select name="status" id="editGroupStatus" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Start date</label><input type="date" name="startDate" id="editGroupStart" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">End date</label><input type="date" name="endDate" id="editGroupEnd" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-navy-950 text-white font-semibold py-3 rounded-xl hover:bg-navy-900 transition-colors">Save Changes</button>
+        <button type="button" onclick="document.getElementById('editGroupModal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Group Modal -->
+<div id="deleteGroupModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6 text-center">
+    <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="w-7 h-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </div>
+    <h3 class="font-bold text-slate-900 mb-1.5">Delete Batch?</h3>
+    <p class="text-sm text-slate-500 mb-5">Are you sure you want to delete <strong id="deleteGroupName"></strong>? Students in this batch will not be deleted, only unassigned from it.</p>
+    <form id="deleteGroupForm" action="" method="POST" class="flex gap-3">
+      <button type="submit" class="flex-1 bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-700 transition-colors">Yes, Delete</button>
+      <button type="button" onclick="document.getElementById('deleteGroupModal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function openBatchRow(event, url) {
+  if (event.target.closest('button,a,form,input,select,textarea')) return;
+  window.location.href = url;
+}
+
+function filterBatches() {
+  const query = document.getElementById('batchSearch').value.trim().toLowerCase();
+  const course = document.getElementById('batchCourseFilter').value;
+  const rows = Array.from(document.querySelectorAll('.batch-row'));
+  let visible = 0;
+  rows.forEach(row => {
+    const matchesSearch = !query || row.dataset.search.includes(query);
+    const matchesCourse = !course || row.dataset.course === course;
+    const show = matchesSearch && matchesCourse;
+    row.classList.toggle('hidden', !show);
+    if (show) visible += 1;
+  });
+  document.getElementById('visibleBatchCount').textContent = visible;
+  document.getElementById('noBatchResults').classList.toggle('hidden', visible !== 0 || rows.length === 0);
+}
+function openEditGroup(id, name, description, academicYear, course, status, startDate, endDate) {
+  document.getElementById('editGroupForm').action = '/admin/groups/' + id;
+  document.getElementById('editGroupName').value = name;
+  document.getElementById('editGroupDescription').value = description;
+  document.getElementById('editGroupAY').value = academicYear;
+  if(document.getElementById('editGroupCourse')) document.getElementById('editGroupCourse').value = course || '';
+  if(document.getElementById('editGroupStatus')) document.getElementById('editGroupStatus').value = status || 'active';
+  if(document.getElementById('editGroupStart')) document.getElementById('editGroupStart').value = startDate || '';
+  if(document.getElementById('editGroupEnd')) document.getElementById('editGroupEnd').value = endDate || '';
+  document.getElementById('editGroupModal').classList.remove('hidden');
+}
+function openDeleteGroup(id, name) {
+  document.getElementById('deleteGroupForm').action = '/admin/groups/' + id + '/delete';
+  document.getElementById('deleteGroupName').textContent = name;
+  document.getElementById('deleteGroupModal').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
