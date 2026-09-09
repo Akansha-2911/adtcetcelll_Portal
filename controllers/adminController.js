@@ -8,6 +8,7 @@ const { parseLocalDateTime, formatDateTimeLocal } = require('../utils/dateTime')
 const { extractSyllabusFromPdf } = require('../utils/syllabusImporter');
 const { formatMathToText, formatMathToWordHtml, setupPdfFonts } = require('../utils/mathFormatter');
 
+
 const COURSES = ['JEE', 'CET', 'NEET'];
 const SUBJECTS_BY_COURSE = { JEE: ['Physics', 'Chemistry', 'Mathematics'], CET: ['Physics', 'Chemistry', 'Mathematics', 'Biology'], NEET: ['Physics', 'Chemistry', 'Biology'] };
 const ALL_SUBJECTS = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'General Knowledge'];
@@ -41,6 +42,18 @@ const finiteNumberOr = (value, fallback = null) => {
 };
 
 
+
+const cleanHierarchyText = value => String(value || '').replace(/\s+/g, ' ').trim();
+const stripUnitPrefix = value => cleanHierarchyText(value).replace(/^unit\s*\d+\s*[—-]\s*/i, '');
+
+const hierarchyValuePattern = (value, { allowUnitPrefix = false } = {}) => {
+  const terms = (allowUnitPrefix ? stripUnitPrefix(value) : cleanHierarchyText(value))
+    .split(' ')
+    .filter(Boolean);
+  const expression = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+  const prefix = allowUnitPrefix ? '(?:unit\\s*\\d+\\s*[—-]\\s*)?' : '';
+  return new RegExp(`^${prefix}${expression}$`, 'i');
+};
 
 const loadTopics = async (course, subject) => {
   const cleanCourse = cleanHierarchyText(course);
@@ -123,18 +136,6 @@ const loadTopics = async (course, subject) => {
   output.forEach(topic => topic.subtopics.sort((a, b) => a.localeCompare(b)));
   output.sort((a, b) => stripUnitPrefix(a.name).localeCompare(stripUnitPrefix(b.name)));
   return output;
-};
-
-const cleanHierarchyText = value => String(value || '').replace(/\s+/g, ' ').trim();
-const stripUnitPrefix = value => cleanHierarchyText(value).replace(/^unit\s*\d+\s*[—-]\s*/i, '');
-
-const hierarchyValuePattern = (value, { allowUnitPrefix = false } = {}) => {
-  const terms = (allowUnitPrefix ? stripUnitPrefix(value) : cleanHierarchyText(value))
-    .split(' ')
-    .filter(Boolean);
-  const expression = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
-  const prefix = allowUnitPrefix ? '(?:unit\\s*\\d+\\s*[—-]\\s*)?' : '';
-  return new RegExp(`^${prefix}${expression}$`, 'i');
 };
 
 const hierarchyWords = value => stripUnitPrefix(value)
@@ -239,11 +240,13 @@ exports.getDashboard = async (req, res) => {
 // ── STUDENT MANAGEMENT ────────────────────────────────────────────────────────
 exports.getStudents = async (req, res) => {
   try {
-    const [students, groups, whatsappTemplate] = await Promise.all([
+    const [rawStudents, rawGroups, whatsappTemplate] = await Promise.all([
       User.find({ role: 'student', isActive: { $ne: false } }).sort({ rollNo: 1 }).lean(),
       Group.find({ isActive: true }).lean(),
       getWhatsAppTemplateValue(),
     ]);
+    const students = rawStudents.map(s => ({ ...s, id: String(s._id) }));
+    const groups = rawGroups.map(g => ({ ...g, id: String(g._id) }));
     res.render('admin/students', { title: 'Manage Students', students, groups, whatsappTemplate });
   } catch (e) { req.flash('error', 'Failed.'); res.redirect('/admin/dashboard'); }
 };
@@ -378,14 +381,6 @@ exports.bulkImportStudents = async (req, res) => {
 };
 
 // ── WHATSAPP TEMPLATE CONTROLLERS ─────────────────────────────────────────────
-exports.getWhatsAppTemplate = async (req, res) => {
-  try {
-    const template = await getWhatsAppTemplateValue();
-    res.json({ success: true, template });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-};
 
 exports.updateWhatsAppTemplate = async (req, res) => {
   try {
@@ -1524,7 +1519,7 @@ async function detectBatchSubjectMode(groupId, testId, results = []) {
   if (groupId) {
     try {
       groupDoc = await Group.findById(groupId).select('name description').lean();
-    } catch (_) {}
+    } catch (_) { }
   }
   const groupName = ((groupDoc?.name || '') + ' ' + (groupDoc?.description || '')).toUpperCase();
   if (groupName.includes('PCMB')) {
@@ -1540,7 +1535,7 @@ async function detectBatchSubjectMode(groupId, testId, results = []) {
   if (testId) {
     try {
       testDoc = await Test.findById(testId).select('title subject groups').lean();
-    } catch (_) {}
+    } catch (_) { }
   }
   if (testDoc) {
     const testTitle = (testDoc.title || '').toUpperCase();
@@ -1585,7 +1580,7 @@ async function detectBatchSubjectMode(groupId, testId, results = []) {
       if (hasPcm && !hasPcb) isPcm = true;
       else if (hasPcb && !hasPcm) isPcb = true;
       else if (hasPcm && hasPcb) { isPcm = true; isPcb = true; }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Default fallback if indeterminate: include both Mathematics and Biology
@@ -2588,13 +2583,24 @@ table.answer-key th { background: #0f172a; color: #fff; padding: 8px 10px; font-
         const isCorrectB = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === 'B';
         const isCorrectC = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === 'C';
         const isCorrectD = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === 'D';
+
+        let cleanQuestion = String(q.question || '').trim();
+        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+        cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+
+        const cleanOptA = String(q.optionA || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptB = String(q.optionB || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptC = String(q.optionC || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptD = String(q.optionD || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+
         html += `<div class='question-block'>
-<div class='q-title'>Q${i + 1}. [${escapeHtml(q.subject || 'General')}${q.topic ? ' · ' + escapeHtml(q.topic) : ''}] [${q.marks || 1} Mark${q.marks !== 1 ? 's' : ''}${q.negativeMarks ? ', -' + q.negativeMarks : ''}] ${formatMathToWordHtml(q.question)}</div>
+<div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
 <div class='options'>
-  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(q.optionA || '')}</div>
-  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(q.optionB || '')}</div>
-  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(q.optionC || '')}</div>
-  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(q.optionD || '')}</div>
+  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}</div>
+  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}</div>
+  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}</div>
+  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}</div>
 </div>`;
         if (includeAnswers) {
           html += `<div class='answer-box'>✔ Correct Answer: Option (${escapeHtml(q.correctAnswer)})
@@ -2669,7 +2675,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
             if (doc.y > 620) doc.addPage();
             doc.image(fullImgPath, { fit: [200, 110], align: 'center' });
             doc.moveDown(0.4);
-          } catch (err) {}
+          } catch (err) { }
         }
       }
 
@@ -2698,7 +2704,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
               if (doc.y > 680) doc.addPage();
               doc.image(fullOptImg, { fit: [150, 75], align: 'left' });
               doc.moveDown(0.3);
-            } catch (err) {}
+            } catch (err) { }
           }
         }
       });
@@ -2814,13 +2820,23 @@ h1 { font-size: 18pt; color: #0f172a; text-align: center; margin-bottom: 4px; }
 <div class='meta'>Subject: ${escapeHtml(subject || 'All Subjects')}${includeAnswers ? ' (With Answers & Solutions)' : ' (Questions Only)'} | Total Questions: ${questions.length} | Generated: ${new Date().toLocaleDateString('en-IN')}</div>
 `;
       questions.forEach((q, i) => {
+        let cleanQuestion = String(q.question || '').trim();
+        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+        cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+
+        const cleanOptA = String(q.optionA || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptB = String(q.optionB || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptC = String(q.optionC || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOptD = String(q.optionD || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+
         html += `<div class='question-block'>
-<div class='q-title'>Q${i + 1}. [${escapeHtml(q.subject || 'General')}${q.topic ? ' · ' + escapeHtml(q.topic) : ''}] [${escapeHtml(q.difficulty || 'Medium')}] [${q.marks || 1} Mark] ${formatMathToWordHtml(q.question)}</div>
+<div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
 <div class='options'>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(q.optionA || '')}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(q.optionB || '')}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(q.optionC || '')}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(q.optionD || '')}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}</div>
 </div>`;
         if (includeAnswers) {
           html += `<div class='answer-box'>✔ Correct Answer: (${escapeHtml(q.correctAnswer)})
@@ -3221,7 +3237,7 @@ exports.exportStudentInfoExcel = async (req, res) => {
 
     const wb = xlsx.utils.book_new();
     const ws = xlsx.utils.json_to_sheet(data);
-    ws['!cols'] = Array.from({ length: 22 }, (_, i) => ({ wch: [3,5].includes(i) ? 28 : 16 }));
+    ws['!cols'] = Array.from({ length: 22 }, (_, i) => ({ wch: [3, 5].includes(i) ? 28 : 16 }));
     xlsx.utils.book_append_sheet(wb, ws, 'Students');
     const buf = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -3378,7 +3394,115 @@ exports.getCombineResult = async (req, res) => {
     res.redirect('/admin/results');
   }
 };
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      req.flash('error', 'All password fields are required.');
+      return res.redirect('/auth/change-password');
+    }
+
+    if (newPassword !== confirmPassword) {
+      req.flash('error', 'New password and confirm password do not match.');
+      return res.redirect('/auth/change-password');
+    }
+
+    if (newPassword.length < 6) {
+      req.flash('error', 'Password must be at least 6 characters.');
+      return res.redirect('/auth/change-password');
+    }
+
+    const user = await User.findById(req.session.user.id);
+
+    if (!user) {
+      req.flash('error', 'Student account not found.');
+      return res.redirect('/auth/login');
+    }
+
+    const validPassword = await user.verifyPassword(currentPassword);
+
+    if (!validPassword) {
+      req.flash('error', 'Current password is incorrect.');
+      return res.redirect('/auth/change-password');
+    }
+
+    // Same student record — only password fields are updated
+    user.password = newPassword;
+
+    user.isFirstLogin = false;
+    user.passwordChangedAt = new Date();
+    user.passwordResetByAdmin = false;
+
+    await user.save();
+
+    req.flash('success', 'Password changed successfully.');
+
+    return res.redirect('/student/dashboard');
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    next(error);
+  }
+};
+
+// ── RESET STUDENT PASSWORD ─────────────────────────────────────────────────
+exports.resetStudentPassword = async (req, res, next) => {
+  try {
+
+    const student = await User.findOne({
+      _id: req.params.id,
+      role: 'student'
+    });
+
+    if (!student) {
+      req.flash('error', 'Student not found.');
+      return res.redirect('/admin/students');
+    }
+
+    const rollNo = String(student.rollNo || '').trim();
+
+    if (!rollNo) {
+      req.flash('error', 'Student roll number is missing.');
+      return res.redirect('/admin/students');
+    }
+
+    // Generate temporary password using existing helper
+    const temporaryPassword = generatePassword(rollNo);
+
+    // Update only password-related fields
+    // Student ID remains unchanged, so all old data remains safe
+    student.password = temporaryPassword;
+    student.isFirstLogin = true;
+    student.passwordResetByAdmin = true;
+    student.passwordResetAt = new Date();
+
+    await student.save();
+
+    req.flash(
+      'success',
+      `Password reset successfully for ${student.name}. Temporary password: ${temporaryPassword}`
+    );
+
+    return res.redirect(
+      `/admin/students/${student._id}/view`
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Reset student password error:',
+      error
+    );
+
+    req.flash(
+      'error',
+      'Failed to reset student password.'
+    );
+
+    return res.redirect('/admin/students');
+  }
+};
 exports.exportCombineResultExcel = async (req, res) => {
   try {
     const groupId = String(req.query.groupId || '');

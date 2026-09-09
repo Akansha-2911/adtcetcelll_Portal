@@ -1940,19 +1940,14 @@ exports.submitSection = async (
 
     const sectionState =
       buildSectionState(
-
         result.questionOrder,
-
         questionRows,
-
         result.answers ||
           {},
-
         result.visitedQuestionIds ||
           [],
-
-        result
-
+        result,
+        cetSectionFlow
       );
 
 
@@ -1972,7 +1967,15 @@ exports.submitSection = async (
           ?.[0] ||
         sectionState
           .firstPendingQuestionNumber ||
-        1;
+        (sectionState.phase1TotalQuestions + 1);
+
+
+      if (req.xhr || req.headers.accept?.includes('application/json')) {
+        return res.json({
+          success: true,
+          redirectUrl: `/exam/${testId}/question/${finalQuestionNumber}`
+        });
+      }
 
 
       return res.redirect(
@@ -1987,9 +1990,7 @@ exports.submitSection = async (
 
 
     await Result.findByIdAndUpdate(
-
       result._id,
-
       {
 
         section1Submitted:
@@ -2009,7 +2010,6 @@ exports.submitSection = async (
       {
         new: true
       }
-
     );
 
 
@@ -2019,17 +2019,12 @@ exports.submitSection = async (
 
     const refreshedState =
       buildSectionState(
-
         result.questionOrder,
-
         questionRows,
-
         result.answers ||
           {},
-
         result.visitedQuestionIds ||
           [],
-
         {
 
           section1Submitted:
@@ -2038,8 +2033,8 @@ exports.submitSection = async (
           finalSectionUnlocked:
             true
 
-        }
-
+        },
+        cetSectionFlow
       );
 
 
@@ -2047,7 +2042,10 @@ exports.submitSection = async (
       refreshedState
         .finalSection
         ?.questionNumbers
-        ?.[0];
+        ?.[0] ||
+      refreshedState
+        .firstPendingQuestionNumber ||
+      (sectionState.phase1TotalQuestions + 1);
 
 
     if (
@@ -2071,6 +2069,14 @@ exports.submitSection = async (
       'success',
       'Physics and Chemistry submitted. Final section unlocked.'
     );
+
+
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.json({
+        success: true,
+        redirectUrl: `/exam/${testId}/question/${finalQuestionNumber}`
+      });
+    }
 
 
     return res.redirect(

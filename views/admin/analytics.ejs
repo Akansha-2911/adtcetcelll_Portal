@@ -3,7 +3,29 @@
 <header class="spvn-ui-topbar sticky top-0 z-10 px-5 lg:px-8"><div class="flex items-center gap-4"><button onclick="openSidebar()" class="lg:hidden text-slate-500">☰</button><nav class="spvn-ui-topnav flex-1"><a href="/admin/organization">Organization</a><a href="/admin/tests">Test Management</a><a href="/admin/results">Reports</a><a href="/admin/analytics" class="active">Analytics</a><a href="/admin/monitor">Monitor</a><a href="/admin/content">Content</a></nav></div></header>
 <div class="p-5 lg:p-8"><%- include('../partials/flash') %>
 <div class="mb-5"><h1 class="spvn-ui-heading">Performance Analytics</h1><p class="text-sm text-slate-500 mt-1">Analyze CET test performance across tests, batches and subjects.</p></div>
-<form method="GET" class="spvn-ui-panel p-4 grid md:grid-cols-5 gap-3 mb-6"><div class="md:col-span-2"><label class="spvn-ui-form-label">Test</label><select name="testId" class="spvn-ui-filter"><option value="">All Tests</option><% tests.forEach(t=>{ %><option value="<%= t._id %>" <%= filters.testId===String(t._id)?'selected':'' %>><%= t.title %></option><% }) %></select></div><div class="md:col-span-2"><label class="spvn-ui-form-label">Batch</label><select name="groupId" class="spvn-ui-filter"><option value="">All Batches</option><% groups.forEach(g=>{ %><option value="<%= g._id %>" <%= filters.groupId===String(g._id)?'selected':'' %>><%= g.name %></option><% }) %></select></div><div class="flex items-end"><button class="spvn-ui-btn spvn-ui-btn-blue w-full">Apply Filter</button></div></form>
+<form method="GET" class="spvn-ui-panel p-4 grid md:grid-cols-5 gap-3 mb-6">
+  <div class="md:col-span-2">
+    <label class="spvn-ui-form-label">Test</label>
+    <select name="testId" class="spvn-ui-filter">
+      <option value="">All Tests</option>
+      <% (tests || []).forEach(t => { %>
+        <option value="<%= t._id %>" <%= (filters && filters.testId === String(t._id)) ? 'selected' : '' %>><%= t.title %></option>
+      <% }); %>
+    </select>
+  </div>
+  <div class="md:col-span-2">
+    <label class="spvn-ui-form-label">Batch</label>
+    <select name="groupId" class="spvn-ui-filter">
+      <option value="">All Batches</option>
+      <% (groups || []).forEach(g => { %>
+        <option value="<%= g._id %>" <%= (filters && filters.groupId === String(g._id)) ? 'selected' : '' %>><%= g.name %></option>
+      <% }); %>
+    </select>
+  </div>
+  <div class="flex items-end">
+    <button class="spvn-ui-btn spvn-ui-btn-blue w-full">Apply Filter</button>
+  </div>
+</form>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"><% [['Attempts',summary.attempted],['Average',summary.avgPct.toFixed(1)+'%'],['Pass ≥40%',summary.passCount],['Best Score',summary.bestPct.toFixed(1)+'%']].forEach(([l,v])=>{ %><div class="spvn-ui-panel p-5"><p class="text-2xl font-bold text-slate-900"><%= v %></p><p class="text-xs text-slate-500 mt-1"><%= l %></p></div><% }) %></div>
 <div class="grid lg:grid-cols-2 gap-6">
 <section class="spvn-ui-panel overflow-hidden"><div class="px-5 py-4 border-b"><h2 class="font-bold text-slate-800">Subject Performance</h2></div><div class="p-5 space-y-4"><% if(!subjectPerformance.length){ %><p class="text-sm text-slate-400">No subject data available.</p><% } %><% subjectPerformance.forEach(row=>{ %><div><div class="flex justify-between text-sm mb-1"><span class="font-medium"><%= row.subject %></span><span><%= row.percentage.toFixed(1) %>%</span></div><div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-sky-500" style="width:<%= Math.min(100,row.percentage) %>%"></div></div><p class="text-[10px] text-slate-400 mt-1"><%= row.attempts %> attempts</p></div><% }) %></div></section>

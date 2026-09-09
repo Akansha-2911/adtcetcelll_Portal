@@ -1633,7 +1633,7 @@ function isVisualDescription(value) {
                 </div>
 
 
-                <% if (q.explanation) { %>
+                <% if (q.explanation || q.detailedSolution) { %>
 
                   <div
                     class="bg-amber-50
@@ -1649,8 +1649,8 @@ function isVisualDescription(value) {
                       Explanation:
                     </strong>
 
-                    <span class="math-content">
-                      <%= q.explanation %>
+                    <span class="math-content" data-math-source="<%= ((q.detailedSolution || q.explanation) || '').replace(/"/g, '&quot;') %>">
+                      <%= q.detailedSolution || q.explanation %>
                     </span>
 
                   </div>

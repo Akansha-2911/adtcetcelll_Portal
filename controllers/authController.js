@@ -75,22 +75,91 @@ exports.postChangePassword = async (req, res) => {
     const currentPassword = normalizeText(req.body.currentPassword);
     const newPassword = normalizeText(req.body.newPassword);
     const confirmPassword = normalizeText(req.body.confirmPassword);
-    if (newPassword !== confirmPassword) { req.flash('error', 'Passwords do not match.'); return res.redirect('/auth/change-password'); }
-    if (newPassword.length < 6) { req.flash('error', 'Password must be at least 6 characters.'); return res.redirect('/auth/change-password'); }
-    const user = await User.findById(req.session.user.id);
-    if (!user) { req.flash('error', 'User not found.'); return res.redirect('/auth/login'); }
-    if (!user.isFirstLogin) {
-      const valid = await user.verifyPassword(currentPassword);
-      if (!valid) { req.flash('error', 'Current password is incorrect.'); return res.redirect('/auth/change-password'); }
+
+    if (!req.session.user) {
+      req.flash('error', 'Please login first.');
+      return res.redirect('/auth/login');
     }
+
+    if (!newPassword || !confirmPassword) {
+      req.flash('error', 'New password and confirm password are required.');
+      return res.redirect('/auth/change-password');
+    }
+
+    if (newPassword !== confirmPassword) {
+      req.flash('error', 'Passwords do not match.');
+      return res.redirect('/auth/change-password');
+    }
+
+    if (newPassword.length < 6) {
+      req.flash('error', 'Password must be at least 6 characters.');
+      return res.redirect('/auth/change-password');
+    }
+
+    const user = await User.findById(req.session.user.id);
+
+    if (!user) {
+      req.flash('error', 'User not found.');
+      return res.redirect('/auth/login');
+    }
+
+    /*
+      If this is NOT first login,
+      verify old/current password.
+    */
+    if (!user.isFirstLogin) {
+      if (!currentPassword) {
+        req.flash('error', 'Current password is required.');
+        return res.redirect('/auth/change-password');
+      }
+
+      const valid = await user.verifyPassword(currentPassword);
+
+      if (!valid) {
+        req.flash('error', 'Current password is incorrect.');
+        return res.redirect('/auth/change-password');
+      }
+    }
+
+    /*
+      IMPORTANT:
+      Same User document is updated.
+      Student _id does NOT change.
+      Therefore tests/results/history stay connected.
+    */
     user.password = newPassword;
+
     user.isFirstLogin = false;
+
+    // ADD THESE
+    user.passwordChangedAt = new Date();
+    user.passwordResetByAdmin = false;
+
     await user.save();
+
+    /*
+      Update current session too
+    */
     req.session.user.isFirstLogin = false;
-    await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
+
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
     req.flash('success', 'Password changed successfully!');
+
     return res.redirect(`/${req.session.user.role}/dashboard`);
-  } catch (err) { console.error(err); req.flash('error', 'Failed to change password.'); return res.redirect('/auth/change-password'); }
+
+  } catch (err) {
+    console.error('Change password error:', err);
+
+    req.flash('error', 'Failed to change password.');
+
+    return res.redirect('/auth/change-password');
+  }
 };
 
 exports.logout = (req, res) => {

@@ -150,6 +150,9 @@ function replaceBalancedRoots(str) {
 function cleanFormula(raw) {
   if (!raw) return '';
   let f = String(raw).trim();
+  // Fix corrupted \right where \r or \n got unescaped into control characters or \night
+  f = f.replace(/[\r\n]+\s*ight\b/g, '\\right');
+  f = f.replace(/\\+night\b/g, '\\right');
 
   // Normalize escaped double-backslashes before commands (e.g. \\sim -> \sim, \\vee -> \vee)
   f = f.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
@@ -275,7 +278,8 @@ function cleanFormula(raw) {
 
   // Superscripts
   f = f.replace(/\^\{([^{}]+)\}/g, (_, p) => toSuperscript(p));
-  f = f.replace(/\^([0-9a-zA-Z+\-])/g, (_, p) => toSuperscript(p));
+  f = f.replace(/\^([-+][0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p));
+  f = f.replace(/\^([0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p));
 
   // Subscripts
   f = f.replace(/_\{([^{}]+)\}/g, (_, p) => toSubscript(p));
@@ -435,9 +439,20 @@ function formatMathToWordHtml(str) {
   let lastIndex = 0;
   let match;
 
+  const formatWordText = (t) => {
+    let s = String(t || '');
+    s = s.replace(/(?<=[A-Za-z0-9)\]\}])\^\{([^{}]+)\}/g, (_, p) => toSuperscript(p))
+         .replace(/(?<=[A-Za-z0-9)\]\}])\^([-+][0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
+         .replace(/(?<=[A-Za-z0-9)\]\}])\^([0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
+         .replace(/(?<=[A-Za-z0-9)\]\}])\s*\^\s*([0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
+         .replace(/=>/g, '⇒')
+         .replace(/<=>/g, '⇔');
+    return escapeHtml(s).replace(/\n/g, '<br>');
+  };
+
   while ((match = DELIMITED_REGEX.exec(raw)) !== null) {
     const prefix = raw.slice(lastIndex, match.index);
-    result += escapeHtml(prefix).replace(/\n/g, '<br>');
+    result += formatWordText(prefix);
 
     const fullMatch = match[0];
     let texBody = fullMatch;
@@ -478,7 +493,7 @@ function formatMathToWordHtml(str) {
   }
 
   const remainder = raw.slice(lastIndex);
-  result += escapeHtml(remainder).replace(/\n/g, '<br>');
+  result += formatWordText(remainder);
 
   return result;
 }

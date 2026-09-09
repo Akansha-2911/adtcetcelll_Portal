@@ -101,6 +101,8 @@ function extensionOf(file) {
 function cleanText(value) {
   return String(value ?? '')
     .replace(/\u0000/g, '')
+    .replace(/[\r\n]+\s*ight\b/g, '\\right')
+    .replace(/\\+night\b/g, '\\right')
     .replace(/\r\n/g, '\n')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')

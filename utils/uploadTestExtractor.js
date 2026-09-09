@@ -82,6 +82,22 @@ function visualLetters(value) {
 }
 
 
+const SUP_MAP = {
+  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+  '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+  '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
+  'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ',
+  'i': 'ⁱ', 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ',
+  'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+  'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ',
+  'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ',
+  'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ'
+};
+
+function toSuperscript(str) {
+  return String(str).split('').map(c => SUP_MAP[c] || c).join('');
+}
+
 /* =========================================================
    TEXT / MATH
 ========================================================= */
@@ -89,6 +105,8 @@ function visualLetters(value) {
 function mathClean(value) {
 
   let text = String(value || '')
+    .replace(/[\r\n]+\s*ight\b/g, '\\right')
+    .replace(/\\+night\b/g, '\\right')
     .replace(/\r\n/g, '\n')
     .trim();
 
@@ -104,6 +122,16 @@ function mathClean(value) {
     .replace(/\$(?!\$)([^$\n]+)\$/g, '\\($1\\)')
     .replace(/√\s*\(([^()]*)\)/g, '\\(\\sqrt{$1}\\)')
     .replace(/√\s*([+-]?(?:\d+(?:\.\d+)?|[A-Za-z]))/g, '\\(\\sqrt{$1}\\)');
+
+  // Normalize caret powers on variables/brackets/functions:
+  // e.g. sin^2 -> sin², cos^-1 -> cos⁻¹, h^2 -> h², (x+1)^2 -> (x+1)²
+  text = text
+    .replace(/(?<=[A-Za-z0-9)\]\}])\^\{([^{}]+)\}/g, (match, p1) => toSuperscript(p1))
+    .replace(/(?<=[A-Za-z0-9)\]\}])\^([-+][0-9a-zA-Z]+)/g, (match, p1) => toSuperscript(p1))
+    .replace(/(?<=[A-Za-z0-9)\]\}])\^([0-9a-zA-Z]+)/g, (match, p1) => toSuperscript(p1))
+    .replace(/(?<=[A-Za-z0-9)\]\}])\s*\^\s*([0-9a-zA-Z]+)/g, (match, p1) => toSuperscript(p1))
+    .replace(/=>/g, '⇒')
+    .replace(/<=>/g, '⇔');
 
   // Normalize common OCR Unicode operators without changing their meaning.
   text = text

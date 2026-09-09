@@ -131,126 +131,6 @@
         padding-bottom: 64px
       }
     }
-
-    /* =========================================================
-       COMPACT QUESTION + OPTIONS LAYOUT
-       Fixes excessive vertical spacing
-    ========================================================= */
-
-    .exam-question-content {
-      padding: 18px 24px !important;
-    }
-
-    .question-text {
-      margin: 0 0 14px 0 !important;
-      font-size: 16px !important;
-      line-height: 1.55 !important;
-    }
-
-    #optionsContainer {
-      display: flex;
-      flex-direction: column;
-      gap: 10px !important;
-    }
-
-    .opt-box {
-      border: 1.5px solid #dbe3ef;
-      border-radius: 12px;
-      padding: 12px 16px !important;
-      min-height: 64px !important;
-      height: auto !important;
-      display: block;
-      cursor: pointer;
-      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
-    }
-
-    .opt-box:hover {
-      border-color: #38bdf8;
-      background: #f8fafc;
-    }
-
-    .opt-box.selected {
-      border-color: #0284c7;
-      background: #f0f9ff;
-      box-shadow: 0 0 0 2px rgba(2, 132, 199, .2);
-    }
-
-    .opt-box > div {
-      align-items: center !important;
-    }
-
-    .opt-key {
-      width: 32px !important;
-      height: 32px !important;
-      min-width: 32px !important;
-      margin-top: 0 !important;
-      flex-shrink: 0;
-      font-size: 13px !important;
-      font-weight: 800 !important;
-    }
-
-    .opt-box .math-content {
-      padding-top: 0 !important;
-      font-size: 15px !important;
-      line-height: 1.45 !important;
-    }
-
-    .opt-box img {
-      margin-top: 8px !important;
-      margin-left: 42px !important;
-      max-height: 180px !important;
-    }
-
-    .question-image-wrap {
-      margin-bottom: 14px !important;
-    }
-
-    .question-header {
-      padding-top: 10px !important;
-      padding-bottom: 10px !important;
-      min-height: 54px;
-    }
-
-    .exam-navigation {
-      padding-top: 11px !important;
-      padding-bottom: 11px !important;
-      min-height: 62px;
-    }
-
-    @media (min-width: 1024px) {
-      .exam-question-content {
-        padding: 18px 28px !important;
-      }
-    }
-
-    @media (max-width: 767px) {
-      .exam-question-content {
-        padding: 14px !important;
-      }
-
-      .question-text {
-        font-size: 15px !important;
-        margin-bottom: 12px !important;
-      }
-
-      .opt-box {
-        padding: 10px 12px !important;
-        min-height: 56px !important;
-      }
-
-      .opt-box .math-content {
-        font-size: 14px !important;
-      }
-
-      #optionsContainer {
-        gap: 8px !important;
-      }
-
-      .exam-navigation {
-        min-height: 58px;
-      }
-    }
-
   </style>
 
   <div class="h-screen flex flex-col exam-shell" id="examContainer">
@@ -313,10 +193,17 @@
       <div
         class="bg-indigo-50 border-b border-indigo-100 text-indigo-800 text-center text-xs font-semibold py-2 px-4 flex-shrink-0">
         <%= ['Physics','Chemistry'].includes(currentSection.name)
-          ? 'Physics and Chemistry are both available. Visit every question in both subjects to unlock Mathematics/Biology.'
+          ? `Physics and Chemistry are both active. Complete both subjects to unlock ${(sectionState && sectionState.finalSection && sectionState.finalSection.name) || 'Mathematics / Biology'}.`
           : `${currentSection.name} is now unlocked.` %>
       </div>
       <% } %>
+
+      <!-- Dynamic Question Container for Instant Loading -->
+      <div id="examDynamicContainer" class="flex-1 flex flex-col overflow-hidden"
+        data-question-id="<%= question.id %>"
+        data-question-number="<%= questionNumber %>"
+        data-selected-answer="<%= selectedAnswer || '' %>"
+        data-is-marked="<%= isMarked ? 'true' : 'false' %>">
 
         <% if (sectionState && sectionState.sections && sectionState.sections.length > 0) { %>
           <div
@@ -329,9 +216,18 @@
               const totalCount = section.totalQuestions || (section.questionIds ? section.questionIds.length : 0);
             %>
               <% if (section.locked) { %>
-                <span class="subject-tab locked whitespace-nowrap" title="Complete the required sections to unlock">
-                  <%= section.name %> 🔒
-                </span>
+                <% if (cetSectionFlow && !sectionState.section1Submitted) { %>
+                  <button type="button" onclick="openSectionReviewModal()"
+                    class="subject-tab locked whitespace-nowrap cursor-pointer hover:bg-slate-200 transition"
+                    title="Click to review and submit Physics &amp; Chemistry to unlock <%= section.name %>">
+                    <span><%= section.name %> 🔒</span>
+                  </button>
+                <% } else { %>
+                  <span class="subject-tab locked whitespace-nowrap opacity-60 cursor-not-allowed"
+                    title="<%= section.name %> is completed and locked">
+                    <span><%= section.name %> 🔒</span>
+                  </span>
+                <% } %>
               <% } else { %>
                 <a href="/exam/<%= test.id %>/question/<%= firstQ %>" onclick="saveAndNav(event, this.href)"
                   class="subject-tab whitespace-nowrap <%= isActive ? 'active':'' %> flex items-center gap-1.5">
@@ -342,7 +238,18 @@
                 </a>
               <% } %>
             <% }) %>
-            <div class="ml-auto hidden sm:flex items-center gap-2 text-[11px] text-slate-500 shrink-0">
+
+            <% if (cetSectionFlow && !sectionState.section1Submitted) { %>
+              <button type="button" onclick="openSectionReviewModal()"
+                class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold transition shadow-xs">
+                <span>Complete Phy &amp; Chem</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+              </button>
+            <% } %>
+
+            <div class="<%= cetSectionFlow && !sectionState.section1Submitted ? 'hidden' : 'ml-auto' %> hidden sm:flex items-center gap-2 text-[11px] text-slate-500 shrink-0">
               <span id="saveIndicator"
                 class="save-indicator inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold">●
                 Saved</span>
@@ -362,7 +269,7 @@
 
                   <!-- Question header -->
                   <div
-                    class="question-header flex items-center justify-between px-5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+                    class="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
                     <div class="flex items-center gap-2.5">
                       <span class="bg-navy-950 text-white text-xs font-bold px-3 py-1 rounded-full">Q <%= questionNumber
                           %> / <%= totalQuestions %></span>
@@ -393,17 +300,17 @@
                   </div>
 
                   <!-- Question content -->
-                  <div class="flex-1 overflow-y-auto exam-question-content">
-                    <p class="math-content question-text font-medium text-slate-900">
+                  <div class="flex-1 overflow-y-auto px-5 lg:px-8 py-5">
+                    <p class="math-content text-base lg:text-lg font-medium text-slate-900 leading-relaxed mb-4">
                       <%= question.question %>
                     </p>
                     <% if (question.questionImage) { %>
-                      <div class="question-image-wrap overflow-x-auto"><img src="<%= question.questionImage %>" alt="Question"
+                      <div class="overflow-x-auto mb-4"><img src="<%= question.questionImage %>" alt="Question"
                           class="block w-auto h-auto max-w-full rounded-xl border border-slate-200 bg-white"
                           loading="eager" decoding="async" /></div>
                       <% } %>
 
-                        <div id="optionsContainer">
+                        <div class="space-y-3" id="optionsContainer">
                           <% options.forEach(opt=> { %>
                             <div class="opt-box <%= selectedAnswer===opt.key?'selected':'' %>"
                               onclick="selectOption('<%= opt.key %>', this)">
@@ -413,7 +320,7 @@
                 <%= selectedAnswer===opt.key?'bg-navy-950 border-navy-950 text-white':'border-slate-300 text-slate-500' %>">
                                   <%= opt.key %>
                                 </span>
-                                <span class="math-content text-sm text-slate-800 leading-relaxed pt-0.5">
+                                <span class="math-content text-base text-slate-800 leading-relaxed pt-0.5">
                                   <%= opt.value %>
                                 </span>
                               </div>
@@ -427,7 +334,7 @@
                   </div>
 
                   <!-- Navigation -->
-                  <div class="exam-navigation border-t border-slate-100 px-5 flex items-center bg-white flex-shrink-0 relative">
+                  <div class="border-t border-slate-100 px-5 py-4 flex items-center bg-white flex-shrink-0 relative">
 
                     <!-- Prev Button (Left) -->
                     <% if (questionNumber> 1) { %>
@@ -441,52 +348,74 @@
                       <% } %>
 
                         <!-- Center: Save & Next OR Save & Review -->
-                        <div class="mx-auto">
-                          <% if (questionNumber < totalQuestions) { %>
+                        <div class="mx-auto flex items-center gap-3">
+                          <% 
+                            const isSectionLast = currentSection &&
+                              currentSection.questionNumbers &&
+                              currentSection.questionNumbers[currentSection.questionNumbers.length-1] === questionNumber;
+                            const nextSection = isSectionLast && sectionState && sectionState.sections ? sectionState.sections[currentSection.index+1] : null;
+                            const isPhase1Last = Boolean(
+                              cetSectionFlow &&
+                              !sectionState.section1Submitted &&
+                              currentSection &&
+                              ['Physics', 'Chemistry'].includes(currentSection.name) &&
+                              isSectionLast &&
+                              nextSection &&
+                              nextSection.locked
+                            );
+                          %>
+
+                          <% if (isPhase1Last) { %>
+                            <!-- Last Question of Physics & Chemistry (e.g. Q 20) -> Save & Review to complete Phy & Chem -->
+                            <button type="button" onclick="openSectionReviewModal()"
+                              class="flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md text-sm">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Save &amp; Review (Complete Phy &amp; Chem)
+                            </button>
+                          <% } else if (questionNumber < totalQuestions) { %>
                             <!-- Normal: Save & Next -->
                             <a href="/exam/<%= test.id %>/question/<%= questionNumber+1 %>"
+                              id="saveNextBtn"
                               onclick="saveAndNav(event, this.href)"
-                              class="flex items-center gap-2 bg-navy-950 hover:bg-navy-900 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
-                              <% const isSectionLast = currentSection &&
-                                currentSection.questionNumbers &&
-                                currentSection.questionNumbers[currentSection.questionNumbers.length-1] === questionNumber;
-                                %>
-                                <% const nextSection = isSectionLast && sectionState && sectionState.sections ? sectionState.sections[currentSection.index+1] :
-                                  null; %>
-                                  <%= nextSection && !nextSection.locked ? `Save & Start ${nextSection.name}`
-                                    : 'Save & Next' %>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                      stroke-width="2.5">
-                                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                    </svg>
+                              class="save-next-btn flex items-center gap-2 bg-navy-950 hover:bg-navy-900 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
+                              <%= nextSection && !nextSection.locked ? `Save & Start ${nextSection.name}` : 'Save & Next' %>
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
                             </a>
-                            <% } else { %>
-                              <!-- Last Question: Save & Review -->
-                              <button type="button" onclick="openReviewModal()"
-                                class="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                  stroke-width="2">
-                                  <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                Save &amp; Review
-                              </button>
-                              <% } %>
+                          <% } else { %>
+                            <!-- Last Question of Test: Save & Review -->
+                            <button type="button" onclick="openReviewModal()"
+                              class="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors text-sm">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Save &amp; Review
+                            </button>
+                          <% } %>
                         </div>
 
-                        <!-- Right: Submit Exam (only on last question) -->
+                        <!-- Right: Submit Exam (only on last question) OR Complete Phy & Chem button -->
                         <% if (questionNumber===totalQuestions) { %>
                           <button type="button" onclick="submitConfirm()"
                             class="absolute right-5 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Submit Exam
                           </button>
-                          <% } %>
+                        <% } else if (cetSectionFlow && !sectionState.section1Submitted && currentSection && ['Physics', 'Chemistry'].includes(currentSection.name)) { %>
+                          <button type="button" onclick="openSectionReviewModal()"
+                            class="absolute right-5 hidden sm:flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold px-4 py-2.5 rounded-xl transition-colors text-xs">
+                            <span>Complete Phy &amp; Chem</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </button>
+                        <% } %>
                   </div>
                 </div>
 
@@ -531,11 +460,19 @@
                         <div class="flex flex-wrap gap-1.5">
                           <% } %>
                             <% if (p.locked) { %>
-                              <span class="palette-btn bg-slate-100 text-slate-300 cursor-not-allowed"
-                                title="Section is locked">
-                                <%= p.num %>
-                              </span>
+                              <% if (cetSectionFlow && !sectionState.section1Submitted) { %>
+                                <button type="button" onclick="openSectionReviewModal()"
+                                  class="palette-btn bg-slate-100 text-slate-400 hover:bg-slate-200 cursor-pointer"
+                                  title="Section is locked. Click to review and submit Physics &amp; Chemistry to unlock <%= p.subject || 'next section' %>">
+                                  <%= p.num %>
+                                </button>
                               <% } else { %>
+                                <span class="palette-btn bg-slate-100 text-slate-300 cursor-not-allowed"
+                                  title="Section is completed and locked">
+                                  <%= p.num %>
+                                </span>
+                              <% } %>
+                            <% } else { %>
                                 <a href="/exam/<%= test.id %>/question/<%= p.num %>"
                                   onclick="saveAndNav(event, this.href)"
                                   class="palette-btn <%= p.num===questionNumber?'current scale-110':'' %>"
@@ -568,8 +505,107 @@
                         </span></div>
                 </div>
               </div>
+  </div> <!-- closes .exam-main -->
+  </div> <!-- closes #examDynamicContainer -->
+  </div> <!-- closes #examContainer -->
+
+  <% if (cetSectionFlow && !sectionState.section1Submitted) { %>
+  <!-- Section 1 (Physics & Chemistry) Review Modal -->
+  <div id="sectionReviewModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-card-lg w-full max-w-lg p-6 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-lg font-bold text-slate-900">Complete Physics &amp; Chemistry</h3>
+            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">Phase 1</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Review your answers before unlocking <%= (sectionState && sectionState.finalSection && sectionState.finalSection.name) || 'Biology / Mathematics' %></p>
+        </div>
+        <button type="button" onclick="closeSectionReviewModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <%
+        const p1Status = paletteStatus.filter(p => !p.locked && ['Physics', 'Chemistry'].includes(p.subject));
+        const p1Answered = p1Status.filter(p => ['answered', 'answered-marked'].includes(p.status)).length;
+        const p1Marked = p1Status.filter(p => ['marked', 'answered-marked'].includes(p.status)).length;
+        const p1Total = p1Status.length || (sectionState && sectionState.phase1TotalQuestions) || 0;
+      %>
+
+      <div class="bg-slate-50 rounded-xl p-4 mb-3 grid grid-cols-3 gap-3 text-center text-sm flex-shrink-0">
+        <div>
+          <p id="sectionReviewAnsweredCount" class="text-2xl font-bold text-emerald-600">
+            <%= p1Answered %>
+          </p>
+          <p class="text-xs text-slate-500">Answered</p>
+        </div>
+        <div>
+          <p id="sectionReviewUnansweredCount" class="text-2xl font-bold text-rose-500">
+            <%= Math.max(0, p1Total - p1Answered) %>
+          </p>
+          <p class="text-xs text-slate-500">Unanswered</p>
+        </div>
+        <div>
+          <p id="sectionReviewMarkedCount" class="text-2xl font-bold text-violet-600">
+            <%= p1Marked %>
+          </p>
+          <p class="text-xs text-slate-500">Marked</p>
+        </div>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-xs text-amber-800 flex items-start gap-2.5 flex-shrink-0">
+        <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span><strong>Notice:</strong> Submitting Section 1 will permanently lock Physics &amp; Chemistry. You will <strong>not</strong> be able to change these answers once <%= (sectionState && sectionState.finalSection && sectionState.finalSection.name) || 'Biology / Mathematics' %> is unlocked.</span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto mb-4 space-y-1">
+        <% p1Status.forEach(p => {
+          const statusColor =
+            p.status==='answered'?'text-emerald-600':p.status==='marked'?'text-violet-600':p.status==='answered-marked'?'text-purple-700':p.status==='not-answered'?'text-rose-500':'text-slate-400';
+          const statusText =
+            p.status==='answered'?'Answered':p.status==='marked'?'Marked':p.status==='answered-marked'?'Ans+Marked':p.status==='not-answered'?'Not Answered':'Not Visited';
+        %>
+          <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+            onclick="saveAndNav(event, this.href); closeSectionReviewModal();"
+            data-section-review-question="<%= p.num %>"
+            data-section-review-status="<%= p.status %>"
+            class="section-review-question-row flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+            <div class="flex items-center gap-3">
+              <span data-section-review-badge
+                class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center <%= p.status==='answered'?'bg-emerald-500 text-white':p.status==='marked'?'bg-violet-500 text-white':p.status==='answered-marked'?'bg-purple-700 text-white':p.status==='not-answered'?'bg-rose-500 text-white':'bg-slate-200 text-slate-500' %>">
+                <%= p.num %>
+              </span>
+              <span class="text-sm font-medium text-slate-700">Question <%= p.num %></span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600"><%= p.subject %></span>
+            </div>
+            <span data-section-review-status-text class="text-xs font-semibold <%= statusColor %>">
+              <%= statusText %>
+            </span>
+          </a>
+        <% }) %>
+      </div>
+
+      <div class="flex gap-3 flex-shrink-0">
+        <button type="button" onclick="closeSectionReviewModal()"
+          class="flex-1 border-2 border-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-sm">
+          &larr; Back to Questions
+        </button>
+        <button type="button" id="confirmSectionSubmitBtn" onclick="submitSectionConfirm()"
+          class="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-sm text-sm">
+          Submit &amp; Start <%= (sectionState && sectionState.finalSection && sectionState.finalSection.name) || 'Next Section' %> &rarr;
+        </button>
+      </div>
+    </div>
   </div>
-  </div>
+
+  <!-- Section submit form -->
+  <form id="sectionSubmitForm" action="/exam/<%= test.id %>/submit-section" method="POST" class="hidden"></form>
+  <% } %>
 
   <!-- Review Modal -->
   <div id="reviewModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -611,24 +647,39 @@
           const statusText =
           p.status==='answered'?'Answered':p.status==='marked'?'Marked':p.status==='answered-marked'?'Ans+Marked':p.status==='not-answered'?'Not Answered':'Not Visited';
           %>
-          <a href="/exam/<%= test.id %>/question/<%= p.num %>"
-            onclick="saveAndNav(event, this.href); closeReviewModal();" data-review-question="<%= p.num %>"
-            data-review-status="<%= p.status %>" data-review-subject="<%= p.subject || '' %>"
-            class="review-question-row flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
-            <div class="flex items-center gap-3">
-              <span data-review-badge
-                class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center <%= p.status==='answered'?'bg-emerald-500 text-white':p.status==='marked'?'bg-violet-500 text-white':p.status==='answered-marked'?'bg-purple-700 text-white':p.status==='not-answered'?'bg-rose-500 text-white':'bg-slate-200 text-slate-500' %>">
-                <%= p.num %>
-              </span>
-              <span class="text-sm font-medium text-slate-700">Question <%= p.num %></span>
-              <% if (p.subject) { %>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600"><%= p.subject %></span>
-              <% } %>
+          <% if (p.locked) { %>
+            <div class="review-question-row opacity-60 flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50/70 border border-transparent cursor-not-allowed">
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center bg-slate-200 text-slate-400">
+                  🔒
+                </span>
+                <span class="text-sm font-medium text-slate-500">Question <%= p.num %></span>
+                <% if (p.subject) { %>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-400"><%= p.subject %></span>
+                <% } %>
+              </div>
+              <span class="text-xs font-semibold text-slate-400">Locked</span>
             </div>
-            <span data-review-status-text class="text-xs font-semibold <%= statusColor %>">
-              <%= statusText %>
-            </span>
-          </a>
+          <% } else { %>
+            <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+              onclick="saveAndNav(event, this.href); closeReviewModal();" data-review-question="<%= p.num %>"
+              data-review-status="<%= p.status %>" data-review-subject="<%= p.subject || '' %>"
+              class="review-question-row flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+              <div class="flex items-center gap-3">
+                <span data-review-badge
+                  class="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center <%= p.status==='answered'?'bg-emerald-500 text-white':p.status==='marked'?'bg-violet-500 text-white':p.status==='answered-marked'?'bg-purple-700 text-white':p.status==='not-answered'?'bg-rose-500 text-white':'bg-slate-200 text-slate-500' %>">
+                  <%= p.num %>
+                </span>
+                <span class="text-sm font-medium text-slate-700">Question <%= p.num %></span>
+                <% if (p.subject) { %>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600"><%= p.subject %></span>
+                <% } %>
+              </div>
+              <span data-review-status-text class="text-xs font-semibold <%= statusColor %>">
+                <%= statusText %>
+              </span>
+            </a>
+          <% } %>
           <% }) %>
       </div>
 
@@ -712,7 +763,8 @@
   <script>
     // ── Core vars ──────────────────────────────────────────────────────────────
     const TEST_ID = '<%= test.id %>';
-    const QUESTION_ID = '<%= question.id %>';
+    let QUESTION_ID = '<%= question.id %>';
+    let currentQNum = <%= questionNumber %>;
     let currentAnswer = '<%= selectedAnswer || "" %>';
     let markedForReview = <%- isMarked ? 'true' : 'false' %>;
     let qElapsed = 0;
@@ -804,7 +856,7 @@
       saveToServer(currentAnswer);
     }
 
-    // ── Save to server (with offline fallback) ───────────────────────────────
+    // ── Save to server (with offline fallback & keepalive) ───────────────────
     function saveToServer(ans) {
       const payload = { questionId: QUESTION_ID, answer: ans, markForReview: markedForReview, timeSpent: qElapsed };
       const url = `/exam/${TEST_ID}/save-answer`;
@@ -832,6 +884,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        keepalive: true
       }).then(r => r.json()).then(data => {
         setSaveState(data.success ? 'Saved' : 'Save failed', data.success ? 'saved' : 'offline');
         return data;
@@ -842,13 +895,127 @@
       });
     }
 
-    // ── Navigate with save (wait for save before nav) ──────────────────────────
+    // ── Instant Question Navigation with Prefetch (No reload delay!) ──────────
+    const prefetchCache = new Map();
+
+    function prefetchNext() {
+      const nextLink = document.getElementById('saveNextBtn') ||
+        document.querySelector('.save-next-btn') ||
+        document.querySelector('a[href*="/question/"][onclick*="saveAndNav"]');
+
+      if (nextLink && nextLink.href && !prefetchCache.has(nextLink.href)) {
+        const targetUrl = nextLink.href;
+        fetch(targetUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(res => {
+            if (!res.ok) return null;
+            return res.text();
+          })
+          .then(html => {
+            if (html) prefetchCache.set(targetUrl, html);
+          })
+          .catch(() => {});
+      }
+    }
+
     function saveAndNav(e, href) {
-      e.preventDefault();
+      if (e) e.preventDefault();
+      if (!href) return;
       if (navInProgress) return;
       navInProgress = true;
-      saveToServer(currentAnswer).finally(() => { allowLeave(); window.location.href = href; });
+
+      // 1. Asynchronously dispatch answer save in background (non-blocking)
+      saveToServer(currentAnswer);
+
+      // 2. If cached, apply instantly (0ms delay!)
+      if (prefetchCache.has(href)) {
+        const cachedHtml = prefetchCache.get(href);
+        applyNewQuestionHtml(cachedHtml, href);
+        return;
+      }
+
+      // 3. If not cached, fetch immediately
+      const saveIndicator = document.getElementById('saveIndicator');
+      if (saveIndicator) saveIndicator.textContent = '● Loading next...';
+
+      fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
+        .then(html => {
+          prefetchCache.set(href, html);
+          applyNewQuestionHtml(html, href);
+        })
+        .catch(err => {
+          console.warn('[Exam] Instant nav fallback to full reload:', err);
+          allowLeave();
+          window.location.href = href;
+        });
     }
+
+    function applyNewQuestionHtml(htmlText, href) {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        const newContainer = doc.getElementById('examDynamicContainer');
+        const curContainer = document.getElementById('examDynamicContainer');
+
+        if (newContainer && curContainer) {
+          // Sync previous question's answered status in the new palette
+          const prevQNum = currentQNum;
+          if (prevQNum) {
+            const prevPaletteBtns = newContainer.querySelectorAll(`.palette-btn[href*="/question/${prevQNum}"]`);
+            prevPaletteBtns.forEach(btn => {
+              if (currentAnswer) {
+                btn.style.background = '#10b981';
+                btn.style.color = '#fff';
+              }
+            });
+          }
+
+          // Instant DOM swap!
+          curContainer.replaceWith(newContainer);
+
+          // Update variables
+          QUESTION_ID = newContainer.dataset.questionId || QUESTION_ID;
+          currentQNum = parseInt(newContainer.dataset.questionNumber, 10) || (currentQNum + 1);
+          currentAnswer = newContainer.dataset.selectedAnswer || '';
+          markedForReview = newContainer.dataset.isMarked === 'true';
+          qElapsed = 0;
+          navInProgress = false;
+
+          // Update address bar without reload
+          if (window.history && window.history.pushState) {
+            window.history.pushState({ href }, '', href);
+          }
+
+          // Instantly render math on new question
+          if (window.SPVNMath && typeof window.SPVNMath.renderStaticMath === 'function') {
+            window.SPVNMath.renderStaticMath(newContainer);
+          }
+
+          // Preload next question in background
+          setTimeout(prefetchNext, 60);
+          return;
+        }
+      } catch (err) {
+        console.error('[Exam] Error applying question HTML:', err);
+      }
+
+      // Safe fallback
+      allowLeave();
+      window.location.href = href;
+    }
+
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.href) {
+        saveAndNav(null, e.state.href);
+      }
+    });
+
+    // Start background prefetch on page load
+    setTimeout(prefetchNext, 200);
 
     // ── Mobile question palette ───────────────────────────────────────────────
     function togglePalette() {
@@ -943,6 +1110,93 @@
 
     function closeReviewModal() {
       document.getElementById('reviewModal').classList.add('hidden');
+    }
+
+    // ── Section 1 Review & Unlock Modal Functions ─────────────────────────────
+    function _refreshCurrentQuestionInSectionReview() {
+      const row = document.querySelector('[data-section-review-question="<%= questionNumber %>"]');
+      if (!row) return;
+
+      let status = 'not-answered';
+      if (currentAnswer && markedForReview) status = 'answered-marked';
+      else if (currentAnswer) status = 'answered';
+      else if (markedForReview) status = 'marked';
+
+      row.dataset.sectionReviewStatus = status;
+      const meta = _reviewStatusMeta(status);
+      const badge = row.querySelector('[data-section-review-badge]');
+      const statusText = row.querySelector('[data-section-review-status-text]');
+
+      if (badge) {
+        badge.className = 'w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ' + meta.badgeClass;
+      }
+      if (statusText) {
+        statusText.textContent = meta.text;
+        statusText.className = 'text-xs font-semibold ' + meta.textClass;
+      }
+    }
+
+    function _refreshSectionReviewCounts() {
+      const rows = [...document.querySelectorAll('.section-review-question-row')];
+      if (!rows.length) return;
+
+      let answered = 0;
+      let marked = 0;
+
+      rows.forEach(row => {
+        const status = row.dataset.sectionReviewStatus || 'not-visited';
+        if (status === 'answered' || status === 'answered-marked') answered++;
+        if (status === 'marked' || status === 'answered-marked') marked++;
+      });
+
+      const answeredEl = document.getElementById('sectionReviewAnsweredCount');
+      const unansweredEl = document.getElementById('sectionReviewUnansweredCount');
+      const markedEl = document.getElementById('sectionReviewMarkedCount');
+
+      if (answeredEl) answeredEl.textContent = answered;
+      if (unansweredEl) unansweredEl.textContent = Math.max(0, rows.length - answered);
+      if (markedEl) markedEl.textContent = marked;
+    }
+
+    function openSectionReviewModal() {
+      const modal = document.getElementById('sectionReviewModal');
+      if (!modal) {
+        openReviewModal();
+        return;
+      }
+
+      saveToServer(currentAnswer).then((data) => {
+        if (!data || (!data.success && !data.queued)) {
+          showWarnBanner('Current answer could not be saved. Please try again.', 'danger');
+          return;
+        }
+
+        _refreshCurrentQuestionInSectionReview();
+        _refreshSectionReviewCounts();
+        modal.classList.remove('hidden');
+      });
+    }
+
+    function closeSectionReviewModal() {
+      const modal = document.getElementById('sectionReviewModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function submitSectionConfirm() {
+      const btn = document.getElementById('confirmSectionSubmitBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Submitting & Unlocking...';
+      }
+      allowLeave();
+      saveToServer(currentAnswer).finally(() => {
+        const form = document.getElementById('sectionSubmitForm');
+        if (form) {
+          form.submit();
+        } else {
+          window.location.href = '/exam/<%= test.id %>/question/<%= questionNumber %>';
+        }
+      });
     }
 
     // ── Fullscreen ─────────────────────────────────────────────────────────────

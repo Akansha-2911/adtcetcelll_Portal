@@ -29,7 +29,20 @@
       </div>
       <section class="spvn-card p-5 mt-5">
         <div class="flex items-center justify-between mb-4"><div><p class="spvn-kicker">Recent</p><h2 class="spvn-section-title">Recently added questions</h2></div><a href="/admin/questions/smart-import" class="spvn-ui-btn spvn-ui-btn-primary">Upload Question Paper</a></div>
-        <div class="divide-y"><% (recentQuestions||[]).forEach(q=>{ %><div class="py-3 flex gap-3"><span class="spvn-chip"><%= q.subject %></span><div class="min-w-0"><div class="math-content font-semibold text-slate-900 truncate"><%= q.question %></div><div class="text-xs mt-1"><%= q.topic || 'Unclassified' %> · <%= q.difficulty %></div></div></div><% }) %><% if(!(recentQuestions||[]).length){ %><div class="spvn-empty p-8 text-center">No questions yet.</div><% } %></div>
+        <div class="divide-y">
+          <% (recentQuestions || []).forEach(q => { %>
+            <div class="py-3 flex gap-3">
+              <span class="spvn-chip"><%= q.subject %></span>
+              <div class="min-w-0">
+                <div class="math-content font-semibold text-slate-900 truncate"><%= q.question %></div>
+                <div class="text-xs mt-1"><%= q.topic || 'Unclassified' %> · <%= q.difficulty %></div>
+              </div>
+            </div>
+          <% }); %>
+          <% if (!(recentQuestions || []).length) { %>
+            <div class="spvn-empty p-8 text-center">No questions yet.</div>
+          <% } %>
+        </div>
       </section>
     </div>
   </main>

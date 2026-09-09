@@ -794,195 +794,140 @@
       }
 
 
+      const SUP_MAP = {
+        '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+        '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+        '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
+        'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ',
+        'i': 'ⁱ', 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ',
+        'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+        'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ',
+        'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ',
+        'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ'
+      };
+
+      function toSuperscript(str) {
+        return String(str).split('').map(function (c) { return SUP_MAP[c] || c; }).join('');
+      }
+
       function normalizeMathText(text) {
+        let value = String(text || '');
 
-        let value =
-          String(text || '');
-
-        value = value
+        // Auto-fix corrupted \right where \r or \n got unescaped into control characters or \night
+        value = value.replace(/[\r\n]+\s*ight\b/g, '\\right')
+          .replace(/\\+night\b/g, '\\right')
+          .replace(/\bnight\b/g, 'right')
+          .replace(/\\\\\s*([A-Za-z]+)/g, '\\$1')
           .replace(/\\\s+\(/g, '\\(')
           .replace(/\\\s+\)/g, '\\)')
           .replace(/\\\s+\[/g, '\\[')
-          .replace(/\\\s+\]/g, '\\]')
-          .replace(/\^\s*2\b/g, '^2')
-          .replace(/\^\s*3\b/g, '^3');
+          .replace(/\\\s+\]/g, '\\]');
+
+        // Normalize caret powers on variables/brackets/functions:
+        // Handles ^{...}, ^-1, ^2, ^3, h^2, sin^2, (x+y)^2, 10^-3, etc.
+        value = value
+          .replace(/(?<=[A-Za-z0-9)\]\}])\^\{([^{}]+)\}/g, function (_, p1) { return toSuperscript(p1); })
+          .replace(/(?<=[A-Za-z0-9)\]\}])\^([-+][0-9a-zA-Z]+)/g, function (_, p1) { return toSuperscript(p1); })
+          .replace(/(?<=[A-Za-z0-9)\]\}])\^([0-9a-zA-Z]+)/g, function (_, p1) { return toSuperscript(p1); })
+          .replace(/(?<=[A-Za-z0-9)\]\}])\s*\^\s*([0-9a-zA-Z]+)/g, function (_, p1) { return toSuperscript(p1); })
+          .replace(/=>/g, '⇒')
+          .replace(/<=>/g, '⇔')
+          .replace(/(?<=\s)->(?=\s)/g, '→')
+          .replace(/\+-/g, '±');
 
         return value;
       }
 
-
       function renderMixedMath(text, target) {
-
         if (!target) {
           return;
         }
 
-        const value =
-          normalizeMathText(text);
+        const value = normalizeMathText(text);
 
         if (!value.trim()) {
-
           target.innerHTML = '';
-
-          target.classList.remove(
-            'math-preview-error'
-          );
-
+          target.classList.remove('math-preview-error');
           return;
         }
 
-
-        if (
-          typeof katex === 'undefined'
-        ) {
-
-          target.innerHTML =
-            escapeHtml(value);
-
-          return;
+        if (window.SPVNMath && typeof window.SPVNMath.renderValue === 'function') {
+          target.classList.remove('math-preview-error');
+          const ok = window.SPVNMath.renderValue(target, value, false);
+          if (ok) return;
         }
 
+        if (typeof katex === 'undefined') {
+          target.innerHTML = escapeHtml(value).replace(/\n/g, '<br>');
+          return;
+        }
 
         try {
-
-          target.classList.remove(
-            'math-preview-error'
-          );
-
-
+          target.classList.remove('math-preview-error');
           let html = '';
-
           let lastIndex = 0;
 
-
-          const regex =
-            /(\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
-
-
+          const regex = /(\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
           let match;
 
-
-          while (
-            (match = regex.exec(value))
-          ) {
-
-            html +=
-              escapeHtml(
-                value.slice(
-                  lastIndex,
-                  match.index
-                )
-              ).replace(/\n/g, '<br>');
-
-
-            const raw =
-              match[0];
-
-
-            const displayMode =
-              raw.startsWith('\\[');
-
-
-            const latex =
-              raw.slice(2, -2);
-
-
-            html +=
-              katex.renderToString(
-                latex,
-                {
-                  throwOnError: false,
-                  displayMode: displayMode,
-                  strict: 'ignore',
-                  trust: false
-                }
-              );
-
-
-            lastIndex =
-              regex.lastIndex;
-
-          }
-
-
-          html +=
-            escapeHtml(
-              value.slice(lastIndex)
+          while ((match = regex.exec(value))) {
+            html += escapeHtml(
+              value.slice(lastIndex, match.index)
             ).replace(/\n/g, '<br>');
 
+            const raw = match[0];
+            const displayMode = raw.startsWith('\\[');
+            let latex = raw.slice(2, -2).trim();
+            latex = latex.replace(/\^([-+][0-9a-zA-Z]+)/g, function (_, p1) { return '^{' + p1 + '}'; });
 
-          target.innerHTML =
-            html;
+            html += katex.renderToString(
+              latex,
+              {
+                throwOnError: false,
+                displayMode: displayMode,
+                strict: 'ignore',
+                trust: false
+              }
+            );
 
+            lastIndex = regex.lastIndex;
+          }
+
+          html += escapeHtml(
+            value.slice(lastIndex)
+          ).replace(/\n/g, '<br>');
+
+          target.innerHTML = html;
+        } catch (error) {
+          console.error('Math preview render error:', error);
+          target.classList.add('math-preview-error');
+          target.innerHTML = escapeHtml(value).replace(/\n/g, '<br>');
         }
-
-        catch (error) {
-
-          console.error(
-            'Math preview render error:',
-            error
-          );
-
-
-          target.classList.add(
-            'math-preview-error'
-          );
-
-
-          target.innerHTML =
-            escapeHtml(value);
-
-        }
-
       }
 
-
       function updateMathPreview(textarea) {
-
         if (!textarea) {
           return;
         }
 
-
-        const previewId =
-          textarea.getAttribute(
-            'data-preview-id'
-          );
-
-
+        const previewId = textarea.getAttribute('data-preview-id');
         if (!previewId) {
           return;
         }
 
-
-        const preview =
-          document.getElementById(
-            previewId
-          );
-
-
-        renderMixedMath(
-          textarea.value,
-          preview
-        );
-
+        const preview = document.getElementById(previewId);
+        renderMixedMath(textarea.value, preview);
       }
 
-
       function initializeMathPreviews() {
-
         document
-          .querySelectorAll(
-            '[data-math-source]'
-          )
+          .querySelectorAll('[data-math-source]')
           .forEach(function (textarea) {
-
-            updateMathPreview(
-              textarea
-            );
-
+            updateMathPreview(textarea);
+            textarea.addEventListener('input', function () {
+              updateMathPreview(textarea);
+            });
           });
-
       }
 
 

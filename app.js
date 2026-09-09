@@ -51,6 +51,13 @@ app.use(compression({ level: 6, threshold: 1024 }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.locals.appTimeZone = APP_TIME_ZONE;
+app.locals.collegeName = process.env.COLLEGE_NAME || 'CET Exam Portal';
+app.locals.collegeShort = process.env.COLLEGE_SHORT_NAME || 'CET';
+app.locals.academicYear = process.env.ACADEMIC_YEAR || '2024-25';
+app.locals.collegeLogo = process.env.COLLEGE_LOGO_PATH || '/spvn-logo.png';
+app.locals.collegeAddress = process.env.COLLEGE_ADDRESS || '';
+app.locals.currentUser = null;
+app.locals.requestPath = '';
 
 // ── Static files ──────────────────────────────────────────────────────────────
 // Runtime uploads may live on a persistent disk outside /public.

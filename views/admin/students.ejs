@@ -7,22 +7,22 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="flex-1">
-        <h1 class="text-lg font-bold text-slate-900">Students</h1>
-        <p class="text-xs text-slate-400"><%= students.length %> total enrolled</p>
+        <h1 class="text-2xl font-bold text-slate-900">Students</h1>
+        <p class="text-sm text-slate-500 mt-0.5"><%= students.length %> total enrolled</p>
       </div>
       <div class="flex items-center gap-2.5">
         <button onclick="openWhatsAppModal()"
-          class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm">
+          class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
           <span class="hidden sm:inline">Draft Message</span>
         </button>
         <button onclick="document.getElementById('importModal').classList.remove('hidden')"
-          class="flex items-center gap-1.5 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+          class="flex items-center gap-2 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           <span class="hidden sm:inline">Import</span>
         </button>
         <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-          class="flex items-center gap-1.5 bg-navy-950 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-navy-900 transition-colors shadow-sm">
+          class="flex items-center gap-2 bg-navy-950 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-navy-900 transition-colors shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
           <span class="hidden sm:inline">Add Student</span>
         </button>
@@ -32,48 +32,48 @@
     <div class="p-5 lg:p-8">
       <%- include('../partials/flash') %>
       <div class="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-50 flex items-center gap-4">
-          <div class="relative flex-1 max-w-xs">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-4">
+          <div class="relative flex-1 max-w-sm">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
             <input type="text" placeholder="Search students…" onkeyup="filterTable(this.value)"
-              class="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-400"/>
+              class="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-400"/>
           </div>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm" id="studentsTable">
-            <thead class="bg-slate-50">
+          <table class="w-full text-sm sm:text-base" id="studentsTable">
+            <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">#</th>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Student</th>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</th>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Email</th>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Joined</th>
-                <th class="px-6 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">#</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">Student</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">Roll No</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider hidden md:table-cell">Email</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3.5 text-left text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider hidden lg:table-cell">Joined</th>
+                <th class="px-6 py-3.5 text-right text-xs sm:text-sm font-bold text-slate-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-50">
+            <tbody class="divide-y divide-slate-100">
               <% students.forEach((s, i) => { %>
               <tr class="hover:bg-slate-50 transition-colors student-row">
-                <td class="px-6 py-4 text-slate-400 text-xs"><%= i + 1 %></td>
+                <td class="px-6 py-4 text-slate-500 text-sm sm:text-base font-semibold"><%= i + 1 %></td>
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-navy-100 flex items-center justify-center text-navy-700 font-bold text-xs shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-navy-100 flex items-center justify-center text-navy-700 font-bold text-sm shrink-0">
                       <%= s.name.charAt(0).toUpperCase() %>
                     </div>
-                    <span class="font-medium text-slate-900"><%= s.name %></span>
+                    <span class="font-semibold text-base text-slate-900"><%= s.name %></span>
                   </div>
                 </td>
-                <td class="px-6 py-4 font-mono text-slate-600 text-xs"><%= s.rollNo %></td>
-                <td class="px-6 py-4 text-slate-500 hidden md:table-cell"><%= s.email || '—' %></td>
+                <td class="px-6 py-4 font-mono text-slate-700 text-sm sm:text-base font-semibold"><%= s.rollNo %></td>
+                <td class="px-6 py-4 text-slate-600 text-sm sm:text-base hidden md:table-cell"><%= s.email || '—' %></td>
                 <td class="px-6 py-4">
-                  <span class="<%= s.isFirstLogin ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' %> text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                  <span class="<%= s.isFirstLogin ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' %> text-xs sm:text-sm font-semibold px-3 py-1 rounded-full">
                     <%= s.isFirstLogin ? 'First Login' : 'Active' %>
                   </span>
                 </td>
-                <td class="px-6 py-4 text-slate-400 text-xs hidden lg:table-cell"><%= new Date(s.createdAt).toLocaleDateString('en-IN') %></td>
+                <td class="px-6 py-4 text-slate-500 text-sm hidden lg:table-cell"><%= new Date(s.createdAt).toLocaleDateString('en-IN') %></td>
                 <td class="px-6 py-4 text-right">
-                  <div class="flex items-center justify-end gap-1.5">
+                  <div class="flex items-center justify-end gap-2">
                     <button type="button"
                       data-student-name="<%= s.name || '' %>"
                       data-roll-no="<%= s.rollNo || '' %>"
@@ -82,16 +82,16 @@
                       data-phone="<%= s.parentContact || s.phone || '' %>"
                       onclick="onWhatsAppBtnClick(this)"
                       title="Send WhatsApp Draft to Parent"
-                      class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-100 transition-colors">
-                      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
+                      class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-100 transition-colors">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824zm-3.423-10.416c-4.418 0-8 3.582-8 8 0 1.558.45 3.011 1.228 4.238l-1.838 6.706 6.879-1.805c1.178.706 2.551 1.111 4.02 1.111 4.418 0 8-3.582 8-8s-3.582-8-8-8z"/></svg>
                     </button>
-                    <a href="/admin/students/<%= s.id %>/view" title="View Profile"
-                      class="w-7 h-7 rounded-lg bg-navy-50 flex items-center justify-center text-navy-600 hover:bg-navy-100 transition-colors">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <a href="/admin/students/<%= s._id || s.id %>/view" title="View Profile"
+                      class="w-8 h-8 rounded-lg bg-navy-50 flex items-center justify-center text-navy-600 hover:bg-navy-100 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     </a>
-                    <button onclick="openDeleteStudent('<%= s.id %>', `<%= s.name.replace(/`/g, '\\`') %>`)" title="Delete Student"
-                      class="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button onclick="openDeleteStudent('<%= s._id || s.id %>', `<%= s.name.replace(/`/g, '\\`') %>`)" title="Delete Student"
+                      class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 hover:bg-rose-100 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                   </div>
                 </td>
@@ -142,7 +142,7 @@
           <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Assign to Group</label>
           <select name="groupId" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
             <option value="">— No Group —</option>
-            <% groups.forEach(g => { %><option value="<%= g.id %>"><%= g.name %></option><% }) %>
+            <% groups.forEach(g => { %><option value="<%= g._id || g.id %>"><%= g.name %></option><% }) %>
           </select>
         </div>
       </div>
@@ -179,7 +179,7 @@
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Add imported students to group</label>
         <select name="groupId" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
           <option value="">— No Group —</option>
-          <% groups.forEach(g => { %><option value="<%= g.id %>"><%= g.name %></option><% }) %>
+          <% groups.forEach(g => { %><option value="<%= g._id || g.id %>"><%= g.name %></option><% }) %>
         </select>
       </div>
       <div class="bg-slate-50 rounded-xl px-4 py-3">
@@ -227,7 +227,7 @@
       </div>
 
       <div>
-        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Click Variable to Insert:</label>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Click Variable to Insert:</label>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="insertVariable('{student_name}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {student_name}</button>
           <button type="button" onclick="insertVariable('{roll_no}')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold border border-slate-200">+ {roll_no}</button>
@@ -239,7 +239,7 @@
       </div>
 
       <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
-        <p class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-1">Live Sample Preview:</p>
+        <p class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">Live Sample Preview:</p>
         <p id="waLivePreview" class="text-xs text-slate-700 whitespace-pre-wrap font-sans"></p>
       </div>
 
