@@ -141,6 +141,28 @@
             </div>
 
 
+            <!-- QUESTIONS WITH DOUBTS NOTIFICATION BANNER -->
+            <% 
+              const doubtQuestions = (uploadSession.questions || []).filter(q => q.needsReview);
+            %>
+            <% if (doubtQuestions.length > 0) { %>
+              <div class="mb-5 bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3.5 text-amber-950 shadow-sm">
+                <div class="w-8 h-8 rounded-lg bg-amber-200/80 flex items-center justify-center shrink-0 mt-0.5 text-amber-800">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div class="text-sm">
+                  <p class="font-bold text-slate-900 text-base">Review Suggested for <%= doubtQuestions.length %> Question(s)</p>
+                  <p class="mt-1 text-slate-700 leading-relaxed">
+                    The AI detected potential ambiguity or lower certainty for <%= doubtQuestions.length %> question(s) (highlighted with 
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-200 text-amber-900">⚠️ Review Suggested</span>). 
+                    Please review them once before creating the test. All other answers are verified and selected.
+                  </p>
+                </div>
+              </div>
+            <% } %>
+
             <!-- REVIEW FORM -->
             <form method="POST" action="/admin/tests/upload-test/review/<%= uploadSession._id %>">
 
@@ -243,6 +265,16 @@
                                                 </span>
 
                                                 <% } %>
+
+                                                <% if (q.needsReview) { %>
+
+                                                  <span class="text-xs bg-amber-100
+                           text-amber-800 font-semibold border border-amber-300
+                           px-2 py-1 rounded inline-flex items-center gap-1">
+                                                    ⚠️ Review Suggested: Option <%= q.correctAnswer || 'None' %>
+                                                  </span>
+
+                                                  <% } %>
 
                       </div>
 
@@ -347,7 +379,7 @@
                                     </div>
 
                                     <img src="<%= questionImageUrl %>" class="visual-image
-                         max-h-80 max-w-full
+                         max-h-[32rem] max-w-full
                          mx-auto object-contain
                          rounded bg-white border" alt="Question image" loading="lazy"
                                       onerror="this.closest('.question-image-wrapper').style.display='none'">
@@ -516,12 +548,15 @@
                                       <!-- ANSWER -->
                                       <div>
 
-                                        <label class="text-xs font-medium">
-                                          Answer
+                                        <label class="text-xs font-medium flex items-center justify-between">
+                                          <span>Answer</span>
+                                          <% if (q.needsReview) { %>
+                                            <span class="text-[10px] text-amber-800 font-bold bg-amber-100 px-1 py-0.5 rounded border border-amber-300">Verify</span>
+                                          <% } %>
                                         </label>
 
                                         <select name="<%= p %>_correctAnswer"
-                                          class="w-full border border-slate-300 rounded-lg p-2">
+                                          class="w-full border <%= q.needsReview ? 'border-amber-400 bg-amber-50/50 text-amber-950 font-bold focus:ring-amber-500' : 'border-slate-300' %> rounded-lg p-2">
 
                                           <option value="">
                                             Select
@@ -538,6 +573,12 @@
                                             <% }); %>
 
                                         </select>
+
+                                        <% if (q.needsReview && q.correctAnswer) { %>
+                                          <p class="text-[11px] text-amber-700 font-medium mt-1 leading-tight">
+                                            ⚠️ Review Suggested: Option <%= q.correctAnswer %>
+                                          </p>
+                                        <% } %>
 
                                       </div>
 

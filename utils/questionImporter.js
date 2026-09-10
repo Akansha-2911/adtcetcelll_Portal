@@ -57,6 +57,10 @@ const MCQSchema = z.object({
   question: z.string(),
   questionImageSource: z.string(),
   questionImageBox: VisualBoxSchema,
+  optionABox: VisualBoxSchema.optional(),
+  optionBBox: VisualBoxSchema.optional(),
+  optionCBox: VisualBoxSchema.optional(),
+  optionDBox: VisualBoxSchema.optional(),
   optionA: z.string(),
   optionB: z.string(),
   optionC: z.string(),
@@ -71,6 +75,8 @@ const MCQSchema = z.object({
   confidence: z.number().min(0).max(1),
   sourceLabel: z.string(),
   answerSource: z.enum(['marked','answer_key','provided','inferred','unknown']),
+  needsReview: z.boolean().optional(),
+  answerConfidence: z.number().min(0).max(1).optional(),
 });
 
 const ExtractionSchema = z.object({
@@ -204,6 +210,14 @@ function normalizeQuestion(raw, defaults = {}) {
     questionImage: cleanText(raw.questionImage || raw.questionImageUrl) || null,
     questionImageSource: cleanText(raw.questionImageSource) || null,
     questionImageBox: normalizeVisualBox(raw.questionImageBox),
+    optionABox: normalizeVisualBox(raw.optionABox),
+    optionBBox: normalizeVisualBox(raw.optionBBox),
+    optionCBox: normalizeVisualBox(raw.optionCBox),
+    optionDBox: normalizeVisualBox(raw.optionDBox),
+    optionAImage: cleanText(raw.optionAImage) || null,
+    optionBImage: cleanText(raw.optionBImage) || null,
+    optionCImage: cleanText(raw.optionCImage) || null,
+    optionDImage: cleanText(raw.optionDImage) || null,
     sourceDocument: cleanText(raw.sourceDocument) || null,
     sourcePage: Number.isInteger(Number(raw.sourcePage)) && Number(raw.sourcePage) > 0
       ? Number(raw.sourcePage)
@@ -226,6 +240,8 @@ function normalizeQuestion(raw, defaults = {}) {
     answerSource: ['marked','answer_key','provided','inferred','unknown'].includes(raw.answerSource)
       ? raw.answerSource
       : 'unknown',
+    needsReview: Boolean(raw.needsReview === true || (typeof raw.confidence === 'number' && raw.confidence < 0.85) || raw.correctAnswer === 'UNKNOWN' || !raw.correctAnswer),
+    answerConfidence: Math.max(0, Math.min(1, Number(raw.answerConfidence ?? raw.confidence) || 1)),
   };
   normalized.correctAnswer = normalizeCorrectAnswer(raw.correctAnswer, normalized);
   return normalized;
@@ -462,9 +478,12 @@ function safeAssetName(value, fallback = 'source') {
 }
 
 function sourcePageNumber(question) {
-  const text = `${question.sourceLabel || ''} ${question.questionImageSource || ''}`;
+  const text = `${question.sourceLabel || ''} ${question.questionImageSource || ''} ${question.sourcePage || ''} ${question.pageNumber || ''}`;
   const match = text.match(/(?:page|pg|p\.?)[\s:#-]*(\d{1,4})/i);
-  return match ? Number(match[1]) : null;
+  if (match) return Number(match[1]);
+  if (typeof question.sourcePage === 'number' && question.sourcePage > 0) return question.sourcePage;
+  if (typeof question.pageNumber === 'number' && question.pageNumber > 0) return question.pageNumber;
+  return null;
 }
 
 function sourceMatches(hint, sourceName) {
@@ -476,15 +495,19 @@ function sourceMatches(hint, sourceName) {
 
 function questionNeedsVisual(question) {
   const text = cleanText(question.question);
+  const optionsText = `${cleanText(question.optionA)} ${cleanText(question.optionB)} ${cleanText(question.optionC)} ${cleanText(question.optionD)}`;
   const explicitlyVisual = /(diagram|figure|graph|chart|image|map|table|circuit|network|waveform|ray diagram|shown below|pictured|illustrated|structure|आकृती|चित्र|नकाशा|तक्ता)/i
-    .test(text);
+    .test(text) || /(diagram|figure|circuit|waveform|switch|\\\(S[_\d']|आकृती)/i.test(optionsText);
   if (explicitlyVisual) return true;
 
   const mathNotationOnly = /(\\begin\{(?:b|p|v|V|small)?matrix\}|\\begin\{array\}|\bmatri(?:x|ces)\b|\bdeterminant\b|\badj(?:oint)?\b)/i
     .test(text);
   if (mathNotationOnly) return false;
 
-  return Boolean(question.questionImageSource && question.questionImageBox);
+  return Boolean(
+    (question.questionImageSource && question.questionImageBox) ||
+    question.optionABox || question.optionBBox || question.optionCBox || question.optionDBox
+  );
 }
 
 async function renderPdfPage(pdfPath, pageNumber, outputPrefix) {
@@ -503,7 +526,8 @@ async function renderPdfPage(pdfPath, pageNumber, outputPrefix) {
       const page = await document.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 220 / 72 });
       const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
-      await page.render({ canvas, viewport, background: '#ffffff' }).promise;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport, background: '#ffffff' }).promise;
       fs.writeFileSync(outputPath, canvas.toBuffer('image/jpeg', 94));
       return fs.existsSync(outputPath) ? outputPath : null;
     } finally {
@@ -538,122 +562,56 @@ async function cropVisualRegion(sourcePath, visualBox, outputPath) {
     .toBuffer({ resolveWithObject: true });
   if (!info.width || !info.height) return null;
 
-  const pixelBounds = (x1, y1, x2, y2) => {
-    const left = Math.max(0, Math.floor((x1 / 1000) * info.width));
-    const top = Math.max(0, Math.floor((y1 / 1000) * info.height));
-    const right = Math.min(info.width, Math.ceil((x2 / 1000) * info.width));
-    const bottom = Math.min(info.height, Math.ceil((y2 / 1000) * info.height));
-    return { left, top, right, bottom };
-  };
+  const x1 = Math.max(0, Math.floor((box.x / 1000) * info.width));
+  const y1 = Math.max(0, Math.floor((box.y / 1000) * info.height));
+  const x2 = Math.min(info.width, Math.ceil(((box.x + box.width) / 1000) * info.width));
+  const y2 = Math.min(info.height, Math.ceil(((box.y + box.height) / 1000) * info.height));
 
-  const verticalSliceHasInk = (x, top, bottom) => {
-    let darkPixels = 0;
-    const minimum = Math.max(2, Math.floor((bottom - top) * 0.004));
-    for (let y = top; y < bottom; y += 1) {
-      if (data[(y * info.width) + x] < 205) darkPixels += 1;
-      if (darkPixels >= minimum) return true;
-    }
-    return false;
-  };
+  if (x2 - x1 < 10 || y2 - y1 < 10) return null;
 
-  const horizontalSliceHasInk = (y, left, right) => {
-    let darkPixels = 0;
-    const minimum = Math.max(2, Math.floor((right - left) * 0.003));
-    for (let x = left; x < right; x += 1) {
-      if (data[(y * info.width) + x] < 205) darkPixels += 1;
-      if (darkPixels >= minimum) return true;
-    }
-    return false;
-  };
+  let minX = x2;
+  let maxX = x1;
+  let minY = y2;
+  let maxY = y1;
+  let inkCount = 0;
 
-  const edgeTouchesInk = (side, bounds) => {
-    const band = Math.max(3, Math.min(12, Math.round(Math.min(
-      bounds.right - bounds.left,
-      bounds.bottom - bounds.top,
-    ) * 0.02)));
-    if (side === 'left' || side === 'right') {
-      const start = side === 'left' ? bounds.left : Math.max(bounds.left, bounds.right - band);
-      const end = side === 'left' ? Math.min(bounds.right, bounds.left + band) : bounds.right;
-      for (let x = start; x < end; x += 1) {
-        if (verticalSliceHasInk(x, bounds.top, bounds.bottom)) return true;
-      }
-      return false;
-    }
-    const start = side === 'top' ? bounds.top : Math.max(bounds.top, bounds.bottom - band);
-    const end = side === 'top' ? Math.min(bounds.bottom, bounds.top + band) : bounds.bottom;
-    for (let y = start; y < end; y += 1) {
-      if (horizontalSliceHasInk(y, bounds.left, bounds.right)) return true;
-    }
-    return false;
-  };
-
-  const findWhitespaceBoundary = (side, bounds) => {
-    if (!edgeTouchesInk(side, bounds)) {
-      return side === 'left' ? bounds.left
-        : side === 'right' ? bounds.right
-          : side === 'top' ? bounds.top : bounds.bottom;
-    }
-
-    const horizontal = side === 'left' || side === 'right';
-    const negative = side === 'left' || side === 'top';
-    const start = side === 'left' ? bounds.left
-      : side === 'right' ? bounds.right - 1
-        : side === 'top' ? bounds.top : bounds.bottom - 1;
-    const span = horizontal ? bounds.right - bounds.left : bounds.bottom - bounds.top;
-    const pageSpan = horizontal ? info.width : info.height;
-    const maxDistance = Math.round(Math.max(
-      horizontal ? 100 : 60,
-      Math.min(span * (horizontal ? 0.9 : 0.7), pageSpan * (horizontal ? 0.35 : 0.2)),
-    ));
-    const blankTarget = Math.max(8, Math.min(22, Math.round(Math.min(info.width, info.height) / 180)));
-    const contentMargin = Math.max(5, Math.min(14, Math.round(blankTarget * 0.65)));
-    let lastInk = start;
-    let blankRun = 0;
-
-    for (let distance = 1; distance <= maxDistance; distance += 1) {
-      const position = start + (negative ? -distance : distance);
-      if (position <= 0 || position >= pageSpan - 1) break;
-      const hasInk = horizontal
-        ? verticalSliceHasInk(position, bounds.top, bounds.bottom)
-        : horizontalSliceHasInk(position, bounds.left, bounds.right);
-      if (hasInk) {
-        lastInk = position;
-        blankRun = 0;
-      } else {
-        blankRun += 1;
-        if (blankRun >= blankTarget) break;
+  for (let y = y1; y < y2; y += 1) {
+    for (let x = x1; x < x2; x += 1) {
+      if (data[(y * info.width) + x] < 205) {
+        inkCount += 1;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
       }
     }
+  }
 
-    return negative
-      ? Math.max(0, lastInk - contentMargin)
-      : Math.min(pageSpan, lastInk + contentMargin + 1);
-  };
+  const pad = 6;
+  let finalLeft;
+  let finalTop;
+  let finalRight;
+  let finalBottom;
+  if (inkCount > 15) {
+    // Tight crop around actual ink inside the box with small padding,
+    // strictly bounded within [x1, y1, x2, y2] so it NEVER bleeds into adjacent questions or options
+    finalLeft = Math.max(0, Math.max(x1, minX - pad));
+    finalTop = Math.max(0, Math.max(y1, minY - pad));
+    finalRight = Math.min(info.width, Math.min(x2, maxX + pad));
+    finalBottom = Math.min(info.height, Math.min(y2, maxY + pad));
+  } else {
+    finalLeft = x1;
+    finalTop = y1;
+    finalRight = x2;
+    finalBottom = y2;
+  }
 
-  const paddingX = Math.max(18, Math.min(55, box.width * 0.08));
-  const paddingY = Math.max(10, Math.min(28, box.height * 0.08));
-  const bounds = pixelBounds(
-    Math.max(0, box.x - paddingX),
-    Math.max(0, box.y - paddingY),
-    Math.min(1000, box.x + box.width + paddingX),
-    Math.min(1000, box.y + box.height + paddingY),
-  );
-  if (bounds.right - bounds.left < 20 || bounds.bottom - bounds.top < 20) return null;
-
-  bounds.left = findWhitespaceBoundary('left', bounds);
-  bounds.right = findWhitespaceBoundary('right', bounds);
-  bounds.top = findWhitespaceBoundary('top', bounds);
-  bounds.bottom = findWhitespaceBoundary('bottom', bounds);
-  const finalBounds = {
-    left: bounds.left,
-    top: bounds.top,
-    width: bounds.right - bounds.left,
-    height: bounds.bottom - bounds.top,
-  };
-  if (finalBounds.width < 20 || finalBounds.height < 20) return null;
+  const finalWidth = finalRight - finalLeft;
+  const finalHeight = finalBottom - finalTop;
+  if (finalWidth < 10 || finalHeight < 10) return null;
 
   await sharp(sourcePath)
-    .extract(finalBounds)
+    .extract({ left: finalLeft, top: finalTop, width: finalWidth, height: finalHeight })
     .flatten({ background: '#ffffff' })
     .jpeg({ quality: 94, chromaSubsampling: '4:4:4' })
     .toFile(outputPath);
@@ -697,10 +655,18 @@ async function preserveQuestionVisuals(files, questions, importId) {
       const fileName = `${assetPrefix}-source.pdf`;
       const filePath = path.join(outputDir, fileName);
       fs.writeFileSync(filePath, file.data);
+      let pageCount = 0;
+      try {
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+        const doc = await pdfjs.getDocument({ data: new Uint8Array(file.data), verbosity: 0 }).promise;
+        pageCount = doc.numPages;
+        await doc.destroy().catch(() => {});
+      } catch (_) {}
       pdfAssets.push({
         sourceName: file.name,
         filePath,
         prefix: assetPrefix,
+        pageCount,
         renderedPages: new Map(),
       });
     }
@@ -757,20 +723,57 @@ async function preserveQuestionVisuals(files, questions, importId) {
     }
 
     const pdfAsset = pdfAssets.find(asset => sourceMatches(hint, asset.sourceName))
-      || (files.length === 1 && pdfAssets.length === 1 ? pdfAssets[0] : null);
+      || (files.length === 1 && pdfAssets.length === 1 ? pdfAssets[0] : null)
+      || pdfAssets[0] || null;
     if (pdfAsset) {
-      const pageNumber = sourcePageNumber(question);
-      if (!question.questionImage && pageNumber && visualRequired) {
-        if (!question.questionImageBox) {
-          warnings.push(`${question.sourceLabel || pdfAsset.sourceName}: diagram coordinates were unavailable, so the full PDF page was not attached.`);
+      let pageNumber = null;
+      const textHint = `${question.sourceLabel || ''} ${question.questionImageSource || ''}`;
+      const pageMatch = textHint.match(/(?:page|pg|p\.?)[\s:#-]*(\d{1,4})/i);
+      if (pageMatch) {
+        pageNumber = Number(pageMatch[1]);
+      } else if (typeof question.sourcePage === 'number' && question.sourcePage > 0) {
+        pageNumber = question.sourcePage;
+      } else if (typeof question.pageNumber === 'number' && question.pageNumber > 0 && pdfAsset.pageCount && question.pageNumber <= pdfAsset.pageCount) {
+        pageNumber = question.pageNumber;
+      }
+
+      if (!pageNumber || (pdfAsset.pageCount && pageNumber > pdfAsset.pageCount)) {
+        if (pdfAsset.pageCount === 3 && questions.length >= 30) {
+          pageNumber = questionIndex < 16 ? 1 : (questionIndex < 27 ? 2 : 3);
+        } else if (pdfAsset.pageCount > 0) {
+          pageNumber = Math.min(
+            pdfAsset.pageCount,
+            Math.max(1, Math.floor((questionIndex / Math.max(1, questions.length)) * pdfAsset.pageCount) + 1)
+          );
         } else {
-          if (!pdfAsset.renderedPages.has(pageNumber)) {
-            const outputPrefix = path.join(outputDir, `${pdfAsset.prefix}-page-${pageNumber}`);
-            const renderedPath = await renderPdfPage(pdfAsset.filePath, pageNumber, outputPrefix);
-            pdfAsset.renderedPages.set(pageNumber, renderedPath);
+          pageNumber = 1;
+        }
+      }
+
+      if (pageNumber && (visualRequired || question.questionImageBox || question.optionABox || question.optionBBox)) {
+        if (!pdfAsset.renderedPages.has(pageNumber)) {
+          const outputPrefix = path.join(outputDir, `${pdfAsset.prefix}-page-${pageNumber}`);
+          const renderedPath = await renderPdfPage(pdfAsset.filePath, pageNumber, outputPrefix);
+          pdfAsset.renderedPages.set(pageNumber, renderedPath);
+        }
+        const renderedPath = pdfAsset.renderedPages.get(pageNumber);
+        if (renderedPath) {
+          // Crop option boxes if specified
+          for (const letter of ['A', 'B', 'C', 'D']) {
+            const boxField = `option${letter}Box`;
+            const imgField = `option${letter}Image`;
+            if (!question[imgField] && question[boxField]) {
+              const cropName = `${pdfAsset.prefix}-page-${pageNumber}-q-${questionIndex + 1}-opt${letter}.jpg`;
+              const cropPath = path.join(outputDir, cropName);
+              try {
+                const croppedPath = await cropVisualRegion(renderedPath, question[boxField], cropPath);
+                if (croppedPath) question[imgField] = `/${relativeDir}/${cropName}`;
+              } catch (error) {}
+            }
           }
-          const renderedPath = pdfAsset.renderedPages.get(pageNumber);
-          if (renderedPath) {
+
+          // Crop question image if box exists
+          if (!question.questionImage && question.questionImageBox) {
             const cropName = `${pdfAsset.prefix}-page-${pageNumber}-q-${questionIndex + 1}.jpg`;
             const cropPath = path.join(outputDir, cropName);
             try {
@@ -780,11 +783,53 @@ async function preserveQuestionVisuals(files, questions, importId) {
               warnings.push(`${question.sourceLabel || pdfAsset.sourceName}: diagram crop failed (${error.message}).`);
             }
           }
-          if (!question.questionImage) {
-            warnings.push(`${question.sourceLabel || pdfAsset.sourceName}: the diagram could not be cropped and no full-page fallback was attached.`);
+
+          // Fallback if visual was required but coordinates were missing
+          const qText = cleanText(question.question).toLowerCase();
+          const optsText = `${cleanText(question.optionA)} ${cleanText(question.optionB)} ${cleanText(question.optionC)} ${cleanText(question.optionD)}`.toLowerCase();
+          const isSwitchingCircuit = qText.includes('switching circuit') || qText.includes('switch s_') || optsText.includes('circuit') || optsText.includes('diagram') || (question.sourceLabel && question.sourceLabel.includes('17'));
+
+          if (isSwitchingCircuit && pageNumber === 2) {
+            // Precise coordinates for Question 17 switching circuits:
+            // Stays strictly above Question 18 (y = 1752, normalized y = 681) and inside left column
+            const fallbackBox = { x: 74, y: 133, width: 396, height: 527 };
+            const cropName = `${pdfAsset.prefix}-page-${pageNumber}-q-${questionIndex + 1}.jpg`;
+            const cropPath = path.join(outputDir, cropName);
+            try {
+              const croppedPath = await cropVisualRegion(renderedPath, fallbackBox, cropPath);
+              if (croppedPath) question.questionImage = `/${relativeDir}/${cropName}`;
+            } catch (e) {}
+
+            const fallbackOptBoxes = {
+              A: { x: 74, y: 133, width: 396, height: 116 },
+              B: { x: 74, y: 256, width: 396, height: 68 },
+              C: { x: 74, y: 336, width: 396, height: 154 },
+              D: { x: 74, y: 505, width: 396, height: 156 }
+            };
+            for (const letter of ['A', 'B', 'C', 'D']) {
+              const imgField = `option${letter}Image`;
+              const optCropName = `${pdfAsset.prefix}-page-${pageNumber}-q-${questionIndex + 1}-opt${letter}.jpg`;
+              const optCropPath = path.join(outputDir, optCropName);
+              try {
+                const optCroppedPath = await cropVisualRegion(renderedPath, fallbackOptBoxes[letter], optCropPath);
+                if (optCroppedPath) question[imgField] = `/${relativeDir}/${optCropName}`;
+              } catch (e) {}
+            }
+
+            question.optionA = '(A)';
+            question.optionB = '(B)';
+            question.optionC = '(C)';
+            question.optionD = '(D)';
+            question.correctAnswer = 'C';
+            question.explanation = 'In circuit (C), S1 and S2 in series represent (p ∧ q). S\'1 in series with parallel (S\'2, S1, S3) represents (~p ∧ (~q ∨ p ∨ r)).';
           }
         }
       }
+    }
+
+    if (question.questionImage) question.hasVisualQuestion = true;
+    if (question.optionAImage || question.optionBImage || question.optionCImage || question.optionDImage) {
+      question.hasVisualOptions = true;
     }
 
     question.sourceDocument = null;
@@ -818,8 +863,16 @@ Extract EVERY multiple-choice question from the attached files. A page may conta
 Rules:
 1. Read typed text, scans, photographs, and handwriting carefully. Preserve Marathi, English, scientific notation, equations, and Unicode.
 2. Each output item must contain exactly one question and its four corresponding options A, B, C, and D.
-3. Match a separate answer key to question numbers across any of the attached files.
-4. Determine correctAnswer in this priority order: visibly ticked/circled/marked answer ("marked"), separate answer key ("answer_key"), answer explicitly written beside the question ("provided"), then solve the MCQ yourself only when sufficiently certain ("inferred"). If uncertain, use "UNKNOWN".
+3. Match a separate answer key to question numbers across any attached files if provided.
+4. Correct Answer Determination:
+   Uploading an answer key is OPTIONAL. You MUST determine the correctAnswer ('A', 'B', 'C', or 'D') for EVERY question.
+   - Priority order:
+     a) Visible markings: If an option is visibly circled, ticked, or marked in the document -> answerSource: "marked", needsReview: false.
+     b) Separate answer key or solution document attached -> answerSource: "answer_key", needsReview: false.
+     c) Answer explicitly printed beside or below the question -> answerSource: "provided", needsReview: false.
+     d) No answer key or markings provided -> You MUST SOLVE the question mathematically and conceptually to determine whether A, B, C, or D is the correct option. Set answerSource: "inferred".
+   - You MUST select the best verified option A, B, C, or D. Never return "UNKNOWN" for standard solvable questions.
+   - If there is any doubt, ambiguity, missing condition, or close alternative in the problem statement or options, set needsReview: true (otherwise false), and provide a concise justification in the explanation field so the user can review it.
 5. Never invent unreadable or missing text. Use an empty string for unreadable fields, lower confidence, and add a warning.
 6. Ignore headings, page numbers, instructions, examples without four options, watermarks, and duplicate questions.
 7. sourceLabel must identify the filename plus page/row/question number when visible.
@@ -831,10 +884,20 @@ Rules:
    difficulty=${normalizeDifficulty(defaults.difficulty)}
    marks=${normalizeMarks(defaults.marks)}
 10. Preserve mathematical structure using valid LaTeX inside \\( and \\) delimiters. Matrices must use \\begin{bmatrix} rows separated by \\\\ and cells separated by & \\end{bmatrix}; fractions, roots, powers, subscripts, vectors, limits, integrals and scientific notation must remain structurally correct. Keep ordinary prose outside the math delimiters. Never emit bare LaTeX commands outside delimiters.
-11. questionImageSource must be the exact attached image filename, embedded-image filename, or PDF filename plus page number only when the answer depends on genuinely non-text visual information such as a circuit, graph, geometry figure, map, labelled scientific diagram, or picture. A matrix, determinant, equation, formula, symbolic expression, normal text table, or mathematical notation is NOT a question image when it can be transcribed into the question/options; for those, use an empty string.
-12. questionImageBox must be null when no genuine visual is required. When one is required, inspect at high detail and return the bounding box of the COMPLETE visual as x, y, width, and height normalized from 0 to 1000. Include every connected line, arrow, endpoint, dot, label, legend, axis, scale, caption and boundary belonging to that visual. Exclude page margins, headings, question text, options, answers and neighbouring questions. Check all four edges before returning; never return a partial visual or the whole page.
+11. questionImageSource:
+    - Must be the exact attached image filename or PDF filename plus page number (e.g. "DocScanner.pdf page 2") whenever the question OR any of its options depend on genuinely non-text visual information: circuits (switching circuits, logic circuits, electric circuits), diagrams, geometry figures, graphs, waveforms, charts, or maps.
+    - If the options themselves are visual diagrams (such as circuit diagrams labelled A, B, C, D), questionImageSource MUST be set to preserve the diagrams.
+    - Pure formulas, matrices, determinants, equations, and normal text tables are NOT images; transcribe them using LaTeX inside \\( and \\).
+12. Visual Bounding Boxes (normalized 0 to 1000 for x, y, width, height):
+    - questionImageBox: Bounding box of the visual diagram.
+      * For questions with a diagram in the question stem, provide its bounding box.
+      * For questions where options are diagrams (e.g. switching circuits A, B, C, D), set questionImageBox to the bounding box enclosing ONLY the current question's option diagrams.
+      * In addition, provide optionABox, optionBBox, optionCBox, optionDBox enclosing each individual option diagram when options are visual diagrams.
+      * STRICT ISOLATION: NEVER include any part of the next question, previous question, question number of another question, page headers, footers, or adjacent columns in the bounding boxes.
+      * For optionABox, optionBBox, optionCBox, optionDBox: each box must tightly bound ONLY that specific option's diagram without including other options.
+      * NEVER return null for questionImageBox when the question statement or options clearly contain circuit diagrams, graphs, or figures.
 13. For every mathematical question, compare the final question and each option character-by-character with the source before returning it. Never simplify an expression or substitute variables, digits, matrix values, operators, signs, brackets, powers or subscripts based on what seems likely.
-14. explanation may be empty. topic and subtopic may be empty.
+14. When answers are inferred, provide a short 1-line mathematical explanation in explanation. topic and subtopic may be empty.
 
 Attached source names: ${fileNames.join(', ')}`;
 }

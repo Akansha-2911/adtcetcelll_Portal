@@ -248,6 +248,10 @@ exports.extractTest=async(req,res)=>{
         ? String(q.correctAnswer).trim().toUpperCase()
         : '',
 
+      needsReview: Boolean(q.needsReview === true || (typeof q.confidence === 'number' && q.confidence < 0.85) || !['A','B','C','D'].includes(String(q.correctAnswer).trim().toUpperCase())),
+      answerSource: q.answerSource || (q.correctAnswer ? 'inferred' : 'unknown'),
+      answerConfidence: typeof q.answerConfidence === 'number' ? q.answerConfidence : (typeof q.confidence === 'number' ? q.confidence : 0.95),
+
       explanation: cleanText(q.explanation),
       detailedSolution: cleanText(q.detailedSolution || q.explanation),
       solutionImage: q.solutionImage || null,
@@ -360,7 +364,12 @@ exports.saveReview=async(req,res)=>{
       row.optionD=cleanText(body[`${p}_optionD`]??row.optionD);
 
       const answer=body[`${p}_correctAnswer`];
+      const prevAnswer = row.correctAnswer;
       row.correctAnswer=['A','B','C','D'].includes(answer)?answer:'';
+      if (row.correctAnswer && row.correctAnswer !== prevAnswer) {
+        row.answerSource = 'provided';
+      }
+      row.needsReview = false;
 
       row.explanation=cleanText(
         body[`${p}_explanation`]??row.explanation

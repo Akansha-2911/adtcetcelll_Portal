@@ -23,6 +23,22 @@ const extractedQuestionSchema=new mongoose.Schema({
     default:''
   },
 
+  needsReview:{
+    type:Boolean,
+    default:false
+  },
+
+  answerSource:{
+    type:String,
+    enum:['marked','answer_key','provided','inferred','unknown',''],
+    default:''
+  },
+
+  answerConfidence:{
+    type:Number,
+    default:1
+  },
+
   explanation:{type:String,default:''},
   detailedSolution:{type:String,default:''},
   solutionImage:{type:String,default:null},
