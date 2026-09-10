@@ -144,6 +144,21 @@ function replaceBalancedRoots(str) {
   return result;
 }
 
+function replaceMatrices(str) {
+  if (!str) return '';
+  return str.replace(/\\begin\{(bmatrix|pmatrix|matrix|vmatrix|Vmatrix)\}([\s\S]*?)\\end\{\1\}/g, (match, env, body) => {
+    const rawRows = body.split(/\\\\|\r?\n/).map(r => r.trim()).filter(r => r.length > 0);
+    const formattedRows = rawRows.map(row => {
+      const cols = row.split('&').map(c => cleanFormula(c.trim())).filter(c => c.length > 0);
+      return cols.join('  ');
+    });
+    const isDet = env.toLowerCase() === 'vmatrix';
+    const leftBracket = isDet ? '| ' : '[ ';
+    const rightBracket = isDet ? ' |' : ' ]';
+    return leftBracket + formattedRows.join(' ;  ') + rightBracket;
+  });
+}
+
 /**
  * Converts a raw LaTeX formula string into clean, human-readable Unicode math text.
  */
@@ -153,6 +168,9 @@ function cleanFormula(raw) {
   // Fix corrupted \right where \r or \n got unescaped into control characters or \night
   f = f.replace(/[\r\n]+\s*ight\b/g, '\\right');
   f = f.replace(/\\+night\b/g, '\\right');
+
+  // Format matrices before stripping generic environments
+  f = replaceMatrices(f);
 
   // Normalize escaped double-backslashes before commands (e.g. \\sim -> \sim, \\vee -> \vee)
   f = f.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
@@ -269,7 +287,7 @@ function cleanFormula(raw) {
        .replace(/\\psi(?![a-zA-Z])/g, 'ψ').replace(/\\Psi(?![a-zA-Z])/g, 'Ψ').replace(/\\omega(?![a-zA-Z])/g, 'ω').replace(/\\Omega(?![a-zA-Z])/g, 'Ω');
 
   // Text formatting commands
-  f = f.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g, '$1');
+  f = f.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname|mathbb|mathcal|mathsf|mathtt)\{([^{}]*)\}/g, '$1');
 
   // Vectors and accents
   f = f.replace(/\\vec\{([^{}]+)\}/g, '$1⃗')
@@ -313,11 +331,12 @@ function cleanFormula(raw) {
     });
   }
 
-  // Binary minus: surround with spaces
-  f = f.replace(new RegExp('([a-zA-Z0-9' + SUP_SUB + '\\)\\]])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(\\[])', 'g'), '$1 − $2');
+  // Binary minus: surround with spaces (standard ASCII minus - is safe across all PDF fonts)
+  f = f.replace(new RegExp('([a-zA-Z0-9' + SUP_SUB + '\\)\\]])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(\\[])', 'g'), '$1 - $2');
   // Unary negation
-  f = f.replace(new RegExp('(^|[=<>≤≥≠\\(\\[/\\n])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(])', 'g'), '$1−$2');
-  f = f.replace(/=\s*−/g, '= −');
+  f = f.replace(new RegExp('(^|[=<>≤≥≠\\(\\[/\\n])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(])', 'g'), '$1-$2');
+  f = f.replace(/=\s*[-−]/g, '= -');
+  f = f.replace(/−/g, '-');
 
   // Strip dollar signs
   f = f.replace(/\$/g, '').trim();
@@ -338,12 +357,15 @@ function formatMathToText(str) {
   // Normalize OCR/plain radical notation before any export conversion.
   text = text.replace(/√\s*\(([^()]*)\)/g, '\\sqrt{$1}');
 
+  // Format matrices before delimiter parsing
+  text = replaceMatrices(text);
+
   // Normalize escaped double-backslashes before commands or delimiters
   text = text.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
   text = text.replace(/\\\\([()[\]])/g, '\\$1');
 
   // 1. Process multi-line display math blocks across the ENTIRE text first
-  const MULTILINE_DELIMITERS = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\begin\{(?:gathered|aligned|array|cases|matrix|split)\}[\s\S]*?\\end\{(?:gathered|aligned|array|cases|matrix|split)\})/g;
+  const MULTILINE_DELIMITERS = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\begin\{(?:gathered|aligned|array|cases|matrix|bmatrix|pmatrix|vmatrix|Vmatrix|split)\}[\s\S]*?\\end\{(?:gathered|aligned|array|cases|matrix|bmatrix|pmatrix|vmatrix|Vmatrix|split)\})/g;
   text = text.replace(MULTILINE_DELIMITERS, (match) => {
     let body = match;
     if (body.startsWith('$$') && body.endsWith('$$')) body = body.slice(2, -2);
@@ -406,6 +428,9 @@ function formatMathToText(str) {
              .replace(/\$/g, '');
 
   text = text.replace(/([~∼¬])\s+([a-zA-Z0-9(\[])/g, '$1$2');
+
+  // Replace Unicode minus with standard ASCII minus to prevent font encoding glitches
+  text = text.replace(/−/g, '-');
 
   // 4. Clean up multiple blank lines
   text = text.replace(/\n{3,}/g, '\n\n');
@@ -499,13 +524,56 @@ function formatMathToWordHtml(str) {
 }
 
 /**
- * Configures PDFKit document with Unicode-capable fonts (Cambria / Segoe UI Symbol / Arial)
- * Cambria on Windows contains full native support for superscripts, subscripts, Greek, and math symbols.
+ * Resolves an image URL (e.g. /uploads/questions/scans/... or relative path)
+ * to an existing absolute path on the local filesystem.
+ */
+function resolveLocalImagePath(imgUrl) {
+  if (!imgUrl || typeof imgUrl !== 'string') return null;
+  const clean = imgUrl.trim().replace(/^[/\\]+/, '');
+  const rootDir = path.resolve(__dirname, '..');
+  const candidates = [
+    path.join(rootDir, 'public', clean),
+    path.join(rootDir, clean),
+    path.join(rootDir, 'public', 'uploads', clean.replace(/^uploads[/\\]?/, '')),
+    path.join(rootDir, 'public', 'uploads', 'questions', clean.replace(/^(?:uploads[/\\]+|questions[/\\]+)+/, ''))
+  ];
+  if (process.env.UPLOAD_ROOT_DIR) {
+    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, clean.replace(/^uploads[/\\]?/, '')));
+    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, 'questions', clean.replace(/^(?:uploads[/\\]+|questions[/\\]+)+/, '')));
+  }
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch (_) {}
+  }
+  return null;
+}
+
+/**
+ * Encodes a local image to a base64 Data URI <img> tag for embedding into Word documents (.doc HTML).
+ */
+function getBase64ImageHtml(imgUrl, style = 'max-width: 420px; max-height: 220px; height: auto;') {
+  const localPath = resolveLocalImagePath(imgUrl);
+  if (!localPath) return '';
+  try {
+    const ext = path.extname(localPath).toLowerCase().replace('.', '') || 'jpeg';
+    const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+    const b64 = fs.readFileSync(localPath).toString('base64');
+    return `<div style="margin: 6px 0;"><img src="data:${mime};base64,${b64}" style="${style}" /></div>`;
+  } catch (err) {
+    console.error('getBase64ImageHtml error:', err.message);
+    return '';
+  }
+}
+
+/**
+ * Configures PDFKit document with Unicode-capable fonts (Segoe UI Symbol / Cambria / Arial)
+ * Segoe UI Symbol and Cambria on Windows contain full native support for superscripts, subscripts, Greek, and math symbols.
  */
 function setupPdfFonts(doc) {
   const fontCandidates = [
-    { regular: 'C:/Windows/Fonts/cambria.ttc', regularSubfont: 'Cambria', bold: 'C:/Windows/Fonts/cambriab.ttf', name: 'Cambria' },
     { regular: 'C:/Windows/Fonts/seguisym.ttf', bold: 'C:/Windows/Fonts/seguisym.ttf', name: 'SegoeUISymbol' },
+    { regular: 'C:/Windows/Fonts/cambria.ttc', regularSubfont: 'Cambria', bold: 'C:/Windows/Fonts/cambria.ttc', boldSubfont: 'Cambria', name: 'Cambria' },
     { regular: 'C:/Windows/Fonts/calibri.ttf', bold: 'C:/Windows/Fonts/calibrib.ttf', name: 'Calibri' },
     { regular: 'C:/Windows/Fonts/arial.ttf', bold: 'C:/Windows/Fonts/arialbd.ttf', name: 'Arial' },
     { regular: 'C:/Windows/Fonts/segoeui.ttf', bold: 'C:/Windows/Fonts/segoeuib.ttf', name: 'SegoeUI' }
@@ -519,7 +587,9 @@ function setupPdfFonts(doc) {
         } else {
           doc.registerFont('MathFont', c.regular);
         }
-        if (fs.existsSync(c.bold)) {
+        if (c.boldSubfont) {
+          doc.registerFont('MathFont-Bold', c.bold, c.boldSubfont);
+        } else if (c.bold && fs.existsSync(c.bold)) {
           doc.registerFont('MathFont-Bold', c.bold);
         } else {
           doc.registerFont('MathFont-Bold', c.regular);
@@ -543,5 +613,7 @@ module.exports = {
   formatMathToWordHtml,
   cleanFormula,
   setupPdfFonts,
+  resolveLocalImagePath,
+  getBase64ImageHtml,
   escapeHtml
 };

@@ -6,7 +6,7 @@ const path = require('path');
 const { uploadRoot: UPLOAD_DIR, pdfDir: PDF_DIR, documentDir: DOC_DIR } = require('../utils/storagePaths');
 const { parseLocalDateTime, formatDateTimeLocal } = require('../utils/dateTime');
 const { extractSyllabusFromPdf } = require('../utils/syllabusImporter');
-const { formatMathToText, formatMathToWordHtml, setupPdfFonts } = require('../utils/mathFormatter');
+const { formatMathToText, formatMathToWordHtml, setupPdfFonts, resolveLocalImagePath, getBase64ImageHtml } = require('../utils/mathFormatter');
 
 
 const COURSES = ['JEE', 'CET', 'NEET'];
@@ -2589,21 +2589,28 @@ table.answer-key th { background: #0f172a; color: #fff; padding: 8px 10px; font-
         cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
         cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
 
-        const cleanOptA = String(q.optionA || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptB = String(q.optionB || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptC = String(q.optionC || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptD = String(q.optionD || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOpt = (opt) => {
+          let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
+          if (/^(?:option\s*)?[A-Da-d]$/i.test(s)) return '';
+          return s;
+        };
+
+        const cleanOptA = cleanOpt(q.optionA);
+        const cleanOptB = cleanOpt(q.optionB);
+        const cleanOptC = cleanOpt(q.optionC);
+        const cleanOptD = cleanOpt(q.optionD);
 
         html += `<div class='question-block'>
 <div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
+${q.questionImage ? getBase64ImageHtml(q.questionImage) : ''}
 <div class='options'>
-  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}</div>
-  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}</div>
-  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}</div>
-  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}</div>
+  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${q.optionAImage ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${q.optionBImage ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${q.optionCImage ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${q.optionDImage ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
 </div>`;
         if (includeAnswers) {
-          html += `<div class='answer-box'>✔ Correct Answer: Option (${escapeHtml(q.correctAnswer)})
+          html += `<div class='answer-box'>Correct Answer: Option (${escapeHtml(q.correctAnswer)})
 ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation:</b> ${formatMathToWordHtml(q.detailedSolution || q.explanation)}</div>` : ''}
 </div>`;
         }
@@ -2664,45 +2671,58 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       doc.fillColor('#64748b').fontSize(8.5).font(mainFont).text(`[${q.marks || 1} Mark${q.marks !== 1 ? 's' : ''}${q.negativeMarks ? ', -' + q.negativeMarks : ''}]`, 40, qY + 5, { width: pageW - 10, align: 'right' });
 
       doc.y = qY + 26;
-      const cleanQText = formatMathToText(q.question || '');
+      let cleanQText = String(q.question || '').trim();
+      cleanQText = cleanQText.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+      cleanQText = cleanQText.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+      cleanQText = cleanQText.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+      cleanQText = formatMathToText(cleanQText);
+
       doc.fillColor('#1e293b').fontSize(10).font(mainFont).text(cleanQText, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
 
       if (q.questionImage) {
-        const fullImgPath = path.join(__dirname, '..', q.questionImage.startsWith('/') ? q.questionImage.slice(1) : q.questionImage);
-        if (fs.existsSync(fullImgPath)) {
+        const fullImgPath = resolveLocalImagePath(q.questionImage);
+        if (fullImgPath) {
           try {
-            if (doc.y > 620) doc.addPage();
-            doc.image(fullImgPath, { fit: [200, 110], align: 'center' });
+            if (doc.y > 580) doc.addPage();
+            doc.image(fullImgPath, { fit: [260, 130], align: 'center' });
             doc.moveDown(0.4);
           } catch (err) { }
         }
       }
 
+      const cleanOpt = (opt) => {
+        let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
+        if (/^(?:option\s*)?[A-Da-d]$/i.test(s)) return '';
+        return s;
+      };
+
       const options = [
-        { key: 'A', text: formatMathToText(q.optionA || ''), img: q.optionAImage },
-        { key: 'B', text: formatMathToText(q.optionB || ''), img: q.optionBImage },
-        { key: 'C', text: formatMathToText(q.optionC || ''), img: q.optionCImage },
-        { key: 'D', text: formatMathToText(q.optionD || ''), img: q.optionDImage },
+        { key: 'A', text: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage },
+        { key: 'B', text: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage },
+        { key: 'C', text: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage },
+        { key: 'D', text: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage },
       ];
 
       options.forEach(opt => {
-        if (doc.y > 720) doc.addPage();
+        const optHasImg = !!opt.img;
+        if (doc.y > (optHasImg ? 640 : 720)) doc.addPage();
         const isCorrect = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === opt.key;
         const optY = doc.y;
         if (isCorrect) {
           doc.rect(48, optY, pageW - 16, 18).fill('#dcfce7');
         }
-        doc.fillColor(isCorrect ? '#166534' : '#334155').fontSize(9).font(isCorrect ? boldFont : mainFont)
-          .text(`(${opt.key}) ${opt.text}`, 54, optY + 4, { width: pageW - 28 });
+        doc.fillColor(isCorrect ? '#166534' : '#334155').fontSize(9);
+        doc.font(boldFont).text(`(${opt.key}) `, 54, optY + 4, { continued: !!opt.text });
+        if (opt.text) doc.font(mainFont).text(opt.text, { width: pageW - 36 });
         doc.y = optY + 20;
 
         if (opt.img) {
-          const fullOptImg = path.join(__dirname, '..', opt.img.startsWith('/') ? opt.img.slice(1) : opt.img);
-          if (fs.existsSync(fullOptImg)) {
+          const fullOptImg = resolveLocalImagePath(opt.img);
+          if (fullOptImg) {
             try {
-              if (doc.y > 680) doc.addPage();
-              doc.image(fullOptImg, { fit: [150, 75], align: 'left' });
+              if (doc.y > 660) doc.addPage();
+              doc.image(fullOptImg, { fit: [180, 85], align: 'left' });
               doc.moveDown(0.3);
             } catch (err) { }
           }
@@ -2722,7 +2742,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         const boxH = cleanExp ? Math.max(36, textH + 16) : 22;
         doc.rect(48, ansY, pageW - 16, boxH).fill('#f0fdf4').strokeColor('#86efac').lineWidth(0.5).stroke();
         doc.fillColor('#15803d').fontSize(8.5).font(boldFont)
-          .text(`✔ Correct Answer: Option (${q.correctAnswer})`, 54, ansY + 5);
+          .text(`Correct Answer: Option (${q.correctAnswer})`, 54, ansY + 5);
         if (cleanExp) {
           doc.fillColor('#374151').fontSize(8.5).font(mainFont)
             .text(`Explanation: ${cleanExp}`, 54, ansY + 20, { width: pageW - 28 });
@@ -2825,21 +2845,28 @@ h1 { font-size: 18pt; color: #0f172a; text-align: center; margin-bottom: 4px; }
         cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
         cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
 
-        const cleanOptA = String(q.optionA || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptB = String(q.optionB || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptC = String(q.optionC || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
-        const cleanOptD = String(q.optionD || '').trim().replace(/^[A-Da-d][\s.:)\-–—]+\s*/, '');
+        const cleanOpt = (opt) => {
+          let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
+          if (/^(?:option\s*)?[A-Da-d]$/i.test(s)) return '';
+          return s;
+        };
+
+        const cleanOptA = cleanOpt(q.optionA);
+        const cleanOptB = cleanOpt(q.optionB);
+        const cleanOptC = cleanOpt(q.optionC);
+        const cleanOptD = cleanOpt(q.optionD);
 
         html += `<div class='question-block'>
 <div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
+${q.questionImage ? getBase64ImageHtml(q.questionImage) : ''}
 <div class='options'>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${q.optionAImage ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${q.optionBImage ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${q.optionCImage ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${q.optionDImage ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
 </div>`;
         if (includeAnswers) {
-          html += `<div class='answer-box'>✔ Correct Answer: (${escapeHtml(q.correctAnswer)})
+          html += `<div class='answer-box'>Correct Answer: (${escapeHtml(q.correctAnswer)})
 ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation:</b> ${formatMathToWordHtml(q.detailedSolution || q.explanation)}</div>` : ''}
 </div>`;
         }
@@ -2882,24 +2909,59 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         .text(`[${q.difficulty || 'Medium'}] [${q.marks || 1} Mark]`, 40, qY + 4, { width: pageW - 10, align: 'right' });
 
       doc.y = qY + 22;
-      const cleanQ = formatMathToText(q.question || '');
+      let cleanQ = String(q.question || '').trim();
+      cleanQ = cleanQ.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+      cleanQ = cleanQ.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+      cleanQ = cleanQ.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+      cleanQ = formatMathToText(cleanQ);
+
       doc.fillColor('#1e293b').fontSize(9.5).font(mainFont).text(cleanQ, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
 
+      if (q.questionImage) {
+        const fullImgPath = resolveLocalImagePath(q.questionImage);
+        if (fullImgPath) {
+          try {
+            if (doc.y > 580) doc.addPage();
+            doc.image(fullImgPath, { fit: [260, 130], align: 'center' });
+            doc.moveDown(0.4);
+          } catch (err) { }
+        }
+      }
+
+      const cleanOpt = (opt) => {
+        let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
+        if (/^(?:option\s*)?[A-Da-d]$/i.test(s)) return '';
+        return s;
+      };
+
       const options = [
-        { k: 'A', v: formatMathToText(q.optionA || '') },
-        { k: 'B', v: formatMathToText(q.optionB || '') },
-        { k: 'C', v: formatMathToText(q.optionC || '') },
-        { k: 'D', v: formatMathToText(q.optionD || '') },
+        { k: 'A', v: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage },
+        { k: 'B', v: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage },
+        { k: 'C', v: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage },
+        { k: 'D', v: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage },
       ];
       options.forEach(opt => {
-        if (doc.y > 730) doc.addPage();
+        const optHasImg = !!opt.img;
+        if (doc.y > (optHasImg ? 640 : 730)) doc.addPage();
         const isAns = includeAnswers && q.correctAnswer === opt.k;
         const optY = doc.y;
         if (isAns) doc.rect(46, optY, pageW - 12, 16).fill('#dcfce7');
-        doc.fillColor(isAns ? '#166534' : '#334155').fontSize(8.5).font(isAns ? boldFont : mainFont)
-          .text(`(${opt.k}) ${opt.v}`, 52, optY + 3, { width: pageW - 24 });
+        doc.fillColor(isAns ? '#166534' : '#334155').fontSize(8.5);
+        doc.font(boldFont).text(`(${opt.k}) `, 52, optY + 3, { continued: !!opt.v });
+        if (opt.v) doc.font(mainFont).text(opt.v, { width: pageW - 32 });
         doc.y = optY + 18;
+
+        if (opt.img) {
+          const fullOptImg = resolveLocalImagePath(opt.img);
+          if (fullOptImg) {
+            try {
+              if (doc.y > 660) doc.addPage();
+              doc.image(fullOptImg, { fit: [180, 85], align: 'left' });
+              doc.moveDown(0.3);
+            } catch (err) { }
+          }
+        }
       });
 
       if (includeAnswers) {
@@ -2914,7 +2976,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         }
         const bH = cleanExp ? Math.max(32, textH + 16) : 18;
         doc.rect(46, aY, pageW - 12, bH).fill('#f0fdf4').strokeColor('#86efac').lineWidth(0.5).stroke();
-        doc.fillColor('#15803d').fontSize(8).font(boldFont).text(`✔ Answer: (${q.correctAnswer})`, 52, aY + 4);
+        doc.fillColor('#15803d').fontSize(8).font(boldFont).text(`Correct Answer: (${q.correctAnswer})`, 52, aY + 4);
         if (cleanExp) {
           doc.fillColor('#374151').fontSize(8).font(mainFont).text(`Explanation: ${cleanExp}`, 52, aY + 16, { width: pageW - 24 });
         }
