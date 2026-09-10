@@ -1,6 +1,11 @@
 node_modules/
 .env
-public/uploads/*
+/uploads/
+public/uploads/pdfs/
+public/uploads/temp/
+public/uploads/test-uploads/
+public/uploads/exports/
+!public/uploads/questions/
+!public/uploads/questions/**
 !public/uploads/.gitkeep
 *.log
-uploads/

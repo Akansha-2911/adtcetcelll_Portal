@@ -3,10 +3,9 @@ const { User, Group, Question, Test, GroupMember, Result, Notification, Topic, S
 const xlsx = require('xlsx');
 const fs = require('fs');
 const path = require('path');
-const { uploadRoot: UPLOAD_DIR, pdfDir: PDF_DIR, documentDir: DOC_DIR } = require('../utils/storagePaths');
 const { parseLocalDateTime, formatDateTimeLocal } = require('../utils/dateTime');
 const { extractSyllabusFromPdf } = require('../utils/syllabusImporter');
-const { formatMathToText, formatMathToWordHtml, setupPdfFonts, resolveLocalImagePath, getBase64ImageHtml } = require('../utils/mathFormatter');
+const { formatMathToText, formatMathToWordHtml, setupPdfFonts, resolveLocalImagePath, resolveImageSource, getBase64ImageHtml } = require('../utils/mathFormatter');
 
 
 const COURSES = ['JEE', 'CET', 'NEET'];
@@ -2602,12 +2601,12 @@ table.answer-key th { background: #0f172a; color: #fff; padding: 8px 10px; font-
 
         html += `<div class='question-block'>
 <div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
-${q.questionImage ? getBase64ImageHtml(q.questionImage) : ''}
+${(q.questionImage || q.questionImageData) ? getBase64ImageHtml(q.questionImage, 'max-width: 420px; max-height: 220px; height: auto;', q.questionImageData) : ''}
 <div class='options'>
-  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${q.optionAImage ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${q.optionBImage ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${q.optionCImage ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${q.optionDImage ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${isCorrectA ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${(q.optionAImage || q.optionAImageData) ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;', q.optionAImageData) : ''}</div>
+  <div class='opt ${isCorrectB ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${(q.optionBImage || q.optionBImageData) ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;', q.optionBImageData) : ''}</div>
+  <div class='opt ${isCorrectC ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${(q.optionCImage || q.optionCImageData) ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;', q.optionCImageData) : ''}</div>
+  <div class='opt ${isCorrectD ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${(q.optionDImage || q.optionDImageData) ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;', q.optionDImageData) : ''}</div>
 </div>`;
         if (includeAnswers) {
           html += `<div class='answer-box'>Correct Answer: Option (${escapeHtml(q.correctAnswer)})
@@ -2667,7 +2666,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       const qY = doc.y;
       doc.rect(40, qY, pageW, 20).fill('#f1f5f9');
       doc.fillColor('#0f172a').fontSize(9.5).font(boldFont)
-        .text(`Question ${idx + 1} (${q.subject || 'General'}${q.topic ? ' · ' + q.topic : ''})`, 48, qY + 5);
+        .text(`Question ${idx + 1}`, 48, qY + 5);
       doc.fillColor('#64748b').fontSize(8.5).font(mainFont).text(`[${q.marks || 1} Mark${q.marks !== 1 ? 's' : ''}${q.negativeMarks ? ', -' + q.negativeMarks : ''}]`, 40, qY + 5, { width: pageW - 10, align: 'right' });
 
       doc.y = qY + 26;
@@ -2680,12 +2679,12 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       doc.fillColor('#1e293b').fontSize(10).font(mainFont).text(cleanQText, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
 
-      if (q.questionImage) {
-        const fullImgPath = resolveLocalImagePath(q.questionImage);
-        if (fullImgPath) {
+      if (q.questionImage || q.questionImageData) {
+        const fullImg = resolveImageSource(q.questionImage, q.questionImageData);
+        if (fullImg) {
           try {
             if (doc.y > 580) doc.addPage();
-            doc.image(fullImgPath, { fit: [260, 130], align: 'center' });
+            doc.image(fullImg, { fit: [260, 130], align: 'center' });
             doc.moveDown(0.4);
           } catch (err) { }
         }
@@ -2698,14 +2697,14 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       };
 
       const options = [
-        { key: 'A', text: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage },
-        { key: 'B', text: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage },
-        { key: 'C', text: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage },
-        { key: 'D', text: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage },
+        { key: 'A', text: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage, imgData: q.optionAImageData },
+        { key: 'B', text: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage, imgData: q.optionBImageData },
+        { key: 'C', text: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage, imgData: q.optionCImageData },
+        { key: 'D', text: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage, imgData: q.optionDImageData },
       ];
 
       options.forEach(opt => {
-        const optHasImg = !!opt.img;
+        const optHasImg = !!(opt.img || opt.imgData);
         if (doc.y > (optHasImg ? 640 : 720)) doc.addPage();
         const isCorrect = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === opt.key;
         const optY = doc.y;
@@ -2717,8 +2716,8 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         if (opt.text) doc.font(mainFont).text(opt.text, { width: pageW - 36 });
         doc.y = optY + 20;
 
-        if (opt.img) {
-          const fullOptImg = resolveLocalImagePath(opt.img);
+        if (opt.img || opt.imgData) {
+          const fullOptImg = resolveImageSource(opt.img, opt.imgData);
           if (fullOptImg) {
             try {
               if (doc.y > 660) doc.addPage();
@@ -2858,12 +2857,12 @@ h1 { font-size: 18pt; color: #0f172a; text-align: center; margin-bottom: 4px; }
 
         html += `<div class='question-block'>
 <div class='q-title'>Q${i + 1}. ${formatMathToWordHtml(cleanQuestion)}</div>
-${q.questionImage ? getBase64ImageHtml(q.questionImage) : ''}
+${(q.questionImage || q.questionImageData) ? getBase64ImageHtml(q.questionImage, 'max-width: 420px; max-height: 220px; height: auto;', q.questionImageData) : ''}
 <div class='options'>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${q.optionAImage ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${q.optionBImage ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${q.optionCImage ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
-  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${q.optionDImage ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;') : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'A' ? 'correct' : ''}'>A) ${formatMathToWordHtml(cleanOptA)}${(q.optionAImage || q.optionAImageData) ? getBase64ImageHtml(q.optionAImage, 'max-width: 260px; max-height: 130px;', q.optionAImageData) : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'B' ? 'correct' : ''}'>B) ${formatMathToWordHtml(cleanOptB)}${(q.optionBImage || q.optionBImageData) ? getBase64ImageHtml(q.optionBImage, 'max-width: 260px; max-height: 130px;', q.optionBImageData) : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'C' ? 'correct' : ''}'>C) ${formatMathToWordHtml(cleanOptC)}${(q.optionCImage || q.optionCImageData) ? getBase64ImageHtml(q.optionCImage, 'max-width: 260px; max-height: 130px;', q.optionCImageData) : ''}</div>
+  <div class='opt ${includeAnswers && q.correctAnswer === 'D' ? 'correct' : ''}'>D) ${formatMathToWordHtml(cleanOptD)}${(q.optionDImage || q.optionDImageData) ? getBase64ImageHtml(q.optionDImage, 'max-width: 260px; max-height: 130px;', q.optionDImageData) : ''}</div>
 </div>`;
         if (includeAnswers) {
           html += `<div class='answer-box'>Correct Answer: (${escapeHtml(q.correctAnswer)})
@@ -2904,7 +2903,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       const qY = doc.y;
       doc.rect(40, qY, pageW, 18).fill('#f1f5f9');
       doc.fillColor('#0f172a').fontSize(9).font(boldFont)
-        .text(`Q${idx + 1}. [${q.subject}${q.topic ? ' · ' + q.topic : ''}]`, 46, qY + 4);
+        .text(`Question ${idx + 1}`, 46, qY + 4);
       doc.fillColor('#64748b').fontSize(8).font(mainFont)
         .text(`[${q.difficulty || 'Medium'}] [${q.marks || 1} Mark]`, 40, qY + 4, { width: pageW - 10, align: 'right' });
 
@@ -2918,12 +2917,12 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       doc.fillColor('#1e293b').fontSize(9.5).font(mainFont).text(cleanQ, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
 
-      if (q.questionImage) {
-        const fullImgPath = resolveLocalImagePath(q.questionImage);
-        if (fullImgPath) {
+      if (q.questionImage || q.questionImageData) {
+        const fullImg = resolveImageSource(q.questionImage, q.questionImageData);
+        if (fullImg) {
           try {
             if (doc.y > 580) doc.addPage();
-            doc.image(fullImgPath, { fit: [260, 130], align: 'center' });
+            doc.image(fullImg, { fit: [260, 130], align: 'center' });
             doc.moveDown(0.4);
           } catch (err) { }
         }
@@ -2936,13 +2935,13 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       };
 
       const options = [
-        { k: 'A', v: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage },
-        { k: 'B', v: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage },
-        { k: 'C', v: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage },
-        { k: 'D', v: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage },
+        { k: 'A', v: formatMathToText(cleanOpt(q.optionA)), img: q.optionAImage, imgData: q.optionAImageData },
+        { k: 'B', v: formatMathToText(cleanOpt(q.optionB)), img: q.optionBImage, imgData: q.optionBImageData },
+        { k: 'C', v: formatMathToText(cleanOpt(q.optionC)), img: q.optionCImage, imgData: q.optionCImageData },
+        { k: 'D', v: formatMathToText(cleanOpt(q.optionD)), img: q.optionDImage, imgData: q.optionDImageData },
       ];
       options.forEach(opt => {
-        const optHasImg = !!opt.img;
+        const optHasImg = !!(opt.img || opt.imgData);
         if (doc.y > (optHasImg ? 640 : 730)) doc.addPage();
         const isAns = includeAnswers && q.correctAnswer === opt.k;
         const optY = doc.y;
@@ -2952,8 +2951,8 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         if (opt.v) doc.font(mainFont).text(opt.v, { width: pageW - 32 });
         doc.y = optY + 18;
 
-        if (opt.img) {
-          const fullOptImg = resolveLocalImagePath(opt.img);
+        if (opt.img || opt.imgData) {
+          const fullOptImg = resolveImageSource(opt.img, opt.imgData);
           if (fullOptImg) {
             try {
               if (doc.y > 660) doc.addPage();

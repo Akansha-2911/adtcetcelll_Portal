@@ -500,6 +500,22 @@ exports.getTestDetails=async(req,res)=>{
   }
 };
 
+function readImageAsDataUri(imgPath){
+  if(!imgPath || typeof imgPath !== 'string') return null;
+  if(imgPath.startsWith('data:image/')) return imgPath;
+  try {
+    const { resolveLocalImagePath } = require('../utils/mathFormatter');
+    const local = resolveLocalImagePath(imgPath);
+    if (local && fs.existsSync(local)) {
+      const ext = path.extname(local).toLowerCase().replace('.', '') || 'jpeg';
+      const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+      const b64 = fs.readFileSync(local).toString('base64');
+      return `data:${mime};base64,${b64}`;
+    }
+  } catch (_) {}
+  return null;
+}
+
 function optionText(value,image,label){
   const text=cleanText(value);
   if(text)return text;
@@ -529,6 +545,7 @@ async function getOrCreateQuestion(extracted,adminId){
     const created=await Question.create({
       question:cleanText(extracted.question),
       questionImage:extracted.questionImage||null,
+      questionImageData:readImageAsDataUri(extracted.questionImage),
 
       optionA:optionText(extracted.optionA,extracted.optionAImage,'A'),
       optionB:optionText(extracted.optionB,extracted.optionBImage,'B'),
@@ -536,9 +553,13 @@ async function getOrCreateQuestion(extracted,adminId){
       optionD:optionText(extracted.optionD,extracted.optionDImage,'D'),
 
       optionAImage:extracted.optionAImage||null,
+      optionAImageData:readImageAsDataUri(extracted.optionAImage),
       optionBImage:extracted.optionBImage||null,
+      optionBImageData:readImageAsDataUri(extracted.optionBImage),
       optionCImage:extracted.optionCImage||null,
+      optionCImageData:readImageAsDataUri(extracted.optionCImage),
       optionDImage:extracted.optionDImage||null,
+      optionDImageData:readImageAsDataUri(extracted.optionDImage),
 
       correctAnswer:extracted.correctAnswer,
 

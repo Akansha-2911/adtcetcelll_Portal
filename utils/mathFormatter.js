@@ -89,7 +89,7 @@ function replaceBalancedFracs(str) {
               const num = cleanFormula(str.slice(numStart, numEnd)).trim();
               const den = cleanFormula(str.slice(denStart, denEnd)).trim();
               const nWrap = /[+\-−\s/]/.test(num) && !/^\([^()]+\)$/.test(num);
-              const dWrap = /[+\-−\s/]/.test(den) && !/^\([^()]+\)$/.test(den);
+              const dWrap = (/[+\-−\s/·]/.test(den) || /[0-9]+[a-zA-Z√]/.test(den) || (den.includes('√') && !den.startsWith('√'))) && !/^\([^()]+\)$/.test(den) && !/^[0-9]+$/.test(den);
               result += (nWrap ? `(${num})` : num) + '/' + (dWrap ? `(${den})` : den);
               i = denEnd + 1;
               continue;
@@ -108,31 +108,37 @@ function replaceBalancedRoots(str) {
   let result = '';
   let i = 0;
   while (i < str.length) {
-    if (str.slice(i).startsWith('\\sqrt')) {
-      let p = i + 5;
+    const isLatexSqrt = str.slice(i).startsWith('\\sqrt');
+    const isPlainSqrt = str.slice(i).match(/^sqrt(?=[\[({])/i);
+    if (isLatexSqrt || isPlainSqrt) {
+      const matchLen = isLatexSqrt ? 5 : 4;
+      let p = i + matchLen;
       let rootDeg = '';
       if (str[p] === '[') {
         const closeIdx = str.indexOf(']', p);
         if (closeIdx !== -1) {
-          rootDeg = toSuperscript(str.slice(p + 1, closeIdx));
+          rootDeg = toSuperscript(str.slice(p + 1, closeIdx).trim());
           p = closeIdx + 1;
         }
       }
       while (p < str.length && /\s/.test(str[p])) p++;
-      if (str[p] === '{') {
+      const openChar = str[p];
+      const closeChar = openChar === '{' ? '}' : openChar === '(' ? ')' : null;
+      if (closeChar) {
         let depth = 0;
         let bStart = p + 1;
         let bEnd = -1;
         for (let j = p; j < str.length; j++) {
-          if (str[j] === '{') depth++;
-          else if (str[j] === '}') {
+          if (str[j] === openChar) depth++;
+          else if (str[j] === closeChar) {
             depth--;
             if (depth === 0) { bEnd = j; break; }
           }
         }
         if (bEnd !== -1) {
           const inside = cleanFormula(str.slice(bStart, bEnd)).trim();
-          result += (rootDeg || '') + (inside.length === 1 && !/[+\-−/]/.test(inside) ? `√${inside}` : `√(${inside})`);
+          const cleanInside = (inside.length === 1 && !/[+\-−/·]/.test(inside)) ? `√${inside}` : `√(${inside})`;
+          result += (rootDeg || '') + cleanInside;
           i = bEnd + 1;
           continue;
         }
@@ -294,6 +300,12 @@ function cleanFormula(raw) {
        .replace(/\\hat\{([^{}]+)\}/g, '$1̂')
        .replace(/\\(?:bar|overline)\{([^{}]+)\}/g, '$1̄');
 
+  // Inverse trigonometric functions: \cos^{-1}, \sin^{-1}, \tan^{-1}, etc.
+  f = f.replace(/\\?(sin|cos|tan|cot|sec|csc|cosec)\s*\^\s*\{?\s*(-1)\s*\}?/gi, (_, fn) => fn.toLowerCase() + '⁻¹');
+
+  // Powers of trigonometric functions: \sin^2, \cos^2, \tan^3, etc.
+  f = f.replace(/\\?(sin|cos|tan|cot|sec|csc|cosec)\s*\^\s*\{?([0-9a-zA-Z]+)\}?/gi, (_, fn, p) => fn.toLowerCase() + toSuperscript(p));
+
   // Superscripts
   f = f.replace(/\^\{([^{}]+)\}/g, (_, p) => toSuperscript(p));
   f = f.replace(/\^([-+][0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p));
@@ -304,7 +316,7 @@ function cleanFormula(raw) {
   f = f.replace(/_([0-9a-zA-Z+\-])/g, (_, p) => toSubscript(p));
 
   // Common functions
-  f = f.replace(/\\(sin|cos|tan|cot|sec|csc|log|ln|det|lim|exp|min|max)\b/g, '$1');
+  f = f.replace(/\\(sin|cos|tan|cot|sec|csc|cosec|log|ln|det|lim|exp|min|max)\b/g, '$1');
 
   // Cleanup stray backslashes
   f = f.replace(/\\([a-zA-Z]+)/g, '$1');
@@ -382,50 +394,8 @@ function formatMathToText(str) {
     return cleanFormula(body);
   });
 
-  // 3. Clean remaining isolated math commands or dangling symbols
-  text = text.replace(/\\(?:vee|lor)(?![a-zA-Z])/g, ' ∨ ')
-             .replace(/\\(?:wedge|land)(?![a-zA-Z])/g, ' ∧ ')
-             .replace(/\\sim(?![a-zA-Z])/g, '~')
-             .replace(/\\neg(?![a-zA-Z])/g, '¬')
-             .replace(/\\(?:leftrightarrow|iff|Leftrightarrow)(?![a-zA-Z])/g, ' ↔ ')
-             .replace(/\\(?:longleftrightarrow|Longleftrightarrow)(?![a-zA-Z])/g, ' ⟺ ')
-             .replace(/\\(?:oplus)(?![a-zA-Z])/g, ' ⊕ ')
-             .replace(/\\(?:otimes)(?![a-zA-Z])/g, ' ⊗ ')
-             .replace(/\\(?:top)(?![a-zA-Z])/g, '⊤')
-             .replace(/\\(?:bot)(?![a-zA-Z])/g, '⊥')
-             .replace(/\\(?:equiv)(?![a-zA-Z])/g, ' ≡ ')
-             .replace(/\\longrightarrow(?![a-zA-Z])/g, ' ⟶ ')
-             .replace(/\\longleftarrow(?![a-zA-Z])/g, ' ⟵ ')
-             .replace(/\\Longrightarrow(?![a-zA-Z])/g, ' ⟹ ')
-             .replace(/\\Longleftrightarrow(?![a-zA-Z])/g, ' ⟺ ')
-             .replace(/\\therefore(?![a-zA-Z])/g, '∴ ')
-             .replace(/\\because(?![a-zA-Z])/g, '∵ ')
-             .replace(/\\(?:Rightarrow|implies)(?![a-zA-Z])/g, ' ⇒ ')
-             .replace(/\\(?:rightarrow|to)(?![a-zA-Z])/g, ' → ')
-             .replace(/\\pm(?![a-zA-Z])/g, '±')
-             .replace(/\\mp(?![a-zA-Z])/g, '∓')
-             .replace(/\\times(?![a-zA-Z])/g, '×')
-             .replace(/\\div(?![a-zA-Z])/g, '÷')
-             .replace(/\\cdot(?![a-zA-Z])/g, '·')
-             .replace(/\\le(?:q)?(?![a-zA-Z])/g, '≤')
-             .replace(/\\ge(?:q)?(?![a-zA-Z])/g, '≥')
-             .replace(/\\ne(?:q)?(?![a-zA-Z])/g, '≠')
-             .replace(/\\approx(?![a-zA-Z])/g, '≈')
-             .replace(/\\infty(?![a-zA-Z])/g, '∞')
-             .replace(/\\alpha(?![a-zA-Z])/g, 'α')
-             .replace(/\\beta(?![a-zA-Z])/g, 'β')
-             .replace(/\\gamma(?![a-zA-Z])/g, 'γ')
-             .replace(/\\delta(?![a-zA-Z])/g, 'δ')
-             .replace(/\\theta(?![a-zA-Z])/g, 'θ')
-             .replace(/\\pi(?![a-zA-Z])/g, 'π')
-             .replace(/\\sigma(?![a-zA-Z])/g, 'σ')
-             .replace(/\\omega(?![a-zA-Z])/g, 'ω')
-             .replace(/\\lambda(?![a-zA-Z])/g, 'λ')
-             .replace(/\\mu(?![a-zA-Z])/g, 'μ')
-             .replace(/\\quad\b/g, '   ')
-             .replace(/\\qquad\b/g, '     ')
-             .replace(/\\sqrt\{([^{}]+)\}/g, '√($1)')
-             .replace(/\$/g, '');
+  // 3. Format remaining plain text and non-delimited equations
+  text = formatPlainMathText(text);
 
   text = text.replace(/([~∼¬])\s+([a-zA-Z0-9(\[])/g, '$1$2');
 
@@ -436,6 +406,85 @@ function formatMathToText(str) {
   text = text.replace(/\n{3,}/g, '\n\n');
 
   return text.trim();
+}
+
+/**
+ * Formats plain text that contains mathematical expressions outside of LaTeX delimiters.
+ * Handles powers (sin^2 x, cos^2 x, h^2, x^2), inverse functions (cos^-1, sin^-1),
+ * roots (sqrt(x)), Greek letters (pi, theta, alpha), logic operators, relations, and arrows.
+ */
+function formatPlainMathText(str) {
+  if (!str) return '';
+  let s = String(str);
+
+  // 1. Arrows & Relations
+  s = s.replace(/<==>|<=>|<->/g, ' ⇔ ')
+       .replace(/==>|=>/g, ' ⇒ ')
+       .replace(/-->|->/g, ' → ')
+       .replace(/\+\s*\/\s*-/g, '±')
+       .replace(/-\s*\/\s*\+/g, '∓')
+       .replace(/!=/g, '≠')
+       .replace(/<=/g, '≤')
+       .replace(/>=/g, '≥');
+
+  // 2. Logic Operators in text
+  s = s.replace(/\\(?:vee|lor)\b/g, '∨')
+       .replace(/\\(?:wedge|land)\b/g, '∧')
+       .replace(/\\sim\b/g, '~')
+       .replace(/\\neg\b/g, '¬')
+       .replace(/\\equiv\b/g, '≡')
+       .replace(/\\therefore\b/g, '∴ ')
+       .replace(/\\because\b/g, '∵ ');
+
+  // 3. Roots: sqrt(...) or \sqrt{...}
+  s = replaceBalancedRoots(s);
+
+  // 4. Fractions: \frac{...}{...}
+  s = replaceBalancedFracs(s);
+
+  // 5. Inverse Trigonometric & Hyperbolic functions (e.g. sin^-1, cos^-1, tan^-1, \cos^{-1})
+  s = s.replace(/\\?(sin|cos|tan|cot|sec|csc|cosec)\s*\^?\s*\{?\s*(-1)\s*\}?/gi, (_, fn) => fn.toLowerCase() + '⁻¹');
+
+  // 6. Powers of Trigonometric functions (e.g. sin^2, cos^2, tan^2, cos^3)
+  s = s.replace(/\\?(sin|cos|tan|cot|sec|csc|cosec)\s*\^\s*\{?([0-9a-zA-Z]+)\}?/gi, (_, fn, p) => fn.toLowerCase() + toSuperscript(p));
+
+  // 7. Greek letters in math context
+  s = s.replace(/\\theta\b|\btheta\b/gi, 'θ')
+       .replace(/\\pi\b/gi, 'π')
+       .replace(/(?<=[0-9nN+\-/*=(), '"]|\b)pi(?=[0-9+\-/*=(), '"]|\b)/g, 'π')
+       .replace(/\\alpha\b|\balpha\b/gi, 'α')
+       .replace(/\\beta\b|\bbeta\b/gi, 'β')
+       .replace(/\\gamma\b|\bgamma\b/gi, 'γ')
+       .replace(/\\delta\b|\bdelta\b/gi, 'δ')
+       .replace(/\\lambda\b|\blambda\b/gi, 'λ')
+       .replace(/\\omega\b|\bomega\b/gi, 'ω')
+       .replace(/\\mu\b|\bmu\b/gi, 'μ')
+       .replace(/\\sigma\b|\bsigma\b/gi, 'σ');
+
+  // 8. Superscripts on variables/brackets: e.g. x^2, h^2, ab = 0, (cos x - 2)^2, |A|^(n-1)
+  s = s.replace(/([a-zA-Z0-9)\]|])\s*\^\s*\{([^{}]+)\}/g, (_, base, exp) => base + toSuperscript(exp));
+  s = s.replace(/([a-zA-Z0-9)\]|])\s*\^\s*\(([^()]+)\)/g, (_, base, exp) => base + toSuperscript(exp));
+  s = s.replace(/([a-zA-Z0-9)\]|])\s*\^\s*([-+]?[0-9a-zA-Z]+)/g, (_, base, exp) => base + toSuperscript(exp));
+
+  // 9. Math Subscripts on specific patterns:
+  // Slopes: m1, m2, m_1, m_2
+  s = s.replace(/\bm_?([1-4])\b/g, (_, num) => 'm' + toSubscript(num));
+  // Switches: S1, S2, S3, S_1, S_2, S_3
+  s = s.replace(/\bS_?([1-9])\b/g, (_, num) => 'S' + toSubscript(num));
+  // Vector / Matrix elements: x1, x2, x3 or R1, R2, C1, C2
+  s = s.replace(/\b([xX])_?([1-9])\b/g, (_, v, num) => v + toSubscript(num));
+  s = s.replace(/\b([RC])_?([1-9])\b/g, (_, v, num) => v + toSubscript(num));
+
+  // 10. Multiplication asterisk between math terms (e.g. 4*sqrt, 2*theta, m1 * m2, 18 * 14)
+  s = s.replace(new RegExp('([0-9a-zA-Zπθαβ√' + SUP_SUB + '\\)\\]])\\s*\\*\\s*([0-9a-zA-Zπθαβ√' + SUP_SUB + '\\(\\[])', 'g'), '$1 · $2');
+
+  // Strip dangling backslashes before common functions
+  s = s.replace(/\\(sin|cos|tan|cot|sec|csc|cosec|log|ln|lim|exp)\b/g, '$1');
+
+  // Clean double spaces
+  s = s.replace(/[ \t]{2,}/g, ' ');
+
+  return s;
 }
 
 function escapeHtml(str) {
@@ -465,13 +514,7 @@ function formatMathToWordHtml(str) {
   let match;
 
   const formatWordText = (t) => {
-    let s = String(t || '');
-    s = s.replace(/(?<=[A-Za-z0-9)\]\}])\^\{([^{}]+)\}/g, (_, p) => toSuperscript(p))
-         .replace(/(?<=[A-Za-z0-9)\]\}])\^([-+][0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
-         .replace(/(?<=[A-Za-z0-9)\]\}])\^([0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
-         .replace(/(?<=[A-Za-z0-9)\]\}])\s*\^\s*([0-9a-zA-Z]+)/g, (_, p) => toSuperscript(p))
-         .replace(/=>/g, '⇒')
-         .replace(/<=>/g, '⇔');
+    let s = formatPlainMathText(t || '');
     return escapeHtml(s).replace(/\n/g, '<br>');
   };
 
@@ -550,9 +593,45 @@ function resolveLocalImagePath(imgUrl) {
 }
 
 /**
- * Encodes a local image to a base64 Data URI <img> tag for embedding into Word documents (.doc HTML).
+ * Resolves an image source (file path, data URI, or fallback base64) to a format
+ * that PDFKit doc.image() can consume (absolute file path or Buffer).
  */
-function getBase64ImageHtml(imgUrl, style = 'max-width: 420px; max-height: 220px; height: auto;') {
+function resolveImageSource(imgUrl, fallbackData) {
+  if (Buffer.isBuffer(imgUrl)) return imgUrl;
+  if (Buffer.isBuffer(fallbackData)) return fallbackData;
+
+  const dataStr = (typeof imgUrl === 'string' && imgUrl.startsWith('data:image/')) ? imgUrl
+    : (typeof fallbackData === 'string' && fallbackData.startsWith('data:image/')) ? fallbackData
+    : (typeof fallbackData === 'string' && fallbackData.length > 50) ? fallbackData
+    : null;
+
+  if (dataStr) {
+    try {
+      const b64 = dataStr.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+      return Buffer.from(b64, 'base64');
+    } catch (_) {}
+  }
+
+  if (typeof imgUrl === 'string') {
+    const local = resolveLocalImagePath(imgUrl);
+    if (local) return local;
+  }
+  return null;
+}
+
+/**
+ * Encodes an image to a base64 Data URI <img> tag for embedding into Word documents (.doc HTML).
+ */
+function getBase64ImageHtml(imgUrl, style = 'max-width: 420px; max-height: 220px; height: auto;', fallbackData = null) {
+  if (typeof imgUrl === 'string' && imgUrl.startsWith('data:image/')) {
+    return `<div style="margin: 6px 0;"><img src="${imgUrl}" style="${style}" /></div>`;
+  }
+  if (typeof fallbackData === 'string' && fallbackData.startsWith('data:image/')) {
+    return `<div style="margin: 6px 0;"><img src="${fallbackData}" style="${style}" /></div>`;
+  }
+  if (typeof fallbackData === 'string' && fallbackData.length > 50) {
+    return `<div style="margin: 6px 0;"><img src="data:image/jpeg;base64,${fallbackData}" style="${style}" /></div>`;
+  }
   const localPath = resolveLocalImagePath(imgUrl);
   if (!localPath) return '';
   try {
@@ -567,13 +646,20 @@ function getBase64ImageHtml(imgUrl, style = 'max-width: 420px; max-height: 220px
 }
 
 /**
- * Configures PDFKit document with Unicode-capable fonts (Segoe UI Symbol / Cambria / Arial)
- * Segoe UI Symbol and Cambria on Windows contain full native support for superscripts, subscripts, Greek, and math symbols.
+ * Configures PDFKit document with Unicode-capable TrueType fonts.
+ * Prioritizes bundled DejaVuSans fonts in public/fonts (accessible across all platforms including Linux/Render/Docker),
+ * followed by Windows fonts (Segoe UI Symbol / Cambria) and Linux system fonts.
  */
 function setupPdfFonts(doc) {
+  const rootDir = path.resolve(__dirname, '..');
+  const bundledRegular = path.join(rootDir, 'public', 'fonts', 'DejaVuSans.ttf');
+  const bundledBold = path.join(rootDir, 'public', 'fonts', 'DejaVuSans-Bold.ttf');
+
   const fontCandidates = [
+    { regular: bundledRegular, bold: bundledBold, name: 'DejaVuSans' },
     { regular: 'C:/Windows/Fonts/seguisym.ttf', bold: 'C:/Windows/Fonts/seguisym.ttf', name: 'SegoeUISymbol' },
     { regular: 'C:/Windows/Fonts/cambria.ttc', regularSubfont: 'Cambria', bold: 'C:/Windows/Fonts/cambria.ttc', boldSubfont: 'Cambria', name: 'Cambria' },
+    { regular: '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', bold: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', name: 'DejaVuSansLinux' },
     { regular: 'C:/Windows/Fonts/calibri.ttf', bold: 'C:/Windows/Fonts/calibrib.ttf', name: 'Calibri' },
     { regular: 'C:/Windows/Fonts/arial.ttf', bold: 'C:/Windows/Fonts/arialbd.ttf', name: 'Arial' },
     { regular: 'C:/Windows/Fonts/segoeui.ttf', bold: 'C:/Windows/Fonts/segoeuib.ttf', name: 'SegoeUI' }
@@ -610,10 +696,12 @@ function setupPdfFonts(doc) {
 
 module.exports = {
   formatMathToText,
+  formatPlainMathText,
   formatMathToWordHtml,
   cleanFormula,
   setupPdfFonts,
   resolveLocalImagePath,
+  resolveImageSource,
   getBase64ImageHtml,
   escapeHtml
 };

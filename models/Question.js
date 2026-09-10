@@ -12,6 +12,11 @@ const questionSchema = new mongoose.Schema({
     default: null
   },
 
+  questionImageData: {
+    type: String,
+    default: null
+  },
+
   sourceDocument: {
     type: String,
     default: null
@@ -47,7 +52,17 @@ const questionSchema = new mongoose.Schema({
     default: null
   },
 
+  optionAImageData: {
+    type: String,
+    default: null
+  },
+
   optionBImage: {
+    type: String,
+    default: null
+  },
+
+  optionBImageData: {
     type: String,
     default: null
   },
@@ -57,7 +72,17 @@ const questionSchema = new mongoose.Schema({
     default: null
   },
 
+  optionCImageData: {
+    type: String,
+    default: null
+  },
+
   optionDImage: {
+    type: String,
+    default: null
+  },
+
+  optionDImageData: {
     type: String,
     default: null
   },
