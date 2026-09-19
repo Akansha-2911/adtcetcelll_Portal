@@ -219,7 +219,7 @@
 
       <!-- Dynamic Question Container for Instant Loading -->
       <div id="examDynamicContainer" class="flex-1 flex flex-col overflow-hidden"
-        data-question-id="<%= question.id %>"
+        data-question-id="<%= question._id || question.id %>"
         data-question-number="<%= questionNumber %>"
         data-selected-answer="<%= selectedAnswer || '' %>"
         data-is-marked="<%= isMarked ? 'true' : 'false' %>">
@@ -492,11 +492,16 @@
                                 </span>
                               <% } %>
                             <% } else { %>
-                                <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+                                <a href="/exam/<%= test._id || test.id %>/question/<%= p.num %>"
                                   onclick="saveAndNav(event, this.href)"
-                                  class="palette-btn <%= p.num===questionNumber?'current scale-110':'' %>"
+                                  class="palette-btn <%= p.num===questionNumber?'current scale-110':'' %> relative"
+                                  data-qnum="<%= p.num %>"
+                                  data-status="<%= p.status %>"
                                   style="<%= bg %>">
                                   <%= p.num %>
+                                  <% if (p.status === 'answered-marked') { %>
+                                    <span class="ans-marked-badge absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white"></span>
+                                  <% } %>
                                 </a>
                                 <% } %>
                                   <% }) %>
@@ -509,13 +514,13 @@
                 <div class="border-t border-slate-100 p-4 text-xs text-slate-600 space-y-1.5">
                   <% const answered=paletteStatus.filter(p=>['answered','answered-marked'].includes(p.status)).length %>
                     <% const marked=paletteStatus.filter(p=>['marked','answered-marked'].includes(p.status)).length %>
-                      <div class="flex justify-between"><span>Answered</span><span class="font-bold text-emerald-600">
+                      <div class="flex justify-between"><span>Answered</span><span id="paletteAnsweredCount" class="font-bold text-emerald-600">
                           <%= answered %>
                         </span></div>
-                      <div class="flex justify-between"><span>Unanswered</span><span class="font-bold text-rose-500">
+                      <div class="flex justify-between"><span>Unanswered</span><span id="paletteUnansweredCount" class="font-bold text-rose-500">
                           <%= totalQuestions-answered %>
                         </span></div>
-                      <div class="flex justify-between"><span>Marked</span><span class="font-bold text-violet-600">
+                      <div class="flex justify-between"><span>Marked</span><span id="paletteMarkedCount" class="font-bold text-violet-600">
                           <%= marked %>
                         </span></div>
                       <div class="flex justify-between border-t border-slate-100 pt-1.5"><span>Total</span><span
@@ -589,7 +594,7 @@
           const statusText =
             p.status==='answered'?'Answered':p.status==='marked'?'Marked':p.status==='answered-marked'?'Ans+Marked':p.status==='not-answered'?'Not Answered':'Not Visited';
         %>
-          <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+          <a href="/exam/<%= test._id || test.id %>/question/<%= p.num %>"
             onclick="saveAndNav(event, this.href); closeSectionReviewModal();"
             data-section-review-question="<%= p.num %>"
             data-section-review-status="<%= p.status %>"
@@ -623,7 +628,7 @@
   </div>
 
   <!-- Section submit form -->
-  <form id="sectionSubmitForm" action="/exam/<%= test.id %>/submit-section" method="POST" class="hidden">
+  <form id="sectionSubmitForm" action="/exam/<%= test._id || test.id %>/submit-section" method="POST" class="hidden">
     <input type="hidden" name="questionId" id="sectionSubmitQuestionId" />
     <input type="hidden" name="answer" id="sectionSubmitAnswer" />
     <input type="hidden" name="markForReview" id="sectionSubmitMarkForReview" />
@@ -688,7 +693,7 @@
               <span class="text-xs font-semibold <%= statusColor %>"><%= statusText %> (Locked)</span>
             </div>
           <% } else { %>
-            <a href="/exam/<%= test.id %>/question/<%= p.num %>"
+            <a href="/exam/<%= test._id || test.id %>/question/<%= p.num %>"
               onclick="saveAndNav(event, this.href); closeReviewModal();" data-review-question="<%= p.num %>"
               data-review-status="<%= p.status %>" data-review-subject="<%= p.subject || '' %>"
               class="review-question-row flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
@@ -780,7 +785,7 @@
   </div>
 
   <!-- Manual submit form -->
-  <form id="manualSubmitForm" action="/exam/<%= test.id %>/submit" method="POST" class="hidden">
+  <form id="manualSubmitForm" action="/exam/<%= test._id || test.id %>/submit" method="POST" class="hidden">
     <input type="hidden" name="questionId" id="manualSubmitQuestionId" />
     <input type="hidden" name="answer" id="manualSubmitAnswer" />
     <input type="hidden" name="markForReview" id="manualSubmitMarkForReview" />
@@ -788,14 +793,14 @@
   </form>
 
   <!-- Single auto-submit form (only one!) -->
-  <form id="autoSubmitForm" action="/exam/<%= test.id %>/submit" method="POST" class="hidden">
+  <form id="autoSubmitForm" action="/exam/<%= test._id || test.id %>/submit" method="POST" class="hidden">
     <input type="hidden" name="auto" value="true" />
   </form>
 
   <script>
     // ── Core vars ──────────────────────────────────────────────────────────────
-    const TEST_ID = '<%= test.id %>';
-    let QUESTION_ID = '<%= question.id %>';
+    const TEST_ID = '<%= test._id || test.id %>';
+    let QUESTION_ID = '<%= question._id || question.id %>';
     let currentQNum = <%= questionNumber %>;
     let currentAnswer = '<%= selectedAnswer || "" %>';
     let markedForReview = <%- isMarked ? 'true' : 'false' %>;
@@ -852,13 +857,8 @@
       if (keySpan) { keySpan.className = keySpan.className.replace('border-slate-300 text-slate-500', '').trim() + ' bg-navy-950 border-navy-950 text-white'; }
       currentAnswer = key;
 
-      // Auto-clear "Mark for Review" when student answers — answered takes priority
-      if (markedForReview) {
-        markedForReview = false;
-        const btn = document.getElementById('markReviewBtn');
-        btn.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors border-slate-200 text-slate-600 hover:border-violet-300';
-        btn.textContent = 'Mark for Review';
-      }
+      // Update palette button in real-time
+      updateCurrentPaletteButton();
 
       // Clear prefetch cache since answer changed
       prefetchCache.clear();
@@ -873,6 +873,7 @@
         if (ks) { ks.className = ks.className.replace('bg-navy-950 border-navy-950 text-white', '').trim() + ' border-slate-300 text-slate-500'; }
       });
       currentAnswer = '';
+      updateCurrentPaletteButton();
       prefetchCache.clear();
       saveToServer('');
     }
@@ -888,8 +889,91 @@
         btn.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors border-slate-200 text-slate-600 hover:border-violet-300';
         btn.textContent = 'Mark for Review';
       }
+      updateCurrentPaletteButton();
       prefetchCache.clear();
       saveToServer(currentAnswer);
+    }
+
+    // ── Real-time palette updates ──────────────────────────────────────────────
+    function updateCurrentPaletteButton() {
+      const btn = document.querySelector(`.palette-btn[data-qnum="${currentQNum}"]`);
+      if (!btn) return;
+
+      const hasAnswer = Boolean(currentAnswer && currentAnswer.trim());
+      let newStatus = 'not-answered';
+      if (hasAnswer && markedForReview) {
+        newStatus = 'answered-marked';
+      } else if (hasAnswer) {
+        newStatus = 'answered';
+      } else if (markedForReview) {
+        newStatus = 'marked';
+      } else {
+        newStatus = 'not-answered';
+      }
+
+      btn.dataset.status = newStatus;
+
+      if (newStatus === 'answered') {
+        btn.style.background = '#10b981';
+        btn.style.color = '#fff';
+      } else if (newStatus === 'marked') {
+        btn.style.background = '#8b5cf6';
+        btn.style.color = '#fff';
+      } else if (newStatus === 'answered-marked') {
+        btn.style.background = '#6d28d9';
+        btn.style.color = '#fff';
+      } else if (newStatus === 'not-answered') {
+        btn.style.background = '#f43f5e';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = '#e2e8f0';
+        btn.style.color = '#475569';
+      }
+
+      let badge = btn.querySelector('.ans-marked-badge');
+      if (newStatus === 'answered-marked') {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'ans-marked-badge absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white';
+          btn.appendChild(badge);
+        }
+      } else {
+        if (badge) badge.remove();
+      }
+
+      refreshPaletteCounters();
+    }
+
+    function refreshPaletteCounters() {
+      const buttons = document.querySelectorAll('.palette-btn[data-status]');
+      let answered = 0;
+      let marked = 0;
+      let total = <%= totalQuestions %>;
+
+      buttons.forEach(b => {
+        const s = b.dataset.status;
+        if (s === 'answered' || s === 'answered-marked') answered++;
+        if (s === 'marked' || s === 'answered-marked') marked++;
+      });
+
+      const ansEl = document.getElementById('paletteAnsweredCount');
+      if (ansEl) ansEl.textContent = answered;
+
+      const unansEl = document.getElementById('paletteUnansweredCount');
+      if (unansEl) unansEl.textContent = Math.max(0, total - answered);
+
+      const markEl = document.getElementById('paletteMarkedCount');
+      if (markEl) markEl.textContent = marked;
+
+      const modalEl = document.getElementById('submitModal');
+      if (modalEl) {
+        const modalStats = modalEl.querySelectorAll('.text-2xl.font-bold');
+        if (modalStats.length >= 3) {
+          modalStats[0].textContent = answered;
+          modalStats[1].textContent = Math.max(0, total - answered);
+          modalStats[2].textContent = marked;
+        }
+      }
     }
 
     // ── Save to server (with offline fallback & keepalive) ───────────────────
@@ -926,6 +1010,12 @@
         keepalive: true
       }).then(r => r.json()).then(data => {
         setSaveState(data.success ? 'Saved' : 'Save failed', data.success ? 'saved' : 'offline');
+        if (data && data.success && typeof data.answeredCount === 'number') {
+          const ansEl = document.getElementById('paletteAnsweredCount');
+          if (ansEl) ansEl.textContent = data.answeredCount;
+          const unansEl = document.getElementById('paletteUnansweredCount');
+          if (unansEl) unansEl.textContent = Math.max(0, <%= totalQuestions %> - data.answeredCount);
+        }
         return data;
       }).catch(() => {
         if (typeof window.queueOfflineAnswer === 'function') window.queueOfflineAnswer(url, payload);
@@ -1016,6 +1106,7 @@
           markedForReview = newContainer.dataset.isMarked === 'true';
           qElapsed = 0;
           navInProgress = false;
+          updateCurrentPaletteButton();
 
           // Update address bar without reload
           if (window.history && window.history.pushState) {

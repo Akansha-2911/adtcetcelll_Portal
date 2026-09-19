@@ -1133,6 +1133,9 @@ exports.getQuestion = async (
         ? rawQuestion.toObject()
         : { ...rawQuestion };
 
+    question.id = String(rawQuestion._id);
+    question._id = rawQuestion._id;
+
     question.question =
       cleanQuestionText(
         question.question
@@ -1208,9 +1211,8 @@ exports.getQuestion = async (
     }
 
 
-    const answers =
-      result.answers ||
-      {};
+    const answers = { ...(result.answers || {}) };
+    delete answers[''];
 
 
     const markedForReview =
@@ -1614,139 +1616,47 @@ exports.saveAnswer = async (
     }
 
 
+    const qId = String(questionId || '').trim();
+    if (!qId || !result.questionOrder.map(String).includes(qId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid question ID'
+      });
+    }
+
     const answers = {
       ...(result.answers || {})
     };
-
+    delete answers[''];
 
     const questionTimings = {
       ...(result.questionTimings || {})
     };
 
+    const markedForReview = (result.markedForReview || []).map(value => String(value));
 
-    const markedForReview =
-      (
-        result.markedForReview ||
-        []
-      )
-        .map(
-          value =>
-            String(
-              value
-            )
-        );
-
-
-    answers[
-      String(
-        questionId
-      )
-    ] = {
-
-      answer:
-        answer
-          ?.trim() ||
-        null,
-
-      savedAt:
-        new Date()
-
+    answers[qId] = {
+      answer: answer?.trim() || null,
+      savedAt: new Date()
     };
 
-
-    if (
-      timeSpent &&
-      !isNaN(
-        timeSpent
-      )
-    ) {
-
-      questionTimings[
-        String(
-          questionId
-        )
-      ] =
-        (
-          questionTimings[
-            String(
-              questionId
-            )
-          ] ||
-          0
-        ) +
-        parseInt(
-          timeSpent,
-          10
-        );
-
+    if (timeSpent && !isNaN(timeSpent)) {
+      questionTimings[qId] = (questionTimings[qId] || 0) + parseInt(timeSpent, 10);
     }
 
-
-    const idx =
-      markedForReview
-        .indexOf(
-          String(
-            questionId
-          )
-        );
-
-
-    if (
-      markForReview ===
-        'true' ||
-      markForReview ===
-        true
-    ) {
-
-      if (
-        idx === -1
-      ) {
-
-        markedForReview.push(
-          String(
-            questionId
-          )
-        );
-
-      }
-
+    const idx = markedForReview.indexOf(qId);
+    if (markForReview === 'true' || markForReview === true) {
+      if (idx === -1) markedForReview.push(qId);
     } else {
-
-      if (
-        idx !== -1
-      ) {
-
-        markedForReview.splice(
-          idx,
-          1
-        );
-
-      }
-
+      if (idx !== -1) markedForReview.splice(idx, 1);
     }
 
-
-    const visitedQuestionIds =
-      [
-        ...new Set([
-
-          ...(
-            result.visitedQuestionIds ||
-            []
-          )
-            .map(
-              value =>
-                String(
-                  value
-                )
-            ),
-
-          String(
-            questionId
-          )
-
-        ])
-      ];
+    const visitedQuestionIds = [
+      ...new Set([
+        ...(result.visitedQuestionIds || []).map(value => String(value)),
+        qId
+      ])
+    ];
 
 
     await Result.findByIdAndUpdate(
@@ -2480,18 +2390,20 @@ exports.submitExam = async (
       timeSpent
     } = req.body || {};
 
-    if (questionId && answer !== undefined) {
+    const qId = String(questionId || '').trim();
+    if (qId && answer !== undefined && result.questionOrder.map(String).includes(qId)) {
       const currentAnswers = {
         ...(result.answers || {})
       };
-      currentAnswers[String(questionId)] = {
+      delete currentAnswers[''];
+      currentAnswers[qId] = {
         answer: String(answer).trim() || null,
         savedAt: new Date()
       };
       result.answers = currentAnswers;
       if (timeSpent) {
         const timings = { ...(result.questionTimings || {}) };
-        timings[String(questionId)] = (timings[String(questionId)] || 0) + Number(timeSpent);
+        timings[qId] = (timings[qId] || 0) + Number(timeSpent);
         result.questionTimings = timings;
       }
       await Result.findByIdAndUpdate(result._id, {
@@ -3154,8 +3066,10 @@ exports.leaveExam = async (
      * Apply same CET lock rules as saveAnswer.
      */
 
+    const qId = String(questionId || '').trim();
     if (
-      questionId
+      qId &&
+      result.questionOrder.map(String).includes(qId)
     ) {
 
       const [
@@ -3221,9 +3135,7 @@ exports.leaveExam = async (
           sectionState
             .subjectById
             .get(
-              String(
-                questionId
-              )
+              qId
             );
 
 
@@ -3260,6 +3172,7 @@ exports.leaveExam = async (
       const answers = {
         ...(result.answers || {})
       };
+      delete answers[''];
 
 
       const questionTimings = {
@@ -3280,11 +3193,7 @@ exports.leaveExam = async (
           );
 
 
-      answers[
-        String(
-          questionId
-        )
-      ] = {
+      answers[qId] = {
 
         answer:
           answer
