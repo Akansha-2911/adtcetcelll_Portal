@@ -2080,3 +2080,110 @@ exports.getPracticeResult = async (req, res) => {
   }
 
 };
+
+
+// ============================================================
+// STUDENT PROFILE
+// ============================================================
+
+exports.getProfile = async (req, res) => {
+  try {
+    const studentId = req.session.user.id;
+    const student = await User.findById(studentId);
+
+    if (!student) {
+      req.flash('error', 'Student profile not found.');
+      return res.redirect('/student/dashboard');
+    }
+
+    const [memberships, documents, allResults] = await Promise.all([
+      GroupMember.find({ userId: studentId }).populate('groupId', 'name academicYear description course'),
+      StudentDocument.find({ studentId }).sort({ createdAt: -1 }),
+      Result.find({
+        studentId,
+        status: { $in: ['submitted', 'auto_submitted'] }
+      })
+        .populate('testId', 'title totalMarks course subject duration')
+        .sort({ createdAt: -1 })
+    ]);
+
+    // Calculate performance statistics
+    const totalTests = allResults.length;
+    let totalScore = 0;
+    let totalPossible = 0;
+    let highestScore = 0;
+    let highestPercentage = 0;
+    let totalCorrect = 0;
+    let totalWrong = 0;
+    let totalAttempted = 0;
+
+    allResults.forEach(r => {
+      const score = Number(r.score) || 0;
+      const tMarks = Number(r.totalMarks || (r.testId && r.testId.totalMarks) || 0);
+      totalScore += score;
+      totalPossible += tMarks;
+      if (score > highestScore) highestScore = score;
+      if (tMarks > 0) {
+        const pct = (score / tMarks) * 100;
+        if (pct > highestPercentage) highestPercentage = pct;
+      }
+      totalCorrect += Number(r.correctAnswers) || 0;
+      totalWrong += Number(r.wrongAnswers) || 0;
+      totalAttempted += (Number(r.correctAnswers) || 0) + (Number(r.wrongAnswers) || 0);
+    });
+
+    const averageScore = totalTests > 0 ? (totalScore / totalTests).toFixed(1) : 0;
+    const averagePercentage = totalPossible > 0 ? ((totalScore / totalPossible) * 100).toFixed(1) : 0;
+    const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(1) : 0;
+
+    return res.render('student/profile', {
+      title: 'My Profile',
+      student,
+      currentUser: student,
+      memberships,
+      documents,
+      results: allResults.slice(0, 10),
+      stats: {
+        totalTests,
+        averageScore,
+        averagePercentage,
+        highestScore,
+        highestPercentage: Number(highestPercentage).toFixed(1),
+        accuracy,
+        totalCorrect,
+        totalWrong
+      }
+    });
+  } catch (error) {
+    console.error('getProfile error:', error);
+    req.flash('error', 'Unable to load profile.');
+    return res.redirect('/student/dashboard');
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const studentId = req.session.user.id;
+    const { phone, parentContact, parentContact2, address, taluka, district, pinCode, bloodGroup, hostel } = req.body;
+
+    const updateFields = {};
+    if (phone !== undefined) updateFields.phone = String(phone).trim() || null;
+    if (parentContact !== undefined) updateFields.parentContact = String(parentContact).trim() || null;
+    if (parentContact2 !== undefined) updateFields.parentContact2 = String(parentContact2).trim() || null;
+    if (address !== undefined) updateFields.address = String(address).trim() || null;
+    if (taluka !== undefined) updateFields.taluka = String(taluka).trim() || null;
+    if (district !== undefined) updateFields.district = String(district).trim() || null;
+    if (pinCode !== undefined) updateFields.pinCode = String(pinCode).trim() || null;
+    if (bloodGroup !== undefined) updateFields.bloodGroup = String(bloodGroup).trim() || null;
+    if (hostel !== undefined) updateFields.hostel = String(hostel).trim() || null;
+
+    await User.findByIdAndUpdate(studentId, updateFields);
+
+    req.flash('success', 'Profile details updated successfully.');
+    return res.redirect('/student/profile');
+  } catch (error) {
+    console.error('updateProfile error:', error);
+    req.flash('error', 'Failed to update profile details.');
+    return res.redirect('/student/profile');
+  }
+};

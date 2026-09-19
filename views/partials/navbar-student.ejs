@@ -59,7 +59,7 @@
 
                 <% const navItems=[ [ '/student/dashboard' , 'Dashboard' ], [ '/student/tests?tab=new' , 'New Test' ],
                     [ '/student/tests?tab=unsolved' , 'Unsolved Test' ], [ '/student/tests?tab=solved' , 'Solved Test'
-                    ], [ '/student/practice' , 'Practice Test' ], [ '/student/results' , 'Result' ] ]; %>
+                    ], [ '/student/practice' , 'Practice Test' ], [ '/student/results' , 'Result' ], [ '/student/profile', 'My Profile' ] ]; %>
 
 
                     <% navItems.forEach(([href, label])=> {
@@ -92,21 +92,30 @@
             <!-- User Section -->
             <div class="hidden lg:flex items-center gap-3 ml-auto shrink-0">
 
-                <div class="text-right hidden xl:block">
+                <a href="/student/profile" class="text-right hidden xl:block group" title="View Student Profile">
 
-                    <p class="text-xs font-semibold text-slate-800">
+                    <p class="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
 
                         <%= currentUser.name %>
 
                     </p>
 
-                    <p class="text-[10px] text-slate-400">
+                    <p class="text-[10px] text-slate-400 group-hover:text-indigo-500 transition-colors">
 
-                        <%= currentUser.rollNo || 'Student' %>
+                        <%= currentUser.rollNo || 'Student' %> &middot; Profile &rarr;
 
                     </p>
 
-                </div>
+                </a>
+
+                <a href="/student/profile"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                    title="Student Profile">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Profile</span>
+                </a>
 
 
                 <a href="/student/notifications"

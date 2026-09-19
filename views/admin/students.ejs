@@ -57,12 +57,12 @@
               <tr class="hover:bg-slate-50 transition-colors student-row">
                 <td class="px-6 py-4 text-slate-500 text-sm sm:text-base font-semibold"><%= i + 1 %></td>
                 <td class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-navy-100 flex items-center justify-center text-navy-700 font-bold text-sm shrink-0">
+                  <a href="/admin/students/<%= s._id || s.id %>/view" class="flex items-center gap-3 group" title="View <%= s.name %>'s Profile">
+                    <div class="w-9 h-9 rounded-full bg-navy-100 group-hover:bg-indigo-600 group-hover:text-white transition-colors flex items-center justify-center text-navy-700 font-bold text-sm shrink-0">
                       <%= s.name.charAt(0).toUpperCase() %>
                     </div>
-                    <span class="font-semibold text-base text-slate-900"><%= s.name %></span>
-                  </div>
+                    <span class="font-semibold text-base text-slate-900 group-hover:text-indigo-600 transition-colors"><%= s.name %></span>
+                  </a>
                 </td>
                 <td class="px-6 py-4 font-mono text-slate-700 text-sm sm:text-base font-semibold"><%= s.rollNo %></td>
                 <td class="px-6 py-4 text-slate-600 text-sm sm:text-base hidden md:table-cell"><%= s.email || '—' %></td>

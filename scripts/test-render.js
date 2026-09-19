@@ -272,6 +272,68 @@ const testsToRender = [
     }
   },
   {
+    name: 'student/profile',
+    data: {
+      user: mockStudent,
+      currentUser: mockStudent,
+      collegeShort: 'SPVN',
+      collegeName: 'SPVN Institute',
+      title: 'My Profile',
+      student: {
+        ...mockStudent,
+        rollNo: '2024CE001',
+        email: 'student@example.com',
+        phone: '9876543210',
+        parentContact: '9876543201',
+        parentContact2: '9876543202',
+        classLevel: '12th',
+        division: 'A',
+        cetExamNo: 'CET-2024-9988',
+        grNo: 'GR-12345',
+        gender: 'Male',
+        category: 'OBC',
+        bloodGroup: 'B+',
+        subjectGroup: 'PCM',
+        academy: 'SPVN Institute',
+        hostel: 'Hostelite',
+        address: 'Sharda Nagar',
+        taluka: 'Baramati',
+        district: 'Pune',
+        pinCode: '413115',
+        aadhaarNo: '123456789012',
+        createdAt: new Date(),
+        lastLogin: new Date(),
+        isActive: true,
+        isFirstLogin: false
+      },
+      memberships: [
+        { groupId: { name: 'Batch Alpha 2026', academicYear: '2026-2027' } }
+      ],
+      documents: [
+        { title: 'Aadhaar Card', originalName: 'aadhaar.pdf', filePath: '/uploads/aadhaar.pdf', createdAt: new Date() }
+      ],
+      results: [
+        {
+          _id: 'r1',
+          testId: { title: 'MHT-CET Physics Mock 1', totalMarks: 100 },
+          score: 88,
+          totalMarks: 100,
+          createdAt: new Date()
+        }
+      ],
+      stats: {
+        totalTests: 5,
+        averageScore: '82.4',
+        averagePercentage: '82.4',
+        highestScore: 94,
+        highestPercentage: '94.0',
+        accuracy: '88.5',
+        totalCorrect: 120,
+        totalWrong: 16
+      }
+    }
+  },
+  {
     name: 'exam/question',
     data: {
       user: mockStudent,
