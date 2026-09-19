@@ -49,6 +49,16 @@ function safeImageUrl(value) {
   return src;
 }
 
+function cleanQuestionText(text) {
+  if (!text) return '';
+  let str = String(text).trim();
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  return str.trim();
+}
+
 
 function isVisualDescription(value) {
 
@@ -794,9 +804,9 @@ const score =
                      leading-7
                      font-semibold
                      text-slate-900"
-              data-math-source="<%= (q.question || '').replace(/"/g, '&quot;') %>"
+              data-math-source="<%= (cleanQuestionText(q.question) || '').replace(/"/g, '&quot;') %>"
             >
-              <%= q.question %>
+              <%= cleanQuestionText(q.question) %>
             </div>
 
 

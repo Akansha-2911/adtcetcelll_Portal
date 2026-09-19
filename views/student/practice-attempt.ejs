@@ -40,6 +40,16 @@ function safeImageUrl(value) {
   return src;
 }
 
+function cleanQuestionText(text) {
+  if (!text) return '';
+  let str = String(text).trim();
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  return str.trim();
+}
+
 function isVisualDescription(value) {
   const text = String(value || '').trim();
 
@@ -315,8 +325,8 @@ function isVisualDescription(value) {
                          font-semibold
                          text-slate-900
                          mb-5"
-                         data-math-source="<%= (q.question || '').replace(/"/g, '&quot;') %>">
-                        <%= q.question %>
+                         data-math-source="<%= (cleanQuestionText(q.question) || '').replace(/"/g, '&quot;') %>">
+                        <%= cleanQuestionText(q.question) %>
                       </div>
 
 

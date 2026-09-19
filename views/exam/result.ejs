@@ -52,6 +52,16 @@ function safeImageUrl(value) {
   return src;
 }
 
+function cleanQuestionText(text) {
+  if (!text) return '';
+  let str = String(text).trim();
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  return str.trim();
+}
+
 
 /* =========================================================
    VISUAL-ONLY OPTION DESCRIPTION
@@ -1405,7 +1415,7 @@ function isVisualDescription(value) {
                          leading-relaxed
                          mb-3"
                 >
-                  <%= q.question %>
+                  <%= cleanQuestionText(q.question) %>
                 </p>
 
 

@@ -19,6 +19,8 @@ const {
   isFinalSubject
 } = require('../utils/cetExam');
 
+const { cleanQuestionText } = require('../utils/mathFormatter');
+
 
 const shuffle = arr => {
 
@@ -1107,13 +1109,13 @@ exports.getQuestion = async (
     }
 
 
-    const question =
+    const rawQuestion =
       await Question.findById(
         currentQuestionId
       );
 
 
-    if (!question) {
+    if (!rawQuestion) {
 
       req.flash(
         'error',
@@ -1125,6 +1127,16 @@ exports.getQuestion = async (
       );
 
     }
+
+    const question =
+      rawQuestion.toObject
+        ? rawQuestion.toObject()
+        : { ...rawQuestion };
+
+    question.question =
+      cleanQuestionText(
+        question.question
+      );
 
 
     let options = [
@@ -1898,6 +1910,32 @@ exports.submitSection = async (
 
     }
 
+    const {
+      questionId,
+      answer,
+      timeSpent
+    } = req.body || {};
+
+    if (questionId && answer !== undefined) {
+      const currentAnswers = {
+        ...(result.answers || {})
+      };
+      currentAnswers[String(questionId)] = {
+        answer: String(answer).trim() || null,
+        savedAt: new Date()
+      };
+      result.answers = currentAnswers;
+      if (timeSpent) {
+        const timings = { ...(result.questionTimings || {}) };
+        timings[String(questionId)] = (timings[String(questionId)] || 0) + Number(timeSpent);
+        result.questionTimings = timings;
+      }
+      await Result.findByIdAndUpdate(result._id, {
+        answers: result.answers,
+        questionTimings: result.questionTimings
+      });
+    }
+
 
     const questionRows =
       await Question.find(
@@ -2434,6 +2472,32 @@ exports.submitExam = async (
         '/student/tests'
       );
 
+    }
+
+    const {
+      questionId,
+      answer,
+      timeSpent
+    } = req.body || {};
+
+    if (questionId && answer !== undefined) {
+      const currentAnswers = {
+        ...(result.answers || {})
+      };
+      currentAnswers[String(questionId)] = {
+        answer: String(answer).trim() || null,
+        savedAt: new Date()
+      };
+      result.answers = currentAnswers;
+      if (timeSpent) {
+        const timings = { ...(result.questionTimings || {}) };
+        timings[String(questionId)] = (timings[String(questionId)] || 0) + Number(timeSpent);
+        result.questionTimings = timings;
+      }
+      await Result.findByIdAndUpdate(result._id, {
+        answers: result.answers,
+        questionTimings: result.questionTimings
+      });
     }
 
 

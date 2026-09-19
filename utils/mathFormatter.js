@@ -150,15 +150,124 @@ function replaceBalancedRoots(str) {
   return result;
 }
 
+const PUA_NEG = '\uE001';
+const PUA_LBRACE = '\uE002';
+const PUA_RBRACE = '\uE003';
+
+const win1252ToByte = new Map([
+  ['\u20AC', 0x80], ['\u201A', 0x82], ['\u0192', 0x83], ['\u201E', 0x84],
+  ['\u2026', 0x85], ['\u2020', 0x86], ['\u2021', 0x87], ['\u02C6', 0x88],
+  ['\u2030', 0x89], ['\u0160', 0x8A], ['\u2039', 0x8B], ['\u0152', 0x8C],
+  ['\u017D', 0x8E], ['\u2018', 0x91], ['\u2019', 0x92], ['\u201C', 0x93],
+  ['\u201D', 0x94], ['\u2022', 0x95], ['\u2013', 0x96], ['\u2014', 0x97],
+  ['\u02DC', 0x98], ['\u2122', 0x99], ['\u0161', 0x9A], ['\u203A', 0x9B],
+  ['\u0153', 0x9C], ['\u017E', 0x9E], ['\u0178', 0x9F]
+]);
+
+function decodeMojibake(str) {
+  if (!str || typeof str !== 'string') return str;
+  if (!/[\u00C2-\u00F4]/.test(str)) return str;
+
+  let out = str.replace(/([\u00C2-\u00F4](?:[\u0080-\u00BF\u00A0-\u00FF]|\u2018|\u2019|\u201C|\u201D|\u2013|\u2014|\u2026|\u02C6|\u2122|\u2022|\u0152|\u0153|\u0160|\u0161|\u0178|\u017D|\u017E|\u20AC|\u201A|\u0192|\u201E|\u2020|\u2021|\u2030|\u2039|\u203A|\u02DC)+)/g, (match) => {
+    try {
+      const bytes = [];
+      for (let i = 0; i < match.length; i++) {
+        const ch = match[i];
+        const code = ch.charCodeAt(0);
+        if (code <= 0x7F) {
+          bytes.push(code);
+        } else if (win1252ToByte.has(ch)) {
+          bytes.push(win1252ToByte.get(ch));
+        } else if (code <= 0xFF) {
+          bytes.push(code);
+        } else {
+          return match;
+        }
+      }
+      const buf = Buffer.from(bytes);
+      const decoded = buf.toString('utf8');
+      if (!decoded.includes('\uFFFD')) {
+        return decoded;
+      }
+    } catch (e) {}
+    return match;
+  });
+
+  out = out.replace(/\u00C2[\u00A0\s]*/g, ' ')
+           .replace(/Â[\u00A0\s]*/g, ' ')
+           .replace(/Â/g, ' ')
+           .replace(/âˆ’/g, '-')
+           .replace(/â€“|â€”/g, '-');
+  return out;
+}
+
+function normalizeMathUnicode(str) {
+  if (!str) return '';
+  let s = String(str);
+  s = decodeMojibake(s);
+  // Normalize Plane 1 SMP Mathematical Alphanumeric symbols (U+1D400 - U+1D7FF) to standard ASCII
+  s = s.replace(/[\uD835][\uDC00-\uDFFF]/g, char => char.normalize('NFKD'));
+  // Normalize mathematical tildes to ASCII ~
+  s = s.replace(/[\u223C\u223D\u223E\u301C\uFF5E]/g, '~');
+  // Normalize minus signs (U+2212) and dashes to standard ASCII -
+  s = s.replace(/[\u2212\u2013\u2014]/g, '-');
+  // Strip invisible math formatting characters that cause PDF tofu boxes
+  s = s.replace(/[\u200B-\u200D\u2060-\u2064\uFEFF]/g, '');
+  // Normalize non-breaking space
+  s = s.replace(/\u00A0/g, ' ');
+  return s;
+}
+
+function formatPiecewiseBody(body) {
+  const rawRows = body.split(/\\\\|\r?\n/).map(r => r.trim()).filter(r => r.length > 0);
+  const formattedRows = rawRows.map(row => {
+    const cols = row.split('&').map(c => cleanFormula(c.trim())).filter(c => c.length > 0);
+    if (cols.length >= 2) {
+      const expr = cols[0];
+      const cond = cols.slice(1).join('  ');
+      if (!expr.endsWith(',') && !cond.startsWith(',')) {
+        return `${expr},  ${cond}`;
+      }
+      return `${expr}  ${cond}`;
+    }
+    return cols.join('  ');
+  });
+  return PUA_LBRACE + ' ' + formattedRows.join(' ;  ') + ' ' + PUA_RBRACE;
+}
+
+function replacePiecewise(str) {
+  if (!str) return '';
+  const leftPiecewiseRegex = /\\left\s*\\?\{\s*\\begin\{(?:array|cases)\}(?:\{[^{}]*\})?([\s\S]*?)\\end\{(?:array|cases)\}\s*\\right\.?/gi;
+  str = str.replace(leftPiecewiseRegex, (match, body) => formatPiecewiseBody(body));
+  const casesRegex = /\\begin\{cases\}(?:\{[^{}]*\})?([\s\S]*?)\\end\{cases\}/gi;
+  str = str.replace(casesRegex, (match, body) => formatPiecewiseBody(body));
+  const condArrayRegex = /\\begin\{array\}(?:\{[^{}]*\})?([\s\S]*?)\\end\{array\}/gi;
+  str = str.replace(condArrayRegex, (match, body) => {
+    if (/\b(?:if|when|otherwise|else|text)\b/i.test(body) || body.includes('&')) {
+      return formatPiecewiseBody(body);
+    }
+    return match;
+  });
+  return str;
+}
+
 function replaceMatrices(str) {
   if (!str) return '';
-  return str.replace(/\\begin\{(bmatrix|pmatrix|matrix|vmatrix|Vmatrix)\}([\s\S]*?)\\end\{\1\}/g, (match, env, body) => {
+  const matrixRegex = /(?:\\left\s*([(\[|])\s*)?\\begin\{(bmatrix|pmatrix|matrix|vmatrix|Vmatrix|array)\}(?:\{[^{}]*\})?([\s\S]*?)\\end\{\2\}(?:\s*\\right\s*([)\]|]))?/g;
+  return str.replace(matrixRegex, (match, leftWrap, env, body, rightWrap) => {
+    if (env.toLowerCase() === 'array' && !leftWrap && !rightWrap && /\b(?:if|when|otherwise|else)\b/i.test(body)) {
+      return match;
+    }
     const rawRows = body.split(/\\\\|\r?\n/).map(r => r.trim()).filter(r => r.length > 0);
     const formattedRows = rawRows.map(row => {
-      const cols = row.split('&').map(c => cleanFormula(c.trim())).filter(c => c.length > 0);
+      const cols = row.split('&').map(c => {
+        let cell = cleanFormula(c.trim());
+        cell = cell.replace(/(^|[\s;,|\[])[-−]([0-9a-zA-Z])/g, '$1' + PUA_NEG + '$2');
+        return cell;
+      }).filter(c => c.length > 0);
       return cols.join('  ');
     });
-    const isDet = env.toLowerCase() === 'vmatrix';
+    const isDet = env.toLowerCase() === 'vmatrix' || leftWrap === '|' || rightWrap === '|';
     const leftBracket = isDet ? '| ' : '[ ';
     const rightBracket = isDet ? ' |' : ' ]';
     return leftBracket + formattedRows.join(' ;  ') + rightBracket;
@@ -171,11 +280,21 @@ function replaceMatrices(str) {
 function cleanFormula(raw) {
   if (!raw) return '';
   let f = String(raw).trim();
+  f = normalizeMathUnicode(f);
   // Fix corrupted \right where \r or \n got unescaped into control characters or \night
   f = f.replace(/[\r\n]+\s*ight\b/g, '\\right');
   f = f.replace(/\\+night\b/g, '\\right');
 
-  // Format matrices before stripping generic environments
+  // Prime notations for derivatives
+  f = f.replace(/\^?\s*\{\s*\\prime\s*\\prime\s*\\prime\s*\}/g, '‴')
+       .replace(/\^?\s*\{\s*\\prime\s*\\prime\s*\}/g, '″')
+       .replace(/\^?\s*\{\s*\\prime\s*\}/g, '′')
+       .replace(/\\prime\s*\\prime\s*\\prime/g, '‴')
+       .replace(/\\prime\s*\\prime/g, '″')
+       .replace(/\\prime/g, '′');
+
+  // Format piecewise & matrices before stripping generic environments
+  f = replacePiecewise(f);
   f = replaceMatrices(f);
 
   // Normalize escaped double-backslashes before commands (e.g. \\sim -> \sim, \\vee -> \vee)
@@ -292,8 +411,9 @@ function cleanFormula(raw) {
        .replace(/\\phi(?![a-zA-Z])|\\varphi(?![a-zA-Z])/g, 'φ').replace(/\\Phi(?![a-zA-Z])/g, 'Φ').replace(/\\chi(?![a-zA-Z])/g, 'χ')
        .replace(/\\psi(?![a-zA-Z])/g, 'ψ').replace(/\\Psi(?![a-zA-Z])/g, 'Ψ').replace(/\\omega(?![a-zA-Z])/g, 'ω').replace(/\\Omega(?![a-zA-Z])/g, 'Ω');
 
-  // Text formatting commands
-  f = f.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname|mathbb|mathcal|mathsf|mathtt)\{([^{}]*)\}/g, '$1');
+  // Text formatting commands: allow optional whitespace before { (do before sub/sup so \mathrm{i} becomes i)
+  f = f.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname|mathbb|mathcal|mathsf|mathtt)\s*\{([^{}]*)\}/g, '$1');
+  f = f.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname|mathbb|mathcal|mathsf|mathtt)\s*\{([^{}]*)\}/g, '$1');
 
   // Vectors and accents
   f = f.replace(/\\vec\{([^{}]+)\}/g, '$1⃗')
@@ -332,6 +452,9 @@ function cleanFormula(raw) {
   // Prefix negation should attach closely to variable or bracket: ~p, ~q, ¬p, ¬(p ∨ q)
   f = f.replace(/([~∼¬])\s+([a-zA-Z0-9(\[])/g, '$1$2');
 
+  // Compact derivative primes to variable: p′ ᵢ -> p′ᵢ
+  f = f.replace(/([′″‴])\s+([a-zA-Z0-9' + SUP_SUB + '])/g, '$1$2');
+
   // 1. Compact number + single variable: e.g. "2 c" -> "2c", "7 y²" -> "7y²", "4 m₁" -> "4m₁"
   f = f.replace(new RegExp('(?<![/0-9a-zA-Z])([0-9]+) ([a-zA-Z][' + SUP_SUB + ']?)\\b', 'g'), '$1$2');
 
@@ -347,8 +470,12 @@ function cleanFormula(raw) {
   f = f.replace(new RegExp('([a-zA-Z0-9' + SUP_SUB + '\\)\\]])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(\\[])', 'g'), '$1 - $2');
   // Unary negation
   f = f.replace(new RegExp('(^|[=<>≤≥≠\\(\\[/\\n])\\s*[-−]\\s*([a-zA-Z0-9' + SUP_SUB + '\\(])', 'g'), '$1-$2');
-  f = f.replace(/=\s*[-−]/g, '= -');
+  f = f.replace(/([=<>≤≥≠≈≡])\s*[-−]/g, '$1 -');
   f = f.replace(/−/g, '-');
+
+  // Unprotect matrix negatives and braces
+  f = f.replace(new RegExp(PUA_NEG, 'g'), '-');
+  f = f.replace(new RegExp(PUA_LBRACE, 'g'), '{').replace(new RegExp(PUA_RBRACE, 'g'), '}');
 
   // Strip dollar signs
   f = f.replace(/\$/g, '').trim();
@@ -359,17 +486,28 @@ function cleanFormula(raw) {
   return f;
 }
 
+function fixMatrixNegatives(str) {
+  if (!str) return '';
+  return str.replace(/\[([^[\]]+)\]/g, (match, inner) => {
+    if (inner.includes(';') || /\d\s+\d/.test(inner)) {
+      inner = inner.replace(/(^|[\s;])[-−]\s+(\d+)/g, '$1-$2');
+    }
+    return '[' + inner + ']';
+  });
+}
+
 /**
  * Converts any text string with LaTeX equations into clean readable text for PDF generation.
  */
 function formatMathToText(str) {
   if (!str) return '';
-  let text = String(str);
+  let text = normalizeMathUnicode(str);
 
   // Normalize OCR/plain radical notation before any export conversion.
   text = text.replace(/√\s*\(([^()]*)\)/g, '\\sqrt{$1}');
 
-  // Format matrices before delimiter parsing
+  // Format piecewise & matrices before delimiter parsing
+  text = replacePiecewise(text);
   text = replaceMatrices(text);
 
   // Normalize escaped double-backslashes before commands or delimiters
@@ -401,6 +539,9 @@ function formatMathToText(str) {
 
   // Replace Unicode minus with standard ASCII minus to prevent font encoding glitches
   text = text.replace(/−/g, '-');
+  text = text.replace(new RegExp(PUA_NEG, 'g'), '-');
+  text = text.replace(new RegExp(PUA_LBRACE, 'g'), '{').replace(new RegExp(PUA_RBRACE, 'g'), '}');
+  text = fixMatrixNegatives(text);
 
   // 4. Clean up multiple blank lines
   text = text.replace(/\n{3,}/g, '\n\n');
@@ -415,7 +556,7 @@ function formatMathToText(str) {
  */
 function formatPlainMathText(str) {
   if (!str) return '';
-  let s = String(str);
+  let s = normalizeMathUnicode(str);
 
   // 1. Arrows & Relations
   s = s.replace(/<==>|<=>|<->/g, ' ⇔ ')
@@ -435,6 +576,11 @@ function formatPlainMathText(str) {
        .replace(/\\equiv\b/g, '≡')
        .replace(/\\therefore\b/g, '∴ ')
        .replace(/\\because\b/g, '∵ ');
+
+  // Prime derivatives
+  s = s.replace(/\\prime\s*\\prime\s*\\prime/g, '‴')
+       .replace(/\\prime\s*\\prime/g, '″')
+       .replace(/\\prime/g, '′');
 
   // 3. Roots: sqrt(...) or \sqrt{...}
   s = replaceBalancedRoots(s);
@@ -503,7 +649,7 @@ function escapeHtml(str) {
  */
 function formatMathToWordHtml(str) {
   if (!str) return '';
-  let raw = String(str);
+  let raw = normalizeMathUnicode(str);
 
   // Normalize escaped double-backslashes before commands or delimiters
   raw = raw.replace(/\\\\([a-zA-Z]+)/g, '\\$1').replace(/\\\\([()[\]])/g, '\\$1');
@@ -566,6 +712,24 @@ function formatMathToWordHtml(str) {
   return result;
 }
 
+function findFileRecursive(dir, targetName, maxDepth = 3) {
+  if (maxDepth < 0) return null;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isFile() && entry.name === targetName) {
+        return full;
+      }
+      if (entry.isDirectory() && maxDepth > 0) {
+        const sub = findFileRecursive(full, targetName, maxDepth - 1);
+        if (sub) return sub;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 /**
  * Resolves an image URL (e.g. /uploads/questions/scans/... or relative path)
  * to an existing absolute path on the local filesystem.
@@ -574,21 +738,61 @@ function resolveLocalImagePath(imgUrl) {
   if (!imgUrl || typeof imgUrl !== 'string') return null;
   const clean = imgUrl.trim().replace(/^[/\\]+/, '');
   const rootDir = path.resolve(__dirname, '..');
+  const baseName = path.basename(clean);
+
+  let uploadRoot = null;
+  try {
+    uploadRoot = require('./storagePaths').uploadRoot;
+  } catch (_) {
+    uploadRoot = path.join(rootDir, 'uploads');
+  }
+
+  const cleanNoUploads = clean.replace(/^(?:public[/\\]+|uploads[/\\]+)+/, '');
+
   const candidates = [
     path.join(rootDir, 'public', clean),
     path.join(rootDir, clean),
-    path.join(rootDir, 'public', 'uploads', clean.replace(/^uploads[/\\]?/, '')),
-    path.join(rootDir, 'public', 'uploads', 'questions', clean.replace(/^(?:uploads[/\\]+|questions[/\\]+)+/, ''))
+    path.join(rootDir, 'uploads', cleanNoUploads),
+    path.join(uploadRoot, cleanNoUploads),
+    path.join(rootDir, 'public', 'uploads', cleanNoUploads),
+    path.join(rootDir, 'public', 'uploads', 'questions', 'scans', cleanNoUploads),
+    path.join(rootDir, 'public', 'uploads', 'questions', cleanNoUploads),
+    path.join(uploadRoot, 'test-extracted-images', cleanNoUploads),
+    path.join(uploadRoot, 'test-extracted-images', baseName),
+    path.join(rootDir, 'public', 'uploads', 'test-extracted-images', baseName),
+    path.join(uploadRoot, 'tests', cleanNoUploads),
+    path.join(rootDir, 'public', 'uploads', 'tests', cleanNoUploads)
   ];
+
   if (process.env.UPLOAD_ROOT_DIR) {
-    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, clean.replace(/^uploads[/\\]?/, '')));
-    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, 'questions', clean.replace(/^(?:uploads[/\\]+|questions[/\\]+)+/, '')));
+    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, cleanNoUploads));
+    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, 'questions', cleanNoUploads));
+    candidates.push(path.join(process.env.UPLOAD_ROOT_DIR, 'test-extracted-images', baseName));
   }
+
   for (const c of candidates) {
     try {
-      if (fs.existsSync(c)) return c;
+      if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
     } catch (_) {}
   }
+
+  // Fallback: search by basename in known upload directories if not found by exact path
+  const searchDirs = [
+    path.join(rootDir, 'public', 'uploads', 'questions', 'scans'),
+    path.join(uploadRoot, 'test-extracted-images'),
+    path.join(uploadRoot, 'tests'),
+    path.join(rootDir, 'public', 'uploads'),
+    uploadRoot
+  ];
+
+  for (const dir of searchDirs) {
+    try {
+      if (!fs.existsSync(dir)) continue;
+      const found = findFileRecursive(dir, baseName, 3);
+      if (found) return found;
+    } catch (_) {}
+  }
+
   return null;
 }
 
@@ -694,11 +898,22 @@ function setupPdfFonts(doc) {
   };
 }
 
+function cleanQuestionText(text) {
+  if (!text) return '';
+  let str = String(text).trim();
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  str = str.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
+  str = str.replace(/^(?:(?:Question|Q)\s*\.?\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+  return str.trim();
+}
+
 module.exports = {
   formatMathToText,
   formatPlainMathText,
   formatMathToWordHtml,
   cleanFormula,
+  cleanQuestionText,
   setupPdfFonts,
   resolveLocalImagePath,
   resolveImageSource,

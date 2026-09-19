@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseLocalDateTime, formatDateTimeLocal } = require('../utils/dateTime');
 const { extractSyllabusFromPdf } = require('../utils/syllabusImporter');
-const { formatMathToText, formatMathToWordHtml, setupPdfFonts, resolveLocalImagePath, resolveImageSource, getBase64ImageHtml } = require('../utils/mathFormatter');
+const { formatMathToText, formatMathToWordHtml, setupPdfFonts, resolveLocalImagePath, resolveImageSource, getBase64ImageHtml, cleanQuestionText } = require('../utils/mathFormatter');
 
 
 const COURSES = ['JEE', 'CET', 'NEET'];
@@ -2583,10 +2583,7 @@ table.answer-key th { background: #0f172a; color: #fff; padding: 8px 10px; font-
         const isCorrectC = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === 'C';
         const isCorrectD = includeAnswers && String(q.correctAnswer).trim().toUpperCase() === 'D';
 
-        let cleanQuestion = String(q.question || '').trim();
-        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-        cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
-        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+        let cleanQuestion = cleanQuestionText(q.question);
 
         const cleanOpt = (opt) => {
           let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
@@ -2670,11 +2667,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
       doc.fillColor('#64748b').fontSize(8.5).font(mainFont).text(`[${q.marks || 1} Mark${q.marks !== 1 ? 's' : ''}${q.negativeMarks ? ', -' + q.negativeMarks : ''}]`, 40, qY + 5, { width: pageW - 10, align: 'right' });
 
       doc.y = qY + 26;
-      let cleanQText = String(q.question || '').trim();
-      cleanQText = cleanQText.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-      cleanQText = cleanQText.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
-      cleanQText = cleanQText.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-      cleanQText = formatMathToText(cleanQText);
+      let cleanQText = formatMathToText(cleanQuestionText(q.question));
 
       doc.fillColor('#1e293b').fontSize(10).font(mainFont).text(cleanQText, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
@@ -2721,7 +2714,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
           if (fullOptImg) {
             try {
               if (doc.y > 660) doc.addPage();
-              doc.image(fullOptImg, { fit: [180, 85], align: 'left' });
+              doc.image(fullOptImg, 54, doc.y, { fit: [180, 85] });
               doc.moveDown(0.3);
             } catch (err) { }
           }
@@ -2839,10 +2832,7 @@ h1 { font-size: 18pt; color: #0f172a; text-align: center; margin-bottom: 4px; }
 <div class='meta'>Subject: ${escapeHtml(subject || 'All Subjects')}${includeAnswers ? ' (With Answers & Solutions)' : ' (Questions Only)'} | Total Questions: ${questions.length} | Generated: ${new Date().toLocaleDateString('en-IN')}</div>
 `;
       questions.forEach((q, i) => {
-        let cleanQuestion = String(q.question || '').trim();
-        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-        cleanQuestion = cleanQuestion.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
-        cleanQuestion = cleanQuestion.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
+        let cleanQuestion = cleanQuestionText(q.question);
 
         const cleanOpt = (opt) => {
           let s = String(opt || '').trim().replace(/^\(?[A-Da-d]\)?[\s.:)\-–—]+\s*/, '');
@@ -2908,11 +2898,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
         .text(`[${q.difficulty || 'Medium'}] [${q.marks || 1} Mark]`, 40, qY + 4, { width: pageW - 10, align: 'right' });
 
       doc.y = qY + 22;
-      let cleanQ = String(q.question || '').trim();
-      cleanQ = cleanQ.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-      cleanQ = cleanQ.replace(/^(?:\[[^\]]+\]\s*)+/i, '');
-      cleanQ = cleanQ.replace(/^(?:Q\s*)?\d+[\s.:)\-–—]+\s*/i, '');
-      cleanQ = formatMathToText(cleanQ);
+      let cleanQ = formatMathToText(cleanQuestionText(q.question));
 
       doc.fillColor('#1e293b').fontSize(9.5).font(mainFont).text(cleanQ, 48, doc.y, { width: pageW - 16 });
       doc.moveDown(0.4);
@@ -2956,7 +2942,7 @@ ${q.detailedSolution || q.explanation ? `<div class='explanation'><b>Explanation
           if (fullOptImg) {
             try {
               if (doc.y > 660) doc.addPage();
-              doc.image(fullOptImg, { fit: [180, 85], align: 'left' });
+              doc.image(fullOptImg, 52, doc.y, { fit: [180, 85] });
               doc.moveDown(0.3);
             } catch (err) { }
           }
