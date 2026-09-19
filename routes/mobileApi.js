@@ -946,7 +946,16 @@ router.patch('/admin/topics/:topicId', requireMobileUser, requireRole('admin'), 
 });
 
 router.delete('/admin/topics/:topicId', requireMobileUser, requireRole('admin'), async (req, res) => {
-  await Topic.findByIdAndUpdate(req.params.topicId, { isActive: false });
+  const topic = await Topic.findByIdAndDelete(req.params.topicId);
+  if (topic) {
+    await Question.updateMany(
+      {
+        subject: new RegExp('^' + String(topic.subject || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'),
+        topic: new RegExp('^(?:unit\\s*\\d+\\s*[—-]\\s*)?' + String(topic.name || '').replace(/^unit\s*\d+\s*[—\-:]\s*/i, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+      },
+      { $unset: { topic: "", subtopic: "" } }
+    );
+  }
   return res.sendStatus(204);
 });
 

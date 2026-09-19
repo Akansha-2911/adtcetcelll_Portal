@@ -1124,204 +1124,78 @@ exports.getPracticeBuilder = async (req, res) => {
 ============================================================================ */
 
 exports.getPracticeTopics = async (req, res) => {
-
   try {
+    const { Topic } = require('../models');
 
-    const { Question } =
-      require('../models');
-
-
-    const subject =
-      String(
-        req.query.subject || ''
-      ).trim();
-
+    const subject = String(req.query.subject || '').trim();
 
     if (!subject) {
-
       return res.json([]);
-
     }
 
+    const syllabusTopics = await Topic.find({
+      isActive: true,
+      subject: new RegExp('^' + subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+    }).sort({ name: 1 }).lean();
 
-    /*
-     * Get topics DIRECTLY from Question Bank.
-     */
+    const cleanTopics = [
+      ...new Set(
+        syllabusTopics
+          .map(row => String(row.name || '').trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b));
 
-    const topicNames =
-      await Question.distinct(
-        'topic',
-        {
-
-          subject,
-
-          isActive: {
-            $ne: false
-          }
-
-        }
-      );
-
-
-    const cleanTopics =
-      [
-        ...new Set(
-
-          topicNames
-
-            .map(value =>
-              String(value || '')
-                .trim()
-            )
-
-            .filter(Boolean)
-
-        )
-      ]
-        .sort(
-          (a, b) =>
-            a.localeCompare(b)
-        );
-
-
-    /*
-     * Existing practice.ejs expects:
-     *
-     * [
-     *   {
-     *      name: "Current Electricity",
-     *      subtopics: []
-     *   }
-     * ]
-     */
-
-    const rows =
-      cleanTopics.map(
-        name => ({
-
-          name,
-
-          subtopics: []
-
-        })
-      );
-
+    const rows = cleanTopics.map(name => ({
+      name,
+      subtopics: []
+    }));
 
     return res.json(rows);
-
-
   } catch (error) {
-
-    console.error(
-      'getPracticeTopics error:',
-      error
-    );
-
-
-    return res
-      .status(500)
-      .json([]);
-
+    console.error('getPracticeTopics error:', error);
+    return res.status(500).json([]);
   }
-
 };
 
-
 /* ==========================================================================
-   GET SUBTOPICS FROM QUESTION BANK
+   GET SUBTOPICS FROM SYLLABUS
 ============================================================================ */
 
 exports.getPracticeSubtopics = async (req, res) => {
-
   try {
+    const { Topic } = require('../models');
 
-    const { Question } =
-      require('../models');
+    const subject = String(req.query.subject || '').trim();
+    const topic = String(req.query.topic || '').trim();
 
-
-    const subject =
-      String(
-        req.query.subject || ''
-      ).trim();
-
-
-    const topic =
-      String(
-        req.query.topic || ''
-      ).trim();
-
-
-    if (
-      !subject ||
-      !topic
-    ) {
-
+    if (!subject || !topic) {
       return res.json([]);
-
     }
 
+    const topicDoc = await Topic.findOne({
+      isActive: true,
+      subject: new RegExp('^' + subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'),
+      name: new RegExp('^' + topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+    }).lean();
 
-    /*
-     * Get subtopics directly from Question Bank.
-     */
+    if (!topicDoc || !Array.isArray(topicDoc.subtopics)) {
+      return res.json([]);
+    }
 
-    const values =
-      await Question.distinct(
-        'subtopic',
-        {
+    const subtopics = [
+      ...new Set(
+        topicDoc.subtopics
+          .map(value => String(value || '').trim())
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b));
 
-          subject,
-
-          topic,
-
-          isActive: {
-            $ne: false
-          }
-
-        }
-      );
-
-
-    const subtopics =
-      [
-        ...new Set(
-
-          values
-
-            .map(value =>
-              String(value || '')
-                .trim()
-            )
-
-            .filter(Boolean)
-
-        )
-      ]
-        .sort(
-          (a, b) =>
-            a.localeCompare(b)
-        );
-
-
-    return res.json(
-      subtopics
-    );
-
-
+    return res.json(subtopics);
   } catch (error) {
-
-    console.error(
-      'getPracticeSubtopics error:',
-      error
-    );
-
-
-    return res
-      .status(500)
-      .json([]);
-
+    console.error('getPracticeSubtopics error:', error);
+    return res.status(500).json([]);
   }
-
 };
 
 

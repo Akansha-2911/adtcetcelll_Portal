@@ -58,59 +58,33 @@ const loadTopics = async (course, subject) => {
   const cleanCourse = cleanHierarchyText(course);
   const cleanSubject = cleanHierarchyText(subject);
 
-  if (!cleanSubject) return [];
-
-  /*
-   * Merge both hierarchy sources:
-   * 1) Syllabus Manager Topic collection
-   * 2) Actual Question Bank topic/subtopic values
-   *
-   * This prevents Create Test from showing only "All Topics" when
-   * Question Bank rows already contain topics that are not yet in syllabus.
-   */
   const syllabusQuery = {
-    isActive: true,
-    subject: hierarchyValuePattern(cleanSubject)
+    isActive: true
   };
+  if (cleanSubject) syllabusQuery.subject = hierarchyValuePattern(cleanSubject);
   if (cleanCourse) syllabusQuery.course = cleanCourse;
 
-  const [syllabusRows, questionRows] = await Promise.all([
-    Topic.find(syllabusQuery).sort({ name: 1 }).lean(),
-    Question.find({
-      isActive: true,
-      subject: hierarchyValuePattern(cleanSubject),
-      topic: { $exists: true, $nin: [null, ''] }
-    }).select('topic subtopic').lean()
-  ]);
+  const syllabusRows = await Topic.find(syllabusQuery).sort({ course: 1, subject: 1, name: 1 }).lean();
 
   const topicMap = new Map();
 
-  const ensureTopic = (name, source = 'question_bank') => {
-    const cleanName = cleanHierarchyText(name);
-    if (!cleanName) return null;
-    const key = stripUnitPrefix(cleanName).toLocaleLowerCase();
+  syllabusRows.forEach(row => {
+    const cleanName = cleanHierarchyText(row.name);
+    if (!cleanName) return;
+    const key = `${row.course || cleanCourse || ''}__${row.subject || cleanSubject || ''}__${stripUnitPrefix(cleanName).toLocaleLowerCase()}`;
     if (!topicMap.has(key)) {
       topicMap.set(key, {
-        _id: null,
-        course: cleanCourse || '',
-        subject: cleanSubject,
+        _id: row._id,
+        id: String(row._id),
+        course: row.course || cleanCourse || '',
+        subject: row.subject || cleanSubject || '',
         name: cleanName,
         subtopics: [],
         isActive: true,
-        source
+        source: 'syllabus'
       });
     }
-    return topicMap.get(key);
-  };
-
-  // Add syllabus topics first so their official names are retained.
-  syllabusRows.forEach(row => {
-    const topic = ensureTopic(row.name, 'syllabus');
-    if (!topic) return;
-    topic._id = row._id || topic._id;
-    topic.course = row.course || topic.course;
-    topic.subject = row.subject || topic.subject;
-    topic.source = 'syllabus';
+    const topic = topicMap.get(key);
     (row.subtopics || []).forEach(value => {
       const sub = cleanHierarchyText(value);
       if (!sub) return;
@@ -120,20 +94,13 @@ const loadTopics = async (course, subject) => {
     });
   });
 
-  // Merge hierarchy that actually exists in Question Bank.
-  questionRows.forEach(row => {
-    const topic = ensureTopic(row.topic, 'question_bank');
-    if (!topic) return;
-    const sub = cleanHierarchyText(row.subtopic);
-    if (!sub) return;
-    if (!topic.subtopics.some(existing => existing.toLocaleLowerCase() === sub.toLocaleLowerCase())) {
-      topic.subtopics.push(sub);
-    }
-  });
-
   const output = Array.from(topicMap.values());
   output.forEach(topic => topic.subtopics.sort((a, b) => a.localeCompare(b)));
-  output.sort((a, b) => stripUnitPrefix(a.name).localeCompare(stripUnitPrefix(b.name)));
+  output.sort((a, b) => {
+    if (a.course !== b.course) return (a.course || '').localeCompare(b.course || '');
+    if (a.subject !== b.subject) return (a.subject || '').localeCompare(b.subject || '');
+    return stripUnitPrefix(a.name).localeCompare(stripUnitPrefix(b.name));
+  });
   return output;
 };
 
@@ -668,7 +635,16 @@ exports.updateTopic = async (req, res) => {
 
 exports.deleteTopic = async (req, res) => {
   try {
-    await Topic.findByIdAndUpdate(req.params.id, { isActive: false });
+    const topic = await Topic.findByIdAndDelete(req.params.id);
+    if (topic) {
+      await Question.updateMany(
+        {
+          subject: hierarchyValuePattern(topic.subject),
+          topic: hierarchyValuePattern(topic.name, { allowUnitPrefix: true })
+        },
+        { $unset: { topic: "", subtopic: "" } }
+      );
+    }
     req.flash('success', 'Syllabus unit deleted.');
     res.redirect('/admin/topics');
   } catch (e) { req.flash('error', 'Failed.'); res.redirect('/admin/topics'); }
@@ -728,17 +704,6 @@ exports.getSubtopicsForTopic = async (req, res) => {
       return res.json([]);
     }
 
-    /*
-     * =========================================================
-     * FIRST:
-     * use loadTopics(), because it already supports:
-     *
-     * Syllabus Manager
-     *        OR
-     * Question Bank fallback
-     * =========================================================
-     */
-
     const topics = await loadTopics(course, subject);
 
     const selectedTopic = topics.find(row => {
@@ -762,82 +727,9 @@ exports.getSubtopicsForTopic = async (req, res) => {
       );
     }
 
-    /*
-     * =========================================================
-     * SECOND FALLBACK:
-     * Direct query against Question Bank.
-     *
-     * This also handles slightly inconsistent topic naming.
-     * =========================================================
-     */
-
-    const subjectPattern = hierarchyValuePattern(subject);
-
-    const questions = await Question.find({
-      isActive: true,
-      subject: subjectPattern,
-
-      subtopic: {
-        $exists: true,
-        $nin: [null, '']
-      }
-    })
-      .select('topic subtopic')
-      .lean();
-
-    const matchingQuestions = questions.filter(question => {
-      const questionTopic = cleanHierarchyText(question.topic);
-
-      if (!questionTopic) {
-        return false;
-      }
-
-      /*
-       * Exact comparison after removing "Unit X -".
-       */
-      if (
-        stripUnitPrefix(questionTopic).toLocaleLowerCase() ===
-        stripUnitPrefix(topic).toLocaleLowerCase()
-      ) {
-        return true;
-      }
-
-      /*
-       * Flexible hierarchy comparison.
-       */
-      return matchesSyllabusTopic(questionTopic, {
-        name: topic,
-        subtopics: []
-      });
-    });
-
-    const seen = new Set();
-    const subtopics = [];
-
-    matchingQuestions.forEach(question => {
-      const value = cleanHierarchyText(question.subtopic);
-
-      if (!value) {
-        return;
-      }
-
-      const key = value.toLocaleLowerCase();
-
-      if (seen.has(key)) {
-        return;
-      }
-
-      seen.add(key);
-      subtopics.push(value);
-    });
-
-    subtopics.sort((a, b) => a.localeCompare(b));
-
-    return res.json(subtopics);
-
+    return res.json([]);
   } catch (error) {
     console.error('Load hierarchy subtopics failed:', error);
-
     return res.json([]);
   }
 };
