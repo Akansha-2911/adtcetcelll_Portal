@@ -321,7 +321,7 @@
                 All Topics
               </option>
 
-              <% (topicRows||[]).forEach(t => { %>
+              <% (typeof topicRows !== 'undefined' && Array.isArray(topicRows) ? topicRows : []).forEach(t => { %>
 
                 <option
                   value="<%= t.name %>"
@@ -352,7 +352,7 @@
                 All Subtopics
               </option>
 
-              <% (subtopicList||[]).forEach(st => { %>
+              <% (typeof subtopicList !== 'undefined' && Array.isArray(subtopicList) ? subtopicList : []).forEach(st => { %>
 
                 <option
                   value="<%= st %>"

@@ -30,7 +30,13 @@
         </div>
       </div>
 
-      <% if (!aiEnabled) { %>
+      <%
+        const isAiReady = typeof aiEnabled !== 'undefined' ? Boolean(aiEnabled) : false;
+        const safeMaxFiles = typeof maxFiles !== 'undefined' ? maxFiles : 10;
+        const safeMaxTotalSizeMb = typeof maxTotalSizeMb !== 'undefined' ? maxTotalSizeMb : 100;
+        const safeCourses = typeof COURSES !== 'undefined' && Array.isArray(COURSES) ? COURSES : ['CET', 'JEE', 'NEET'];
+      %>
+      <% if (!isAiReady) { %>
       <div class="mb-6 bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3">
         <span class="text-xl">⚠️</span>
         <div>
@@ -47,7 +53,7 @@
               <h3 class="font-bold text-slate-900">1. Upload question paper / solution</h3>
               <p class="text-xs text-slate-500 mt-1">Question paper, answer key, or both together</p>
             </div>
-            <span class="text-[11px] text-slate-500 bg-slate-100 rounded-full px-3 py-1">Max <%= maxFiles %> files / <%= maxTotalSizeMb %> MB</span>
+            <span class="text-[11px] text-slate-500 bg-slate-100 rounded-full px-3 py-1">Max <%= safeMaxFiles %> files / <%= safeMaxTotalSizeMb %> MB</span>
           </div>
 
           <label id="dropZone" class="block border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 rounded-2xl p-8 lg:p-12 text-center cursor-pointer transition-colors">
@@ -87,7 +93,7 @@
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1.5">Course <span class="text-rose-500">*</span></label>
               <select id="scanCourse" name="course" required class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
-                <% COURSES.forEach(course => { %>
+                <% safeCourses.forEach(course => { %>
                   <option value="<%= course %>" <%= course === 'CET' ? 'selected' : '' %>><%= course %></option>
                 <% }) %>
               </select>
@@ -214,13 +220,13 @@ dropZone.addEventListener('drop', event => {
 function beginScan() {
   const files = Array.from(input.files);
   if (!files.length) return false;
-  if (files.length > <%= maxFiles %>) {
-    alert('Choose a maximum of <%= maxFiles %> files.');
+  if (files.length > <%= safeMaxFiles %>) {
+    alert('Choose a maximum of <%= safeMaxFiles %> files.');
     return false;
   }
   const total = files.reduce((sum, file) => sum + file.size, 0);
-  if (total > <%= maxTotalSizeMb %> * 1024 * 1024) {
-    alert('Combined file size must be below <%= maxTotalSizeMb %> MB.');
+  if (total > <%= safeMaxTotalSizeMb %> * 1024 * 1024) {
+    alert('Combined file size must be below <%= safeMaxTotalSizeMb %> MB.');
     return false;
   }
   document.getElementById('scanButton').disabled = true;

@@ -295,7 +295,7 @@
                       <% if (currentSection) { %>
                         <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
                           <%= currentSection.name %>
-                            <%= sectionQuestionNumber %>/<%= currentSection.questionIds.length %>
+                            <%= sectionQuestionNumber %>/<%= (currentSection.questionIds?.length || currentSection.questionNumbers?.length || 0) %>
                         </span>
                         <% } %>
                           <span class="text-xs text-slate-400 hidden sm:block">

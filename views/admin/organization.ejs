@@ -16,16 +16,25 @@
         <div><p class="text-xs text-sky-600 font-semibold mb-1">Home / Organization</p><h1 class="spvn-ui-heading">Organization Details</h1><p class="text-sm text-slate-500 mt-1"><%= collegeName %></p></div>
         <div class="flex gap-2"><a href="/admin/questions/smart-import" class="spvn-ui-btn spvn-ui-btn-blue">Upload Questions</a><a href="/admin/groups" class="spvn-ui-btn spvn-ui-btn-primary">+ Add Batch</a></div>
       </div>
+      <%
+        const orgGroups = typeof groups !== 'undefined' && Array.isArray(groups) ? groups : [];
+        const orgTotals = typeof totals !== 'undefined' && totals ? totals : {
+          batches: orgGroups.length,
+          students: orgGroups.reduce((sum, row) => sum + Number(row.totalStudents || 0), 0),
+          active: orgGroups.filter(row => (row.status || 'active') === 'active').length,
+          courses: new Set(orgGroups.map(row => row.course).filter(Boolean)).size
+        };
+      %>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <% [['Batches',totals.batches],['Students',totals.students],['Active Batches',totals.active],['Courses',totals.courses]].forEach(([label,val])=>{ %>
+        <% [['Batches',orgTotals.batches||0],['Students',orgTotals.students||0],['Active Batches',orgTotals.active||0],['Courses',orgTotals.courses||0]].forEach(([label,val])=>{ %>
           <div class="spvn-ui-panel p-5"><p class="text-2xl font-bold text-slate-900"><%= val %></p><p class="text-xs text-slate-500 mt-1"><%= label %></p></div>
         <% }) %>
       </div>
       <section class="spvn-ui-panel overflow-hidden">
         <div class="px-5 py-4 border-b flex items-center justify-between"><div><h2 class="font-bold text-slate-800">Batches</h2><p class="text-xs text-slate-400">SPVN CET batches and student strength</p></div><input id="batchSearch" oninput="filterBatches()" class="spvn-ui-filter max-w-xs" placeholder="Search batch..." /></div>
         <div class="overflow-x-auto"><table class="spvn-ui-table"><thead><tr><th>Name</th><th>Total Students</th><th>Course</th><th>Start date</th><th>End date</th><th>Status</th><th>Reports</th><th>Action</th></tr></thead><tbody>
-          <% if(!groups.length){ %><tr><td colspan="8" class="text-center py-12 text-slate-400">No batches created yet.</td></tr><% } %>
-          <% groups.forEach(g=>{ %><tr data-batch-row data-search="<%= (g.name+' '+(g.course||'')+' '+(g.status||'active')).toLowerCase() %>"><td><a class="text-sky-600 font-medium hover:underline" href="/admin/groups/<%= g._id %>"><%= g.name %></a></td><td><%= g.totalStudents %></td><td><%= g.course || 'CET' %></td><td><%= g.startDate ? new Date(g.startDate).toLocaleDateString('en-IN') : '—' %></td><td><%= g.endDate ? new Date(g.endDate).toLocaleDateString('en-IN') : '—' %></td><td><span class="text-xs font-semibold <%= (g.status||'active')==='active'?'text-emerald-600':'text-slate-500' %>"><%= g.status||'active' %></span></td><td><a href="/admin/results?groupId=<%= g._id %>" class="text-sky-600 hover:underline">Reports</a></td><td><a href="/admin/groups/<%= g._id %>" class="spvn-ui-icon-btn bg-amber-400">✎</a></td></tr><% }) %>
+          <% if(!orgGroups.length){ %><tr><td colspan="8" class="text-center py-12 text-slate-400">No batches created yet.</td></tr><% } %>
+          <% orgGroups.forEach(g=>{ %><tr data-batch-row data-search="<%= (g.name+' '+(g.course||'')+' '+(g.status||'active')).toLowerCase() %>"><td><a class="text-sky-600 font-medium hover:underline" href="/admin/groups/<%= g._id %>"><%= g.name %></a></td><td><%= g.totalStudents %></td><td><%= g.course || 'CET' %></td><td><%= g.startDate ? new Date(g.startDate).toLocaleDateString('en-IN') : '—' %></td><td><%= g.endDate ? new Date(g.endDate).toLocaleDateString('en-IN') : '—' %></td><td><span class="text-xs font-semibold <%= (g.status||'active')==='active'?'text-emerald-600':'text-slate-500' %>"><%= g.status||'active' %></span></td><td><a href="/admin/results?groupId=<%= g._id %>" class="text-sky-600 hover:underline">Reports</a></td><td><a href="/admin/groups/<%= g._id %>" class="spvn-ui-icon-btn bg-amber-400">✎</a></td></tr><% }) %>
         </tbody></table></div>
       </section>
     </div>

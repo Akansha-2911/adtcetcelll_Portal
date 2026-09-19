@@ -115,7 +115,7 @@ function isVisualDescription(value) {
       >
 
         <p class="text-white/80 text-sm mb-1 truncate">
-          <%= result.test.title %>
+          <%= (result.test || result.testId)?.title || '' %>
         </p>
 
 
@@ -135,7 +135,7 @@ function isVisualDescription(value) {
 
             Percentage uses attempted subjects only · Full test:
 
-            <%= result.fullTotalMarks || result.test.totalMarks %>
+            <%= result.fullTotalMarks || (result.test || result.testId)?.totalMarks || 0 %>
 
             marks
 
@@ -363,13 +363,13 @@ function isVisualDescription(value) {
         <span>
 
           <span class="font-semibold text-slate-800">
-            <%= result.student.name %>
+            <%= (result.student || result.studentId)?.name || 'Student' %>
           </span>
 
           · Roll:
 
           <span class="font-mono">
-            <%= result.student.rollNo %>
+            <%= (result.student || result.studentId)?.rollNo || '—' %>
           </span>
 
         </span>
@@ -1290,13 +1290,14 @@ function isVisualDescription(value) {
 
 
         <%
+        const currentTest = (result.test || result.testId) || {};
         const answers =
           result.answers || {};
 
         const resultAnswerKeyMap =
           new Map(
             (
-              result.test.questionSettings ||
+              currentTest.questionSettings ||
               []
             ).map(function(row){
 
@@ -1310,7 +1311,7 @@ function isVisualDescription(value) {
         %>
 
 
-        <% (result.test.questions || []).forEach(function(q,idx){
+        <% (currentTest.questions || []).forEach(function(q,idx){
 
           const qid =
             String(

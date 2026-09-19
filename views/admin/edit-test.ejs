@@ -39,7 +39,17 @@
         <div class="p-5 lg:p-8 max-w-4xl mx-auto">
 
           <%- include('../partials/flash') %>
-
+          <%
+            const safeCourses = typeof COURSES !== 'undefined' && Array.isArray(COURSES) ? COURSES : ['CET', 'JEE', 'NEET'];
+            const safeSubjects = typeof SUBJECTS !== 'undefined' && Array.isArray(SUBJECTS) ? SUBJECTS : ['Physics', 'Chemistry', 'Mathematics', 'Biology'];
+            const safeFormatDateTimeLocal = typeof formatDateTimeLocal === 'function' ? formatDateTimeLocal : (d => {
+              if (!d) return '';
+              try {
+                const dt = new Date(d);
+                return isNaN(dt.getTime()) ? '' : dt.toISOString().slice(0, 16);
+              } catch { return ''; }
+            });
+          %>
 
             <form action="/admin/tests/<%= test.id %>/edit" method="POST" enctype="multipart/form-data"
               class="space-y-6">
@@ -95,7 +105,7 @@
 
                     <div class="flex flex-wrap gap-2">
 
-                      <% COURSES.forEach(c=> { %>
+                      <% safeCourses.forEach(c=> { %>
 
                         <label
                           class="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -127,7 +137,7 @@
 
                     <div class="flex flex-wrap gap-2">
 
-                      <% SUBJECTS.forEach(s=> { %>
+                      <% safeSubjects.forEach(s=> { %>
 
                         <label
                           class="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -184,7 +194,7 @@
                       Start Time
                     </label>
 
-                    <input type="datetime-local" name="startTime" value="<%= formatDateTimeLocal(test.startTime) %>"
+                    <input type="datetime-local" name="startTime" value="<%= safeFormatDateTimeLocal(test.startTime) %>"
                       class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
 
                   </div>
@@ -198,7 +208,7 @@
                       End Time
                     </label>
 
-                    <input type="datetime-local" name="endTime" value="<%= formatDateTimeLocal(test.endTime) %>"
+                    <input type="datetime-local" name="endTime" value="<%= safeFormatDateTimeLocal(test.endTime) %>"
                       class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
 
                   </div>
@@ -562,7 +572,7 @@
                           All Courses
                         </option>
 
-                        <% COURSES.forEach(c=> { %>
+                        <% safeCourses.forEach(c=> { %>
 
                           <option value="<%= c %>">
                             <%= c %>

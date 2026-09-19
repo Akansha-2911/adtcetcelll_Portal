@@ -1,4 +1,9 @@
 <%- include('../partials/head') %>
+<%
+  const safeGroups = typeof groups !== 'undefined' && Array.isArray(groups) ? groups : [];
+  const safeStudents = typeof students !== 'undefined' && Array.isArray(students) ? students : [];
+  const safeCourses = typeof COURSES !== 'undefined' && Array.isArray(COURSES) ? COURSES : ['CET', 'JEE', 'NEET'];
+%>
 <div class="flex min-h-screen">
   <%- include('../partials/sidebar-admin') %>
   <main class="lg:ml-64 flex-1 min-h-screen">
@@ -8,7 +13,7 @@
       </button>
       <div class="flex-1"><nav class="spvn-ui-topnav"><a href="/admin/groups" class="active">Organization</a><a href="/admin/tests">Test Management</a><a href="/admin/results">Reports</a><a href="/admin/results">Analytics</a><a href="/admin/tests?view=online">Monitor</a><a href="/admin/content">Content</a></nav>
         <h1 class="sr-only">Groups &amp; Batches</h1>
-        <p class="text-xs text-slate-400"><%= groups.length %> active groups</p>
+        <p class="text-xs text-slate-400"><%= safeGroups.length %> active groups</p>
       </div>
       <div class="flex items-center gap-2.5">
         <button onclick="document.getElementById('assignModal').classList.remove('hidden')"
@@ -27,11 +32,11 @@
     <div class="p-5 lg:p-8">
       <%- include('../partials/flash') %>
       <%
-        const totalAssignedStudents = groups.reduce((sum, group) => sum + (group.members?.length || 0), 0);
-        const courseCount = new Set(groups.map(group => group.course).filter(Boolean)).size;
+        const totalAssignedStudents = safeGroups.reduce((sum, group) => sum + (group.members?.length || 0), 0);
+        const courseCount = new Set(safeGroups.map(group => group.course).filter(Boolean)).size;
       %>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Batches</p><p class="text-2xl font-bold text-slate-900 mt-1"><%= groups.length %></p></div>
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Batches</p><p class="text-2xl font-bold text-slate-900 mt-1"><%= safeGroups.length %></p></div>
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned Students</p><p class="text-2xl font-bold text-navy-700 mt-1"><%= totalAssignedStudents %></p></div>
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Courses</p><p class="text-2xl font-bold text-indigo-600 mt-1"><%= courseCount %></p></div>
       </div>
@@ -43,9 +48,9 @@
         </label>
         <select id="batchCourseFilter" onchange="filterBatches()" class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-navy-500">
           <option value="">All courses</option>
-          <% COURSES.forEach(course => { %><option value="<%= course.toLowerCase() %>"><%= course %></option><% }) %>
+          <% safeCourses.forEach(course => { %><option value="<%= course.toLowerCase() %>"><%= course %></option><% }) %>
         </select>
-        <div class="flex items-center px-3 text-xs text-slate-500"><strong id="visibleBatchCount" class="text-slate-800 mr-1"><%= groups.length %></strong> shown</div>
+        <div class="flex items-center px-3 text-xs text-slate-500"><strong id="visibleBatchCount" class="text-slate-800 mr-1"><%= safeGroups.length %></strong> shown</div>
       </div>
 
       <div class="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
@@ -63,7 +68,7 @@
               </tr>
             </thead>
             <tbody id="batchTableBody" class="divide-y divide-slate-100">
-              <% groups.forEach(g => {
+              <% safeGroups.forEach(g => {
                 const studentCount = g.members ? g.members.filter(m => m.GroupMember?.role === 'student').length : 0;
                 const searchText = [g.name, g.description, g.academicYear, g.course, ...(g.members || []).flatMap(member => [member.name, member.rollNo])].filter(Boolean).join(' ').toLowerCase();
               %>
@@ -118,7 +123,7 @@
                 </td>
               </tr>
               <% }) %>
-              <% if (groups.length === 0) { %>
+              <% if (safeGroups.length === 0) { %>
               <tr><td colspan="7" class="px-6 py-16 text-center"><p class="font-semibold text-slate-600">No groups yet.</p><p class="text-xs text-slate-400 mt-1">Create a group to start assigning students.</p></td></tr>
               <% } %>
               <tr id="noBatchResults" class="hidden"><td colspan="7" class="px-6 py-14 text-center"><p class="font-semibold text-slate-600">No matching batch found.</p><p class="text-xs text-slate-400 mt-1">Try another batch, student, roll number or course.</p></td></tr>
@@ -370,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
           class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"/>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"><option value="">Select course</option><% COURSES.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div>
+        <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"><option value="">Select course</option><% safeCourses.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div>
         <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status</label><select name="status" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm"><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -470,14 +475,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Group *</label>
         <select name="groupId" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
           <option value="">Select group</option>
-          <% groups.forEach(g => { %><option value="<%= g.id %>"><%= g.name %></option><% }) %>
+          <% safeGroups.forEach(g => { %><option value="<%= g.id %>"><%= g.name %></option><% }) %>
         </select>
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Student *</label>
         <select name="userId" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-white">
           <option value="">Select student</option>
-          <% students.forEach(s => { %><option value="<%= s.id %>"><%= s.name %> (<%= s.rollNo %>)</option><% }) %>
+          <% safeStudents.forEach(s => { %><option value="<%= s.id %>"><%= s.name %> (<%= s.rollNo %>)</option><% }) %>
         </select>
         <input type="hidden" name="role" value="student"/>
       </div>
@@ -508,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
         <input type="text" name="academicYear" id="editGroupAY" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/>
       </div>
-      <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" id="editGroupCourse" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="">None</option><% COURSES.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label><select name="status" id="editGroupStatus" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Start date</label><input type="date" name="startDate" id="editGroupStart" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">End date</label><input type="date" name="endDate" id="editGroupEnd" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div>
+      <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Course</label><select name="course" id="editGroupCourse" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="">None</option><% safeCourses.forEach(c=>{ %><option value="<%= c %>"><%= c %></option><% }) %></select></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label><select name="status" id="editGroupStatus" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"><option value="active">Active</option><option value="inactive">Inactive</option><option value="completed">Completed</option></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Start date</label><input type="date" name="startDate" id="editGroupStart" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div><div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">End date</label><input type="date" name="endDate" id="editGroupEnd" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"/></div>
       </div>
       <div class="flex gap-3 pt-1">
         <button type="submit" class="flex-1 bg-navy-950 text-white font-semibold py-3 rounded-xl hover:bg-navy-900 transition-colors">Save Changes</button>

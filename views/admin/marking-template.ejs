@@ -223,10 +223,12 @@
                                             <tbody class="divide-y divide-slate-100">
 
 
-                                                <% test.questions.forEach((q, i)=> {
+                                                <%
+                                                  const safeSettingMap = typeof settingMap !== 'undefined' && settingMap ? settingMap : new Map(((test && test.questionSettings) || []).map(row => [String(row.questionId), row]));
+                                                  (test.questions || []).forEach((q, i)=> {
 
                                                     const st =
-                                                    settingMap.get(
+                                                    safeSettingMap.get(
                                                     String(q._id)
                                                     );
 

@@ -10,7 +10,9 @@
     "seed:fresh": "node seeders/seed.js",
     "verify": "node scripts/verify.js",
     "preflight": "node scripts/preflight.js",
-    "check:all": "npm run verify && npm run preflight",
+    "test:views": "node scripts/test-all-views.js",
+    "test:e2e": "node scripts/test-e2e-suite.js",
+    "check:all": "npm run verify && npm run test:views && npm run test:e2e",
     "start:production": "NODE_ENV=production node app.js",
     "prod:check": "node scripts/productionCheck.js",
     "db:indexes": "node scripts/ensureIndexes.js"

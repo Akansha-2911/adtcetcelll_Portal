@@ -49,9 +49,14 @@
           >
         </div>
 
+        <%
+          const safeFilterCourse = typeof filterCourse !== 'undefined' ? filterCourse : '';
+          const safeFilterSubject = typeof filterSubject !== 'undefined' ? filterSubject : '';
+          const safeCourses = typeof COURSES !== 'undefined' && Array.isArray(COURSES) ? COURSES : ['CET', 'JEE', 'NEET'];
+        %>
         <!-- Safe EJS -> DOM values. No EJS is embedded inside JavaScript. -->
-        <input type="hidden" id="initialCourseValue" value="<%= filterCourse || '' %>">
-        <input type="hidden" id="initialSubjectValue" value="<%= filterSubject || '' %>">
+        <input type="hidden" id="initialCourseValue" value="<%= safeFilterCourse %>">
+        <input type="hidden" id="initialSubjectValue" value="<%= safeFilterSubject %>">
 
         <div class="spvn-ui-panel overflow-hidden">
           <div class="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-end gap-3">
@@ -72,8 +77,8 @@
               <label class="block text-[11px] font-bold text-slate-600 mb-1.5">1. Course</label>
               <select id="ctCourse" class="spvn-ui-filter">
                 <option value="">Select Course</option>
-                <% COURSES.forEach(function(course){ %>
-                  <option value="<%= course %>" <%= filterCourse === course ? 'selected' : '' %>><%= course %></option>
+                <% safeCourses.forEach(function(course){ %>
+                  <option value="<%= course %>" <%= safeFilterCourse === course ? 'selected' : '' %>><%= course %></option>
                 <% }); %>
               </select>
             </div>

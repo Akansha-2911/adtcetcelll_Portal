@@ -27,10 +27,15 @@
 
           <div class="rounded-2xl bg-slate-50 border border-slate-200 p-5">
             <div class="flex items-center justify-between mb-4"><div><h3 class="text-sm font-bold text-slate-800">Syllabus Classification</h3><p class="text-xs text-slate-400 mt-1">Subject → Unit/Topic → Subtopic</p></div><a href="/admin/topics" target="_blank" class="text-xs font-semibold text-indigo-600">Manage syllabus ↗</a></div>
+            <%
+              const editSubjects = typeof SUBJECTS !== 'undefined' && Array.isArray(SUBJECTS) ? SUBJECTS : ['Physics','Chemistry','Mathematics','Biology'];
+              const editTopicRows = typeof topicRows !== 'undefined' && Array.isArray(topicRows) ? topicRows : [];
+              const editSubtopics = typeof subtopicList !== 'undefined' && Array.isArray(subtopicList) ? subtopicList : [];
+            %>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subject *</label><select name="subject" id="editSubject" required onchange="loadTopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><% SUBJECTS.forEach(s=>{ %><option value="<%= s %>" <%= question.subject===s?'selected':'' %>><%= s %></option><% }) %></select></div>
-              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Topic / Unit</label><select name="topic" id="editTopic" onchange="loadSubtopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Topic</option><% topicRows.forEach(t=>{ %><option value="<%= t.name %>" <%= question.topic===t.name?'selected':'' %>><%= t.name %></option><% }) %></select></div>
-              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subtopic</label><select name="subtopic" id="editSubtopic" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Subtopic</option><% subtopicList.forEach(s=>{ %><option value="<%= s %>" <%= question.subtopic===s?'selected':'' %>><%= s %></option><% }) %></select></div>
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subject *</label><select name="subject" id="editSubject" required onchange="loadTopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><% editSubjects.forEach(s=>{ %><option value="<%= s %>" <%= question.subject===s?'selected':'' %>><%= s %></option><% }) %></select></div>
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Topic / Unit</label><select name="topic" id="editTopic" onchange="loadSubtopics(this.value)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Topic</option><% editTopicRows.forEach(t=>{ %><option value="<%= t.name %>" <%= question.topic===t.name?'selected':'' %>><%= t.name %></option><% }) %></select></div>
+              <div><label class="block text-xs font-semibold text-slate-600 mb-1.5">Subtopic</label><select name="subtopic" id="editSubtopic" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"><option value="">Select Subtopic</option><% editSubtopics.forEach(s=>{ %><option value="<%= s %>" <%= question.subtopic===s?'selected':'' %>><%= s %></option><% }) %></select></div>
             </div>
           </div>
 
